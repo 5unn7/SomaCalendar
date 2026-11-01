@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import { panchang, panchangAtSunrise, kundali } from '@grahan/vedic';
+import { julianDayFromDate, moonPhase } from '@grahan/core';
+const opts={latitude:27.7172,longitude:85.324,timezone:'Asia/Kathmandu'};
+const p=panchang({date:new Date('2026-07-02T06:00:00Z'),...opts});
+assert.equal(p.tithi.name,'Tritiya');
+assert.equal(p.nakshatra.name,'Shravana');
+const day=panchangAtSunrise({year:2026,month:7,day:2,...opts});
+assert.equal(day.tithi[0].name,'Dwitiya');
+assert.ok(day.tithi[0].endsAt instanceof Date);
+assert.ok(day.sunrise instanceof Date);
+assert.ok(Array.isArray(day.karana));
+const moon=moonPhase(julianDayFromDate(new Date('2026-07-02T06:00:00Z')));
+assert.ok(moon.illuminatedFraction>=0 && moon.illuminatedFraction<=1);
+const k=kundali({date:new Date('1993-08-18T05:15:00Z'),latitude:27.0104,longitude:84.8821});
+assert.ok(k.grahas.some(g=>g.graha==='moon'));
+console.log('Grahan integration fixture checks passed');
