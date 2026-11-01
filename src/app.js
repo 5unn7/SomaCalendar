@@ -1,5 +1,5 @@
 import {panchangAtSunrise,kundali,kundaliSvg} from '@grahan/vedic';
-import {julianDayFromDate,moonPhase} from '@grahan/core';
+import {julianDayFromDate,moonPhase,moonPosition,equatorialFromEcliptic,trueObliquity,localSiderealTime} from '@grahan/core';
 
 const $=id=>document.getElementById(id);
 const CITIES={
@@ -20,6 +20,9 @@ try{
   const loaded=JSON.parse(localStorage.getItem(STORE)||'{}');
   state={...state,...loaded,profile:loaded.profile||{},notes:loaded.notes||{}};
 }catch(e){console.warn('Local storage unavailable',e);}
+if(state.liveCoordinates && Number.isFinite(state.liveCoordinates.lat) && Number.isFinite(state.liveCoordinates.lon)){
+ CITIES.gps={label:'Device GPS',lat:state.liveCoordinates.lat,lon:state.liveCoordinates.lon,zone:state.liveCoordinates.zone||Intl.DateTimeFormat().resolvedOptions().timeZone,altitude:state.liveCoordinates.altitude};
+}
 if(!CITIES[state.location])state.location='delhi';
 const city=()=>CITIES[state.location];
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -160,4 +163,165 @@ function init(){
   document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>go(b.dataset.page));
   showProfile();showToday();showCalendar();go('today');
 }
+
+/* Soma v0.2: opt-in location/weather, geocentric sky bearing, and local solar telemetry. */
+const degrees=r=>r*180/Math.PI;
+const radians=d=>d*Math.PI/180;
+const numberOrNull=x=>x==null||!Number.isFinite(Number(x))?null:Number(x);
+const displayNumber=(x,suffix='',digits=0)=>numberOrNull(x)==null?'—':Number(x).toFixed(digits)+suffix;
+const geoValid=x=>x&&Number.isFinite(x.lat)&&Number.isFinite(x.lon)&&Math.abs(x.lat)<=90&&Math.abs(x.lon)<=180;
+function solarClockOffset(c){
+  const instant=new Date(),parts=new Intl.DateTimeFormat('en-GB',{timeZone:c.zone,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).formatToParts(instant);
+  const p=Object.fromEntries(parts.filter(x=>x.type!=='literal').map(x=>[x.type,Number(x.value)]));
+  const wall=Date.UTC(p.year,p.month-1,p.day,p.hour,p.minute);
+  const utcFloor=Math.floor(instant.getTime()/60000)*60000;
+  const offsetMin=Math.round((wall-utcFloor)/60000);
+  return Math.round(c.lon*4-offsetMin);
+}
+function moonBearing(c){
+  const jd=julianDayFromDate(new Date()),moon=moonPosition(jd);
+  const eq=equatorialFromEcliptic(moon.apparentLongitude,moon.latitude,trueObliquity(jd));
+  const H=radians(localSiderealTime(jd,c.lon)-eq.rightAscension),lat=radians(c.lat),dec=radians(eq.declination);
+  const alt=degrees(Math.asin(Math.sin(lat)*Math.sin(dec)+Math.cos(lat)*Math.cos(dec)*Math.cos(H)));
+  const az=(degrees(Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(lat)-Math.tan(dec)*Math.cos(lat)))+180+360)%360;
+  return {az,alt};
+}
+function upcomingSolarEvent(p,d){
+  const now=Date.now();
+  const events=[p.sunrise&&{label:'Sunrise',at:p.sunrise},p.sunset&&{label:'Sunset',at:p.sunset}].filter(Boolean);
+  try{const nd=getDay(nextDay(d,1));if(nd.sunrise)events.push({label:'Tomorrow sunrise',at:nd.sunrise});}catch{}
+  return events.filter(e=>e.at.getTime()>now).sort((a,b)=>a.at-b.at)[0]||null;
+}
+const countDown=t=>{
+  if(!t)return '—';
+  const min=Math.max(0,Math.ceil((t.getTime()-Date.now())/60000));
+  return min>60?Math.floor(min/60)+'h '+(min%60)+'m':min+'m';
+};
+function updateWidgetWeather(w){
+  try{
+    if(!window.SomaNative?.updateAtmosphere)return;
+    if(!w||!w.current){window.SomaNative.updateAtmosphere('—','Weather off','Tap app for conditions');return;}
+    const t=displayNumber(w.current.temperature_2m,'°C');
+    const cloud=displayNumber(w.current.cloud_cover,'% cloud');
+    const age=Math.round((Date.now()-(w.fetchedAt||Date.now()))/60000);
+    window.SomaNative.updateAtmosphere(t,cloud,'From last request'+(age>=1?' · '+age+'m ago':''));
+  }catch(e){console.warn('Weather widget',e);}
+}
+function weatherForCurrent(){
+  const w=state.weather,c=city();
+  return w&&Math.abs(w.lat-c.lat)<0.01&&Math.abs(w.lon-c.lon)<0.01?w:null;
+}
+function showWeather(){
+  const w=weatherForCurrent();
+  if(!w||!w.current){
+    $('weatherCurrent').textContent='Weather is off';
+    $('weatherStatus').textContent='Tap “Get weather” to share these coordinates with Open-Meteo.';
+    $('weatherDetails').innerHTML='';
+    $('tattvaValues').innerHTML='<p class="muted">Five-element reflections appear when you request weather data.</p>';
+    $('sadhana').textContent='Check conditions before heading outside';
+    updateWidgetWeather(null);return;
+  }
+  const a=w.current,unit=w.current_units||{};
+  const values=[
+    ['Feels like',displayNumber(a.apparent_temperature,'°C')],
+    ['Cloud cover',displayNumber(a.cloud_cover,'%')],
+    ['Wind',displayNumber(a.wind_speed_10m,' km/h')],
+    ['Wind direction',displayNumber(a.wind_direction_10m,'°')],
+    ['Humidity',displayNumber(a.relative_humidity_2m,'%')],
+    ['UV index',displayNumber(a.uv_index)],
+    ['Pressure',displayNumber(a.surface_pressure,' hPa')],
+    ['Precipitation',displayNumber(a.precipitation,' mm',1)]
+  ];
+  $('weatherCurrent').textContent=displayNumber(a.temperature_2m,'°C');
+  $('weatherStatus').textContent='Modelled conditions · fetched '+new Intl.DateTimeFormat('en-IN',{hour:'numeric',minute:'2-digit'}).format(new Date(w.fetchedAt));
+  $('weatherDetails').innerHTML=values.map(([label,val])=>'<div class="weatherStat"><span>'+escape(label)+'</span><b>'+escape(val)+'</b></div>').join('');
+  const cloud=numberOrNull(a.cloud_cover),wind=numberOrNull(a.wind_speed_10m),uv=numberOrNull(a.uv_index),rain=numberOrNull(a.precipitation);
+  let suggestion='Check local conditions before going out';
+  if((wind!=null&&wind>=30)||(rain!=null&&rain>0.2)||(uv!=null&&uv>=8))suggestion='Indoor practice may be more comfortable';
+  else if(cloud!=null&&cloud<=25)suggestion='Lower cloud cover: consider Moon gazing';
+  $('sadhana').textContent=suggestion;
+  const pairs=[
+    ['Agni · fire','Temperature '+displayNumber(a.temperature_2m,'°C')+' · UV '+displayNumber(a.uv_index)],
+    ['Jala · water','Humidity '+displayNumber(a.relative_humidity_2m,'%')+' · Dewpoint '+displayNumber(a.dew_point_2m,'°C')],
+    ['Vayu · air','Wind '+displayNumber(a.wind_speed_10m,' km/h')+' · '+displayNumber(a.surface_pressure,' hPa')],
+    ['Prithvi · earth','Soil moisture: not sampled'],
+    ['Akasha · space','Cloud cover '+displayNumber(a.cloud_cover,'%')+' · actual sky visibility unverified']
+  ];
+  $('tattvaValues').innerHTML=pairs.map(([label,value])=>'<div class="tattva"><b>'+escape(label)+'</b><span>'+escape(value)+'</span></div>').join('');
+  updateWidgetWeather(w);
+}
+function renderTelemetry(){
+  const c=city(),d=today();
+  const gps=state.location==='gps'&&state.liveCoordinates;
+  $('telemetryName').textContent=c.label;
+  $('telemetryPosition').textContent=c.lat.toFixed(4)+'°, '+c.lon.toFixed(4)+'°';
+  $('telemetryAltitude').textContent=gps&&Number.isFinite(gps.altitude)?Math.round(gps.altitude)+'m device altitude':'Altitude not measured';
+  $('telemetrySolarOffset').textContent='Mean solar offset '+(solarClockOffset(c)>=0?'+':'')+solarClockOffset(c)+'m';
+  $('gpsStatus').textContent=gps?'GPS active · '+(Number.isFinite(gps.accuracy)?Math.round(gps.accuracy)+'m reported accuracy':'accuracy unknown'):'Manual city coordinates';
+  $('telemetryZone').textContent='Zone '+c.zone+(gps?' (device setting)':'');
+  try{
+    const p=getDay(d);
+    const duration=p.sunrise&&p.sunset?Math.round((p.sunset-p.sunrise)/60000):null;
+    $('daylightDuration').textContent=duration==null?'—':Math.floor(duration/60)+'h '+pad(duration%60)+'m';
+    $('solarMidpoint').textContent=p.sunrise&&p.sunset?clock(new Date((p.sunrise.getTime()+p.sunset.getTime())/2)):'—';
+    const upcoming=upcomingSolarEvent(p,d);
+    $('nextSolar').textContent=upcoming?upcoming.label+' in '+countDown(upcoming.at):'Not available';
+    const now=Date.now();
+    $('rahuCountdown').textContent=p.rahuKaal&&p.rahuKaal.start&&p.rahuKaal.start.getTime()>now?'Rahu Kaal starts in '+countDown(p.rahuKaal.start):'Rahu Kaal times in Panchang';
+  }catch(e){$('nextSolar').textContent='Solar timing unavailable';}
+  try{
+    const m=moonBearing(c);
+    $('moonAzimuth').textContent=Math.round(m.az)+'° from north';
+    $('moonAltitude').textContent=Math.round(m.alt)+'° altitude · '+(m.alt>0?'above geometric horizon':'below geometric horizon');
+    $('moonDirection').style.transform='rotate('+m.az+'deg)';
+  }catch(e){$('moonAzimuth').textContent='Moon position unavailable';}
+  showWeather();
+}
+const originalShowToday=showToday;
+showToday=function(){originalShowToday();renderTelemetry();};
+function initTelemetry(){
+  $('useGPS').onclick=()=>{
+    if(!window.SomaNative?.requestLocation){$('gpsStatus').textContent='GPS requires the Android app';return;}
+    $('gpsStatus').textContent='Requesting one-time location fix…';
+    window.SomaNative.requestLocation();
+  };
+  $('refreshWeather').onclick=()=>{
+    if(!window.SomaNative?.fetchWeather){$('weatherStatus').textContent='Weather requires the Android app';return;}
+    $('weatherStatus').textContent='Requesting modelled conditions from Open-Meteo…';
+    const c=city();window.SomaNative.fetchWeather(c.lat,c.lon);
+  };
+  window.somaReceiveLocation=payload=>{
+    if(payload.startsWith('ERROR:')){$('gpsStatus').textContent=payload;return;}
+    try{
+      const obj=JSON.parse(payload);
+      if(!geoValid(obj))throw Error('Invalid GPS coordinates');
+      const gps={lat:obj.lat,lon:obj.lon,zone:obj.zone||Intl.DateTimeFormat().resolvedOptions().timeZone,
+        altitude:numberOrNull(obj.altitude),accuracy:numberOrNull(obj.accuracy)};
+      state.liveCoordinates=gps;
+      CITIES.gps={label:'Device GPS',...gps};
+      state.location='gps';save();
+      if(!$('location').querySelector('option[value="gps"]')){
+        const option=document.createElement('option');option.value='gps';option.textContent='Device GPS';$('location').appendChild(option);
+      }
+      $('location').value='gps';selected=today();month={...selected,day:1};
+      showToday();showCalendar();
+    }catch(e){$('gpsStatus').textContent='Could not use GPS: '+e.message;}
+  };
+  window.somaReceiveWeather=payload=>{
+    if(payload.startsWith('ERROR:')){$('weatherStatus').textContent=payload;return;}
+    try{
+      const body=JSON.parse(payload);
+      if(!body.current)throw Error('Missing current conditions');
+      const c=city();
+      state.weather={lat:body.latitude??c.lat,lon:body.longitude??c.lon,
+        current:body.current,current_units:body.current_units,fetchedAt:Date.now()};
+      // Weather models may snap to nearby grid coordinates; store the requested observation point.
+      state.weather.lat=c.lat;state.weather.lon=c.lon;
+      save();showWeather();
+    }catch(e){$('weatherStatus').textContent='Could not display weather: '+e.message;}
+  };
+  renderTelemetry();
+}
+
 init();
+initTelemetry();

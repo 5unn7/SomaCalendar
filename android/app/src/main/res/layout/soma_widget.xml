@@ -1,15 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/widgetRoot" android:layout_width="match_parent" android:layout_height="match_parent"
-  android:padding="18dp" android:orientation="vertical" android:background="@drawable/widget_bg">
+  android:padding="16dp" android:orientation="vertical" android:background="@drawable/widget_bg">
   <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="SOMA / TODAY" android:textColor="#B5D2BF" android:textSize="12sp" android:letterSpacing=".14"/>
+    android:text="SOMA / EARTH × SKY" android:textColor="#B5D2BF" android:textSize="11sp" android:letterSpacing=".12"/>
   <TextView android:id="@+id/widgetDate" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="11dp" android:textColor="#FFFFFF" android:textSize="24sp" android:textStyle="bold"/>
+    android:layout_marginTop="8dp" android:textColor="#FFFFFF" android:textSize="23sp" android:textStyle="bold"/>
   <TextView android:id="@+id/widgetPhase" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="7dp" android:textColor="#EDF4ED" android:textSize="15sp"/>
-  <TextView android:id="@+id/widgetTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
     android:layout_marginTop="4dp" android:textColor="#EDF4ED" android:textSize="14sp"/>
+  <TextView android:id="@+id/widgetTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="3dp" android:textColor="#EDF4ED" android:textSize="12sp"/>
+  <TextView android:id="@+id/widgetWeather" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="7dp" android:textColor="#F2DCA9" android:textSize="14sp"/>
+  <TextView android:id="@+id/widgetWeatherLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:textColor="#B5D2BF" android:textSize="10sp"/>
   <TextView android:id="@+id/widgetCity" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="11dp" android:textColor="#B5D2BF" android:textSize="11sp"/>
+    android:layout_marginTop="7dp" android:textColor="#B5D2BF" android:textSize="10sp"/>
 </LinearLayout>

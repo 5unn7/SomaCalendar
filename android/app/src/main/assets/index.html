@@ -8,20 +8,47 @@
 <style>
 :root{--bg:#f6f7f2;--ink:#1d2924;--muted:#75817b;--deep:#244237;--sage:#dfe8db;--border:#e3e8df;--white:#fff;--gold:#bd9b67;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink)}
 *{box-sizing:border-box}html,body{padding:0;margin:0;background:var(--bg);min-height:100%}button,input,select{font:inherit}button{cursor:pointer}h1,h2,h3,p{margin:0}main{width:min(680px,100%);margin:auto;padding:22px 20px 116px}header{width:min(680px,100%);margin:auto;padding:24px 20px 4px;display:flex;justify-content:space-between;align-items:center}header .logo{font-size:25px;font-weight:730;letter-spacing:-1.5px}header .logo span{color:#879d88}header .edition{font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:700}.overline{font-size:10px;letter-spacing:1.9px;font-weight:750;text-transform:uppercase;color:#75867a}h1{font-size:38px;line-height:1.12;letter-spacing:-1.6px;font-weight:590;margin:10px 0}h2{font-size:20px;letter-spacing:-.6px;font-weight:640}h3{font-size:15px;font-weight:660}p{line-height:1.5}.muted{color:var(--muted);font-size:13px}.tiny{font-size:11px}.lead{font-size:14px;color:#64736b;margin:8px 0 23px}section{display:none}section.active{display:block}.panel{background:var(--white);border:1px solid var(--border);border-radius:24px;padding:20px;margin-top:15px}.row{display:flex;justify-content:space-between;align-items:center;gap:16px}.moonHero{background:var(--deep);border-radius:29px;color:white;padding:25px 23px 21px;display:flex;align-items:center;justify-content:space-between;margin:23px 0 17px;min-height:178px;overflow:hidden}.moonHero .overline{color:#b5d0bb}.moonHero h2{font-size:33px;margin:7px 0 9px;letter-spacing:-1px}.moonHero .muted{color:#d3ded5}.moonEmoji{font-size:76px;filter:grayscale(.35);line-height:1}.pill{border-radius:100px;padding:9px 13px;background:var(--sage);color:var(--deep);font-size:11px;font-weight:650;display:inline-block}.sectionIntro{padding:14px 0 0}.sectionIntro .muted{margin-top:5px}.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:13px}.fact{background:#fff;border:1px solid var(--border);padding:16px;border-radius:19px}.fact label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px}.fact strong{display:block;font-size:15px}.panelHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.panelHeader .overline{color:#79967d}.transition{padding:14px 0;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #edf0e9}.transition:last-child{border-bottom:0}.transition b{font-size:14px;font-weight:640;display:block}.transition span{display:block;font-size:11px;color:var(--muted);margin-top:4px}.transition small{font-size:11px;white-space:nowrap;color:#66836e}.gridLabel{display:flex;justify-content:space-between;align-items:center;margin:14px 0}.gridLabel h2{font-size:25px}.monthActions{display:flex;align-items:center;gap:7px}.round{width:34px;height:34px;border:1px solid var(--border);background:#fff;border-radius:12px;font-size:18px;color:var(--deep)}.weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin:24px 0 7px;color:var(--muted);font-size:11px;font-weight:700}.calendarGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.day{border:1px solid transparent;border-radius:13px;background:#fff;min-height:57px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:7px;color:var(--ink)}.day b{font-size:13px;font-weight:560}.day.other{color:#b5bdb5;background:transparent}.day.selected{border:2px solid var(--deep)}.day.current{background:var(--sage)}.phaseDot{display:block;width:11px;height:11px;background:linear-gradient(90deg,#e9ebdf var(--lit),#394c43 var(--lit));border:1px solid #8a998c;border-radius:50%}.inlineAction{border:0;background:var(--sage);color:var(--deep);font-weight:650;border-radius:14px;padding:10px 13px;font-size:12px}.formGrid{display:grid;gap:13px}.formGrid label{font-size:12px;color:#697a6c;display:grid;gap:7px;font-weight:600}.formGrid input,.formGrid select,select.city{width:100%;height:48px;padding:0 14px;border:1px solid #dce5db;border-radius:13px;background:#fff;color:var(--ink);outline:none}.city{max-width:154px;font-size:12px;height:38px!important}.primary{background:var(--deep);color:white;border:0;border-radius:15px;padding:14px 19px;font-weight:650;min-height:48px}.delete{background:transparent;border:1px solid #d7ded5;padding:12px;border-radius:14px;color:#7e5851}.birthGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:18px}.birthGrid>div{padding:13px 9px;background:#f2f5ef;border-radius:14px}.birthGrid small{display:block;font-size:9px;letter-spacing:.6px;color:#657769;margin-bottom:7px}.birthGrid strong{font-size:13px;overflow-wrap:anywhere}.chart{max-width:340px;margin:0 auto 12px}.chart svg{max-width:100%;height:auto}.note{display:flex;justify-content:space-between;align-items:center;padding:12px;border-top:1px solid var(--border);gap:10px}.note button{background:none;border:0;color:#b17d73;font-size:24px}.smallNotice{padding:17px;border-radius:17px;background:#e8eee5;font-size:12px;color:#5d7664;line-height:1.5;margin-top:15px}nav{position:fixed;bottom:0;left:0;width:100%;background:rgba(249,250,245,.97);border-top:1px solid #e1e6de;display:flex;justify-content:center;gap:7px;padding:12px max(16px,env(safe-area-inset-left)) calc(12px + env(safe-area-inset-bottom));z-index:4}nav button{border:0;background:transparent;color:#78877c;display:grid;justify-items:center;gap:4px;min-width:85px;padding:8px 10px;border-radius:13px;font-size:10px;font-weight:650}nav button .navIcon{font-size:21px}nav button.active{background:#e3eae0;color:var(--deep)}.locationLine{display:flex;align-items:center;gap:7px;margin-top:8px;flex-wrap:wrap}.iconLeaf{color:#8da08e}@media(min-width:600px){main{padding-top:35px}header{padding-top:30px}.moonHero{min-height:190px}.day{min-height:68px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s ease,transform .15s ease}button:active{transform:scale(.98)}} 
+
+.telemetryBar{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:7px;background:#e7ede4;border:1px solid #dde5d9;border-radius:18px;padding:12px 14px}
+.telemetryBar b{display:block;font-size:12px}.telemetryBar span{display:block;margin-top:5px;font-size:11px;color:#687c70}.telemetryMini{display:flex;justify-content:space-between;gap:10px;margin:8px 2px 0;font-size:10px;color:#738077;flex-wrap:wrap}
+.weatherPanel{padding:19px 20px}.weatherGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:15px}
+.weatherStat{background:#f4f6f1;border-radius:12px;padding:11px 12px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+.weatherStat span{font-size:11px;color:#738077}.weatherStat b{font-size:12px;white-space:nowrap}
+.weatherCredit{margin-top:13px;font-size:10px;color:#829186;line-height:1.5}
+.compactFacts{margin-top:9px}.compactFacts .fact{padding:11px 6px 11px 0;border:none}.rhythm{font-weight:690;font-size:15px;margin:12px 0 8px}
+.compass{position:relative;margin:15px auto;width:158px;height:158px;border:1px solid #bac7b9;background:radial-gradient(circle at center,#eff4ed 5%,#f8faf6 80%);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.compass:after{position:absolute;inset:19px;content:"";border:1px dashed #ccd6ca;border-radius:50%}
+.compass span{position:absolute;font-size:11px;color:#6c7e70;font-weight:740}
+.compass .north{top:10px}.compass .south{bottom:10px}.compass .east{right:13px}.compass .west{left:13px}
+.compassNeedle{font-size:52px;font-weight:200;color:#386147;transition:transform .2s;z-index:1;line-height:1}
+.tattva{padding:13px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;border-bottom:1px solid #ecf0e8}
+.tattva b{font-size:12px;white-space:nowrap}.tattva span{font-size:11px;color:#78867a;text-align:right}
 </style>
 </head>
 <body>
-<header><div class="logo">soma<span>.</span></div><span class="edition">COSMIC CALENDAR / 01</span></header>
+<header><div class="logo">soma<span>.</span></div><span class="edition">EARTH × SKY / 02</span></header>
 <main>
 <section id="tab-today" class="active">
   <div class="overline">Your daily rhythm</div>
   <h1 id="greeting">In rhythm with today.</h1>
   <p id="todayDate" class="lead">Today</p>
   <div class="locationLine"><span class="overline">Viewing sky over</span><select id="location" class="city" aria-label="Calendar location"></select></div>
+  <div class="telemetryBar">
+  <div><b id="telemetryName">Selected city</b><span id="telemetryPosition">—</span></div>
+  <button class="inlineAction" id="useGPS" type="button">◎ Use GPS</button>
+</div>
+<div class="telemetryMini"><span id="telemetryAltitude">Altitude not measured</span><span id="telemetrySolarOffset">Solar offset —</span></div>
+<div class="telemetryMini"><span id="telemetryZone">Zone —</span><span id="gpsStatus">Manual city coordinates</span></div>
   <div class="moonHero">
     <div><div class="overline">The Moon today</div><h2 id="moonPhase">Loading…</h2><p id="moonIllumination" class="muted">—</p><div style="margin-top:14px"><span class="pill">Real lunar data</span></div></div>
     <div class="moonEmoji" id="moonGlyph" aria-hidden="true">◕</div>
   </div>
+<div class="panel weatherPanel">
+  <div class="row"><div><div class="overline">Earth / Atmosphere</div><h2 style="margin-top:8px" id="weatherCurrent">Weather is off</h2></div><button id="refreshWeather" class="inlineAction" type="button">↻ Get weather</button></div>
+  <p id="weatherStatus" class="muted" style="margin-top:10px">Opt in to fetch nearby weather conditions.</p>
+  <div id="weatherDetails" class="weatherGrid"></div>
+  <p class="weatherCredit">Forecast-model data: Open-Meteo.com · CC BY 4.0 · sent only when requested</p>
+</div>
   <div class="sectionIntro"><h2>Today's Panchang</h2><p class="muted">Five traditional elements, from sunrise to sunrise.</p></div>
   <div class="panel"><div class="panelHeader"><h3>Tithi</h3><span class="overline">Lunar day</span></div><div id="tithi"></div></div>
   <div class="panel"><div class="panelHeader"><h3>Nakshatra</h3><span class="overline">Lunar mansion</span></div><div id="nakshatra"></div></div>
@@ -33,6 +60,29 @@
     <div class="fact"><label>Vara</label><strong id="weekday">—</strong></div>
     <div class="fact"><label>Rahu Kaal</label><strong id="rahu">—</strong></div>
   </div>
+<div class="panel">
+  <div class="panelHeader"><h3>Solar rhythm</h3><span class="overline">Local · approximate</span></div>
+  <div class="facts compactFacts">
+    <div class="fact"><label>Dinaman · daylight</label><strong id="daylightDuration">—</strong></div>
+    <div class="fact"><label>Daylight midpoint</label><strong id="solarMidpoint">—</strong></div>
+  </div>
+  <p class="rhythm" id="nextSolar">Next solar transition —</p>
+  <p class="muted" id="rahuCountdown">Rahu Kaal countdown —</p>
+  <p class="muted tiny" style="margin-top:10px">Not an elevation-corrected or second-precision sunrise model. Local horizon, refraction and weather can shift observed events.</p>
+</div>
+<div class="panel">
+  <div class="panelHeader"><h3>Moon direction</h3><span class="overline">Compass · north-up</span></div>
+  <div class="compass"><span class="north">N</span><span class="east">E</span><span class="south">S</span><span class="west">W</span><div id="moonDirection" class="compassNeedle">↑</div></div>
+  <p id="moonAzimuth" style="text-align:center;font-size:18px;font-weight:700">—</p>
+  <p class="muted" id="moonAltitude" style="text-align:center;margin-top:6px">—</p>
+  <p class="muted tiny" style="text-align:center;margin-top:8px">Approximate geocentric bearing, not phone orientation or a topocentric corrected position.</p>
+</div>
+<div class="panel">
+  <div class="panelHeader"><h3>Elements, observed</h3><span class="overline">Symbolic reflection</span></div>
+  <div id="tattvaValues"><p class="muted">Weather is optional.</p></div>
+  <p class="smallNotice" id="sadhana">Check conditions before heading outside</p>
+  <p class="muted tiny" style="margin-top:10px">These categories group environmental measurements for reflection; they are not diagnoses, personalized health advice or measured spiritual forces.</p>
+</div>
   <p class="smallNotice" id="calcStatus">Calculating locally…</p>
 </section>
 <section id="tab-calendar">

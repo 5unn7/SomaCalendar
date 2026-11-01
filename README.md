@@ -1,37 +1,33 @@
-# SOMA — Cosmic Calendar
+# SOMA — Earth × Sky (Android v0.2)
 
-An early, minimal, offline-first Android app uniting Gregorian dates with the Vedic Panchang, Moon phases, optional personal birth-chart calculations, private notes and a home-screen widget.
+A minimal, privacy-conscious Android Panchang, Moon and atmospheric-awareness experiment powered by [Grahan](https://github.com/svarbhanu/grahan) under the MIT license.
 
-## Build an APK
-GitHub Actions builds automatically on push to `main`, or via **Actions → Build Soma debug APK → Run workflow**.
-When the workflow succeeds, download the artifact named `soma-debug-apk`, extract it, and install `app-debug.apk` on an Android phone.
+## Build
+A push to main runs the GitHub Actions **Build Soma debug APK** workflow. Download the `soma-debug-apk` artifact if its check succeeds.
 
-Build yourself using Node 22+, JDK 17, Gradle 8.9 and Android SDK platform 35:
-```sh
-npm install
-npm run test:fixtures
-npm run bundle
-cd android
-gradle assembleDebug
-```
-The JavaScript bundle is generated into `android/app/src/main/assets/app.js` before compilation.
+## Implemented
+- Daily sunrise-based Panchang with transition times, local sunrise/sunset, Rahu Kaal, lunar phase.
+- Interactive Gregorian calendar and private notes.
+- Optional birth information and natal Lagna / Rashi / Nakshatra from distinct birthplace coordinates.
+- User-initiated **foreground** Android location request with approximate/precise system permissions.
+- GPS telemetry: latitude, longitude, reported altitude/accuracy, **device** timezone, mean-solar/clock offset. No background location tracking. No automatic reverse geocoding; display label "Device GPS".
+- Local Dinaman, daylight midpoint (not exact solar transit), next sunrise/sunset countdown.
+- Approximate geocentric Moon azimuth/altitude from Grahan astronomical coordinates; NOT a topocentric/refraction-corrected compass.
+- Optional on-tap weather request via HTTPS to [Open-Meteo](https://open-meteo.com/): current temperature, feels-like, humidity, dew point, cloud cover, precipitation, wind, UV, and surface pressure where provided.
+- Weather and Panchang home-screen widget displays **last opened/last fetched** data.
+- Contextual five-element weather groupings as symbolic presentation, without biomedical assertions.
 
-## What works in this prototype
-- Grahan `panchangAtSunrise()` for tithi, nakshatra, yoga, karana, sunrise, sunset and Rahu Kaal
-- Real lunar phase and illumination, calendar month navigation
-- Personal birth chart (`kundali`, `kundaliSvg`) with selected city preset
-- Private notes and birth details stored on the device only
-- Native Android widget with **last displayed** Panchang data (tap widget to open app and refresh)
-- No INTERNET, location, analytics, ad, account or cloud-storage permissions.
+## Privacy and data
+Birth data and notes are stored in WebView localStorage and are not uploaded by Soma. Android backup is disabled. Location access must be granted by the user; a coordinate fix is requested only by tapping "Use GPS". GPS coordinates are stored locally for the chosen current location; select a manual city to switch back. Weather is fetched **only after** tapping "Get weather", which sends selected lat/lon to Open-Meteo. No analytics, ads, logins or accounts. The weather API is free for non-commercial use (attribution required); obtain a suitable commercial agreement before monetization.
 
-## What is not finished
-- **No festivals yet**: festival dates require verified region-specific rules, not simplistic lunar phase assumptions.
-- The widget is not self-refreshing. It displays the last calculated data with a "last opened" label.
-- City centre coordinates are approximate. Birth times around daylight-saving changes can be ambiguous.
-- The first GitHub Actions run is the integration test; a passing workflow must be confirmed before claiming an APK exists.
-- Traditional astrological interpretations are not scientific predictions.
-- This is a debug prototype, not a production-ready release or security audit.
+## Out of scope / cautions
+- Elevation and local horizon/refraction are **not** applied to Grahan sunrise/sunset or ascendant positions; no second-level precision is claimed.
+- Historical timezone conversion uses IANA zones from the device for live GPS and built-in birth-city presets. GPS timezone is NOT geospatially determined; if device timezone is wrong, the results can be wrong. DST gaps/overlaps need a dedicated UI.
+- Moon bearing is geocentric and compass is north-up, not tied to phone sensor heading. Moonrise/set, moon parallax, planet compass, true Sandhya twilight, Kp, audio noise, soil moisture, barometric trends, Hora, detailed Muhurta and festival rules remain for future validation.
+- Atmospheric "sky clarity" based on cloud cover is a proxy, not measured optical transparency or an assertion that a star is naked-eye visible.
+- Android lock-screen widget support varies by platform/launcher. Home-screen widget works on launchers that support AppWidgets and does not update autonomously in this prototype.
+- Weather conditions are model-derived and may lag; availability depends on internet. Do not present these as device sensors or immediate health indicators.
+- Traditional astrology is cultural/spiritual interpretation, not empirically validated prediction.
 
-## License and attribution
-Application prototype: MIT. Grahan core and Vedic packages: MIT © Svarbhanu Neel — https://github.com/svarbhanu/grahan.
-No Grahan source is vendored. Dependencies are installed from npm at build time.
+## Testing
+`npm run test:fixtures` checks documented Grahan fixture behavior, `npm run bundle` generates the offline browser asset, and Gradle builds the Android debug APK. A successful compilation is not a substitute for testing location permissions, view transitions, widget on real devices, or independent astronomical comparisons.

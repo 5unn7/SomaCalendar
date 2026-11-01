@@ -9,7 +9,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.widget.RemoteViews;
 
-/** Widget reflects last calculated Panchang; open Soma to refresh. */
+/** Shows last calculated Panchang + opt-in weather. No background location tracking. */
 public final class SomaWidget extends AppWidgetProvider {
   static void refreshAll(Context context){
     AppWidgetManager manager=AppWidgetManager.getInstance(context);
@@ -26,7 +26,11 @@ public final class SomaWidget extends AppWidgetProvider {
     v.setTextViewText(R.id.widgetPhase,p.getString("phase","Open Soma to begin"));
     v.setTextViewText(R.id.widgetTithi,p.getString("tithi","Today's Panchang"));
     v.setTextViewText(R.id.widgetCity,p.getString("city","Tap to refresh")+" · last opened");
-    PendingIntent click=PendingIntent.getActivity(c,0,new Intent(c,MainActivity.class),PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+    v.setTextViewText(R.id.widgetWeather,p.getString("temp","—")+
+      "  ·  "+p.getString("cloud","Weather off"));
+    v.setTextViewText(R.id.widgetWeatherLabel,p.getString("weatherStatus","Weather is opt-in"));
+    PendingIntent click=PendingIntent.getActivity(c,0,new Intent(c,MainActivity.class),
+      PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
     v.setOnClickPendingIntent(R.id.widgetRoot,click);
     m.updateAppWidget(id,v);
   }
