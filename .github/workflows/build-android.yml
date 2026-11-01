@@ -14,14 +14,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-      - name: Verify UI IDs and event bindings
-        run: npm run test:dom
-      - name: Test Grahan integration
-        run: npm run test:fixtures
-      - name: Bundle offline app
-        run: npm run bundle
+      - name: Validate bundled Horizon
+        run: node tests/horizon-contract.mjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -35,7 +29,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Build APK
+      - name: Compile Android debug APK
         working-directory: android
         run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4

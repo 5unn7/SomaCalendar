@@ -20,4 +20,6 @@ if grep -E 'E/SomaJS.*(Uncaught|SyntaxError|TypeError|ReferenceError)' soma-js-l
   echo 'JavaScript runtime error in WebView' >&2
   exit 1
 fi
+grep -Fq 'Horizon health' soma-js-log.txt
+grep -Fq 'tithi' soma-js-log.txt
 echo 'ANDROID RUNTIME SMOKE PASSED: Native WebView and Soma JS bridge initialized'

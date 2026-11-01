@@ -22,6 +22,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import org.json.JSONArray;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.json.JSONObject;
@@ -77,7 +79,10 @@ public final class MainActivity extends Activity {
       if(web!=null)web.evaluateJavascript("window."+function+"("+JSONObject.quote(payload)+")",null);
     });
   }
-  private void sendError(String function,String message){send(function,"ERROR: "+message);}
+  private void sendError(String function,String message){
+    if("somaReceiveLocation".equals(function))send(function,"{\"error\":"+JSONObject.quote(message)+"}");
+    else send(function,"ERROR: "+message);
+  }
   @Override public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grants){
     super.onRequestPermissionsResult(requestCode,permissions,grants);
     if(requestCode==LOCATION_PERMISSION_REQUEST){
@@ -122,7 +127,13 @@ public final class MainActivity extends Activity {
     }catch(Exception e){sendError("somaReceiveLocation","Invalid device location data.");}
   }
   public final class Bridge {
-    @JavascriptInterface public void appReady(){Log.i("SomaJS","Astronomical app initialized");}
+    @JavascriptInterface public void appReady(){
+      Log.i("SomaJS","Astronomical app initialized");
+      runOnUiThread(()->{
+        if(web!=null)web.evaluateJavascript("JSON.stringify(window.SomaPrototype?.health?.())",
+          value->Log.i("SomaJS","Horizon health "+value));
+      });
+    }
     @JavascriptInterface public void appFailure(String detail){Log.e("SomaJS","App initialization error: "+detail);}
     @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
       getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
@@ -135,6 +146,54 @@ public final class MainActivity extends Activity {
         .putString("temp",safe(temp)).putString("cloud",safe(cloud))
         .putString("weatherStatus",safe(status)).apply();
       runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
+    }
+    /** Only the text typed into birthplace search leaves the device; birth date/time are never transmitted. */
+    @JavascriptInterface public void searchBirthplaces(String query){
+      final String term=query==null?"":query.trim();
+      if(term.length()<3||term.length()>100){placeError("Search for a place using at least three letters.");return;}
+      new Thread(()->{
+        HttpURLConnection conn=null;
+        try{
+          String encoded=URLEncoder.encode(term,"UTF-8");
+          URL url=new URL("https://geocoding-api.open-meteo.com/v1/search?name="+encoded+"&count=8&language=en");
+          conn=(HttpURLConnection)url.openConnection();
+          conn.setRequestMethod("GET");
+          conn.setConnectTimeout(10000);conn.setReadTimeout(12000);
+          conn.setInstanceFollowRedirects(false);
+          if(conn.getResponseCode()!=200){placeError("Place lookup unavailable (HTTP "+conn.getResponseCode()+"). Manual coordinates still work.");return;}
+          StringBuilder response=new StringBuilder();
+          try(BufferedReader reader=new BufferedReader(new InputStreamReader(conn.getInputStream(),"UTF-8"))){
+            String line;while((line=reader.readLine())!=null){
+              if(response.length()+line.length()>60000)throw new IllegalStateException("Place search response too large");
+              response.append(line);
+            }
+          }
+          JSONObject data=new JSONObject(response.toString());
+          JSONArray result=new JSONArray();
+          JSONArray rows=data.optJSONArray("results");
+          if(rows!=null)for(int i=0;i<Math.min(rows.length(),8);i++){
+            JSONObject row=rows.optJSONObject(i);
+            if(row==null||!row.has("latitude")||!row.has("longitude")||!row.has("timezone"))continue;
+            JSONObject option=new JSONObject();
+            String name=row.optString("name","Place");
+            String region=row.optString("admin1","");
+            String country=row.optString("country","");
+            option.put("name",name+(region.isEmpty()?"":", "+region)+(country.isEmpty()?"":", "+country));
+            option.put("lat",row.getDouble("latitude"));
+            option.put("lon",row.getDouble("longitude"));
+            option.put("zone",row.getString("timezone"));
+            if(row.has("elevation")&&!row.isNull("elevation"))option.put("elevation",row.getDouble("elevation"));
+            result.put(option);
+          }
+          JSONObject output=new JSONObject();output.put("results",result);
+          send("somaReceiveBirthplaces",output.toString());
+        }catch(Exception e){placeError("Online place search failed. Use manual coordinates or try again.");}
+        finally{if(conn!=null)conn.disconnect();}
+      },"SomaBirthPlaceSearch").start();
+    }
+    private void placeError(String message){
+      try{JSONObject j=new JSONObject();j.put("error",message);send("somaReceiveBirthplaces",j.toString());}
+      catch(Exception ignored){send("somaReceiveBirthplaces","{\"error\":\"Place search unavailable\"}");}
     }
     @JavascriptInterface public void requestLocation(){
       runOnUiThread(()->{
