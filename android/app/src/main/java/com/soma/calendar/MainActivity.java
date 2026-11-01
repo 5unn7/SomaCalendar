@@ -130,7 +130,7 @@ public final class MainActivity extends Activity {
     @JavascriptInterface public void appReady(){
       Log.i("SomaJS","Astronomical app initialized");
       runOnUiThread(()->{
-        if(web!=null)web.evaluateJavascript("JSON.stringify(window.SomaPrototype?.health?.())",
+        if(web!=null)web.evaluateJavascript("window.SomaPrototype && window.SomaPrototype.health ? JSON.stringify(window.SomaPrototype.health()) : null",
           value->Log.i("SomaJS","Horizon health "+value));
       });
     }
