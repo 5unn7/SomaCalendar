@@ -1,0 +1,64 @@
+name: Android WebView runtime smoke test
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  phone-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: npm run bundle
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enable hardware acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Build debug APK
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+      - name: Launch on Android 29 emulator and check JavaScript startup
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: |
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -n com.soma.calendar/.MainActivity
+            for i in $(seq 1 25); do
+              adb logcat -d -s SomaJS:I > soma-js-log.txt || true
+              if grep -q 'Astronomical app initialized' soma-js-log.txt; then break; fi
+              sleep 2
+            done
+            adb shell uiautomator dump /sdcard/window.xml || true
+            adb shell cat /sdcard/window.xml > soma-ui.xml || true
+            adb exec-out screencap -p > soma-runtime.png || true
+            cat soma-js-log.txt
+            grep -q 'Astronomical app initialized' soma-js-log.txt
+            ! grep -E 'E/SomaJS.*(Uncaught|SyntaxError|TypeError|ReferenceError)' soma-js-log.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soma-android-runtime-smoke
+          path: |
+            soma-js-log.txt
+            soma-ui.xml
+            soma-runtime.png
+          if-no-files-found: ignore
