@@ -323,5 +323,15 @@ function initTelemetry(){
   renderTelemetry();
 }
 
-init();
-initTelemetry();
+try {
+  init();
+  initTelemetry();
+  window.__somaReady=true;
+  const status=document.getElementById('bootStatus');
+  if(status){status.className='bootStatus bootReady';status.textContent='✓ Astronomy engine ready · calculations are local';}
+  try{window.SomaNative?.appReady?.();}catch(e){console.warn('Native bridge handshake',e);}
+} catch (e) {
+  console.error('Soma startup failed',e);
+  const status=document.getElementById('bootStatus');
+  if(status){status.className='bootStatus bootError';status.textContent='Startup error: '+(e?.message||String(e));}
+}

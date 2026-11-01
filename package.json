@@ -5,7 +5,7 @@
   "description": "Offline-first minimal lunar calendar and Vedic Panchang Android app",
   "license": "MIT",
   "scripts": {
-    "bundle": "esbuild src/app.js --bundle --minify --platform=browser --format=iife --target=es2020 --outfile=android/app/src/main/assets/app.js",
+    "bundle": "esbuild src/app.js --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=android/app/src/main/assets/app.js",
     "test:fixtures": "node tests/grahan-fixtures.mjs"
   },
   "dependencies": {

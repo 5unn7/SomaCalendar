@@ -23,6 +23,7 @@
 .compassNeedle{font-size:52px;font-weight:200;color:#386147;transition:transform .2s;z-index:1;line-height:1}
 .tattva{padding:13px 0;display:flex;justify-content:space-between;align-items:start;gap:10px;border-bottom:1px solid #ecf0e8}
 .tattva b{font-size:12px;white-space:nowrap}.tattva span{font-size:11px;color:#78867a;text-align:right}
+.bootStatus{margin:9px auto;padding:9px 14px;width:min(680px,calc(100% - 40px));border-radius:12px;background:#e7eee3;font-size:11px;color:#536b56}.bootStatus.bootReady{background:#e7eee3;color:#486c50}.bootStatus.bootError{background:#fff0eb;color:#942f24;font-weight:650}
 </style>
 </head>
 <body>
@@ -114,6 +115,17 @@
   <button data-page="calendar"><span class="navIcon">▦</span>Calendar</button>
   <button data-page="sky"><span class="navIcon">✧</span>Your Sky</button>
 </nav>
-<script src="app.js"></script>
+<div id="bootStatus" class="bootStatus" role="status">Loading Soma calculations…</div>
+<script>
+(function(){
+ var status=document.getElementById('bootStatus');
+ window.__somaReady=false;
+ function fail(message){status.className='bootStatus bootError';status.textContent='Startup error: '+String(message).slice(0,180);}
+ window.addEventListener('error',function(e){fail(e.message||'Script did not load');});
+ window.addEventListener('unhandledrejection',function(e){fail(e.reason&&e.reason.message||'Calculation failed');});
+ window.addEventListener('load',function(){setTimeout(function(){if(!window.__somaReady&&!status.classList.contains('bootError'))fail('Astronomical engine did not initialize. Update Android System WebView and report this message.');},6000);});
+})();
+</script>
+<script src="app.js" onerror="document.getElementById('bootStatus').textContent='Cannot load bundled calculations';document.getElementById('bootStatus').className='bootStatus bootError'"></script>
 </body>
 </html>

@@ -12,6 +12,11 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebResourceResponse;
+import android.util.Log;
+import androidx.webkit.WebViewAssetLoader;
 import android.webkit.WebResourceRequest;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -25,6 +30,7 @@ import org.json.JSONObject;
 public final class MainActivity extends Activity {
   private static final int LOCATION_PERMISSION_REQUEST = 412;
   private WebView web;
+  private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     getWindow().setStatusBarColor(0xfff6f7f2);
@@ -36,18 +42,35 @@ public final class MainActivity extends Activity {
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
     s.setAllowContentAccess(false);
-    s.setAllowFileAccess(true);
+    s.setAllowFileAccess(false);
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
     s.setJavaScriptCanOpenWindowsAutomatically(false);
     web.addJavascriptInterface(new Bridge(),"SomaNative");
+    final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
+      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
+      .build();
+    web.setWebChromeClient(new WebChromeClient() {
+      @Override public boolean onConsoleMessage(ConsoleMessage message) {
+        if(message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+          Log.e("SomaJS", message.message() + " at " + message.sourceId() + ":" + message.lineNumber());
+        }
+        return true;
+      }
+    });
     web.setWebViewClient(new WebViewClient() {
+      @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
+        return loader.shouldInterceptRequest(request.getUrl());
+      }
+      @Override public void onPageFinished(WebView v, String url) {
+        Log.i("SomaJS", "WebView document loaded: " + url);
+      }
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
-        return !r.getUrl().toString().startsWith("file:///android_asset/");
+        return !r.getUrl().toString().startsWith(ASSET_ORIGIN);
       }
     });
     setContentView(web);
-    web.loadUrl("file:///android_asset/index.html");
+    web.loadUrl(ASSET_ORIGIN + "index.html");
   }
   private void send(String function, String payload) {
     runOnUiThread(() -> {
@@ -78,8 +101,11 @@ public final class MainActivity extends Activity {
         manager.getCurrentLocation(provider,null,command -> runOnUiThread(command),this::reportLocation);
       }else{
         Location last=manager.getLastKnownLocation(provider);
-        if(last==null)sendError("somaReceiveLocation","No recent device location. Try again outside.");
-        else reportLocation(last);
+        if(last!=null)reportLocation(last);
+        else manager.requestSingleUpdate(provider,new android.location.LocationListener(){
+          @Override public void onLocationChanged(Location location){reportLocation(location);}
+          @Override public void onProviderDisabled(String p){sendError("somaReceiveLocation","Location provider disabled.");}
+        },android.os.Looper.getMainLooper());
       }
     }catch(SecurityException e){sendError("somaReceiveLocation","Location permission unavailable.");}
      catch(Exception e){sendError("somaReceiveLocation","Unable to obtain GPS fix.");}
@@ -96,6 +122,7 @@ public final class MainActivity extends Activity {
     }catch(Exception e){sendError("somaReceiveLocation","Invalid device location data.");}
   }
   public final class Bridge {
+    @JavascriptInterface public void appReady(){Log.i("SomaJS","Astronomical app initialized");}
     @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
       getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
         .putString("date",safe(date)).putString("phase",safe(phase))
