@@ -14,8 +14,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Install JS transpiler
+        run: npm install --no-audit --no-fund
       - name: Validate bundled Horizon
         run: node tests/horizon-contract.mjs
+      - name: Transpile bundled scripts for older Android WebViews
+        run: node scripts/transpile-horizon.mjs
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
