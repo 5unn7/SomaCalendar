@@ -6,7 +6,8 @@
   "license": "MIT",
   "scripts": {
     "bundle": "esbuild src/app.js --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=android/app/src/main/assets/app.js",
-    "test:fixtures": "node tests/grahan-fixtures.mjs"
+    "test:fixtures": "node tests/grahan-fixtures.mjs",
+    "test:dom": "node tests/dom-ids.mjs"
   },
   "dependencies": {
     "@grahan/core": "1.0.1",

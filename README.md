@@ -1,6 +1,9 @@
-# SOMA — Earth × Sky (Android v0.2)
+# SOMA — Earth × Sky (Android v0.2.2)
 
 A minimal, privacy-conscious Android Panchang, Moon and atmospheric-awareness experiment powered by [Grahan](https://github.com/svarbhanu/grahan) under the MIT license.
+
+## Startup verification
+The main Android build now runs a DOM ID contract test to detect JavaScript references to absent elements before packaging. The emulator smoke test separately verifies that the WebView successfully initializes on Android 10. Do not infer functional correctness from Gradle success alone.
 
 ## Build
 A push to main runs the GitHub Actions **Build Soma debug APK** workflow. Download the `soma-debug-apk` artifact if its check succeeds.

@@ -59,7 +59,6 @@ function widget(date,p){
 function showToday(){
   const d=today();
   $('todayDate').textContent=displayDate(d);
-  $('todayLocation').textContent=city().label;
   $('greeting').textContent=state.profile.name?'In rhythm, '+state.profile.name+'.':'In rhythm with today.';
   try{
     const p=getDay(d);

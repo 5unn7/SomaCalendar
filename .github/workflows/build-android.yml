@@ -16,6 +16,8 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Verify UI IDs and event bindings
+        run: npm run test:dom
       - name: Test Grahan integration
         run: npm run test:fixtures
       - name: Bundle offline app
