@@ -331,7 +331,9 @@ try {
   if(status){status.className='bootStatus bootReady';status.textContent='✓ Astronomy engine ready · calculations are local';}
   try{window.SomaNative?.appReady?.();}catch(e){console.warn('Native bridge handshake',e);}
 } catch (e) {
-  console.error('Soma startup failed',e);
+  const detail=e&&e.stack?e.stack:(e&&e.message?e.message:String(e));
+  console.error('Soma startup failed: '+detail);
+  try{window.SomaNative?.appFailure?.(String(detail));}catch(_){};
   const status=document.getElementById('bootStatus');
   if(status){status.className='bootStatus bootError';status.textContent='Startup error: '+(e?.message||String(e));}
 }

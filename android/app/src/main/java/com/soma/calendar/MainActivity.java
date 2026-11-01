@@ -123,6 +123,7 @@ public final class MainActivity extends Activity {
   }
   public final class Bridge {
     @JavascriptInterface public void appReady(){Log.i("SomaJS","Astronomical app initialized");}
+    @JavascriptInterface public void appFailure(String detail){Log.e("SomaJS","App initialization error: "+detail);}
     @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
       getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
         .putString("date",safe(date)).putString("phase",safe(phase))

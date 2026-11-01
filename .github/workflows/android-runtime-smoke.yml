@@ -47,4 +47,5 @@ jobs:
             soma-js-log.txt
             soma-ui.xml
             soma-runtime.png
+            soma-full-log.txt
           if-no-files-found: ignore
