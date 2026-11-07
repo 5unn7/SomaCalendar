@@ -2,7 +2,7 @@ name: Android WebView runtime smoke test
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, redesign/gujarati-time]
 permissions:
   contents: read
 jobs:
@@ -16,10 +16,10 @@ jobs:
           node-version: '22'
       - name: Install JS transpiler
         run: npm install --no-audit --no-fund
-      - name: Validate bundled Horizon
-        run: node tests/horizon-contract.mjs
-      - name: Transpile bundled scripts for older Android WebViews
-        run: node scripts/transpile-horizon.mjs
+      - name: Test calendar calculations
+        run: npm test
+      - name: Bundle redesigned Soma
+        run: npm run bundle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

@@ -16,7 +16,7 @@ import android.webkit.WebChromeClient;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebResourceResponse;
 import android.util.Log;
-import androidx.webkit.WebViewAssetLoader;
+
 import android.webkit.WebResourceRequest;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -35,11 +35,11 @@ public final class MainActivity extends Activity {
   private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
-    getWindow().setStatusBarColor(0xfff6f7f2);
-    getWindow().setNavigationBarColor(0xfff6f7f2);
-    getWindow().getDecorView().setSystemUiVisibility(0x00002000 | 0x00000010);
+    getWindow().setStatusBarColor(0xff101c1a);
+    getWindow().setNavigationBarColor(0xff101c1a);
+    getWindow().getDecorView().setSystemUiVisibility(0);
     web=new WebView(this);
-    web.setBackgroundColor(0xfff6f7f2);
+    web.setBackgroundColor(0xff101c1a);
     WebSettings s=web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
@@ -49,9 +49,7 @@ public final class MainActivity extends Activity {
     s.setAllowUniversalAccessFromFileURLs(false);
     s.setJavaScriptCanOpenWindowsAutomatically(false);
     web.addJavascriptInterface(new Bridge(),"SomaNative");
-    final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
-      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-      .build();
+
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onConsoleMessage(ConsoleMessage message) {
         if(message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
@@ -62,14 +60,33 @@ public final class MainActivity extends Activity {
     });
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
-        return loader.shouldInterceptRequest(request.getUrl());
+        android.net.Uri uri=request.getUrl();
+        if("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
+          String path=uri.getPath();
+          if(path!=null && path.startsWith("/assets/") && !path.contains("..")) {
+            try {
+              String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":"application/octet-stream";
+              return new WebResourceResponse(type,"UTF-8",getAssets().open(path.substring(8)));
+            } catch(java.io.IOException ignored) { }
+          }
+        }
+        return new WebResourceResponse("text/plain","UTF-8",new java.io.ByteArrayInputStream(new byte[0]));
       }
       @Override public void onPageFinished(WebView v, String url) {
         Log.i("SomaJS", "WebView document loaded: " + url);
       }
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
-        return !r.getUrl().toString().startsWith(ASSET_ORIGIN);
+        if(r.getUrl().toString().startsWith(ASSET_ORIGIN)) return false;
+        if ("https".equals(r.getUrl().getScheme())) {
+          try { startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,r.getUrl())); }
+          catch (android.content.ActivityNotFoundException ignored) { }
+        }
+        return true;
       }
+    });
+    web.setOnApplyWindowInsetsListener((v,insets)->{
+      if(Build.VERSION.SDK_INT>=30){android.graphics.Insets i=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(i.left,i.top,i.right,i.bottom);}
+      return insets;
     });
     setContentView(web);
     web.loadUrl(ASSET_ORIGIN + "index.html");
@@ -127,6 +144,20 @@ public final class MainActivity extends Activity {
     }catch(Exception e){sendError("somaReceiveLocation","Invalid device location data.");}
   }
   public final class Bridge {
+    @JavascriptInterface public void addCalendarEvent(String title,String start,String end,String place,String description) {
+      runOnUiThread(() -> {
+        try {
+          android.content.Intent intent=new android.content.Intent(android.content.Intent.ACTION_INSERT)
+            .setData(android.provider.CalendarContract.Events.CONTENT_URI)
+            .putExtra(android.provider.CalendarContract.Events.TITLE,title)
+            .putExtra(android.provider.CalendarContract.Events.EVENT_LOCATION,place)
+            .putExtra(android.provider.CalendarContract.Events.DESCRIPTION,description)
+            .putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME,java.time.Instant.parse(start).toEpochMilli())
+            .putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME,java.time.Instant.parse(end).toEpochMilli());
+          startActivity(intent);
+        } catch(Exception e) { android.widget.Toast.makeText(MainActivity.this,"No calendar app available. Your plan is still saved in Soma.",android.widget.Toast.LENGTH_LONG).show(); }
+      });
+    }
     @JavascriptInterface public void appReady(){
       Log.i("SomaJS","Astronomical app initialized");
       runOnUiThread(()->{

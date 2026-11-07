@@ -3,13 +3,13 @@ android {
   namespace 'com.soma.calendar'
   compileSdk 35
   defaultConfig {
-    applicationId 'com.soma.calendar'
+    applicationId 'com.soma.calendar.preview'
     minSdk 26
     targetSdk 35
-    versionCode 5
-    versionName '0.5.0'
+    versionCode 6
+    versionName '0.6.0'
   }
   buildTypes { release { minifyEnabled false } }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
-dependencies { implementation 'androidx.webkit:webkit:1.12.1' }
+// Offline asset origin is served by the platform WebViewClient. No AndroidX dependency.
