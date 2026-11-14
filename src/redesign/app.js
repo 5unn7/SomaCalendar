@@ -1,7 +1,9 @@
 "use strict";
 /* Soma 0.8 · Kaal Chakra. A daily panchang in the believer's own voice: the day as a dial, what today is,
    when the good times are, which vrat is next. Works offline; nothing leaves the phone. */
-const $ = id => document.getElementById(id), K = Kaal, A = Astronomy, P = Panchang, M = Meanings, Fe = Festivals;
+const $ = id => document.getElementById(id), K = Kaal, A = Astronomy, P = Panchang, M = Meanings, Fe = Festivals, Clock = SomaClock;
+/* Every "now" in the app comes from the shared clock (clock.js), so tests can move it and every screen agrees. */
+const now = () => Clock.now();
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const DEFAULT_LOC = { name: 'Jamnagar', lat: 22.4707, lon: 70.0577, zone: 'Asia/Kolkata' };
 const STORE = 'soma-redesign-v1';
@@ -11,7 +13,8 @@ let loc = saved.loc || DEFAULT_LOC, profile = saved.profile || {}, events = save
 let prefs = Object.assign({ lang: 'en', theme: 'auto', layout: 'dial', month: null, sets: null, custom: false, reminders: { vrat: true, parana: true, daily: false, rahu: false } }, saved.prefs || {});
 // People who already set a place before the guided setup existed skip it.
 if (saved.loc && prefs.onboarded == null) prefs.onboarded = true;
-let view = 'today', day = K.dateKey(new Date(), loc.zone), lastToday = day, monthView = day.slice(0, 7), hour = 12, practice = null, muhuratEvent = 'griha';
+// hour: the Moon page's scrubbed time of day; null means "follow the clock" on today and noon on other days.
+let view = 'today', day = K.dateKey(now(), loc.zone), lastToday = day, monthView = day.slice(0, 7), hour = null, practice = null, muhuratEvent = 'griha';
 let L = I18n.make(prefs.lang);
 const t = (k, v) => L.t(k, v);
 function applyLocationDefaults() {
@@ -35,9 +38,8 @@ const span = p => p ? fmt(p.start) + ' – ' + fmt(p.end) : '—';
 const full = d => fmt(d, { day: 'numeric', month: 'short' });
 const dayLabel = (key, opts) => new Intl.DateTimeFormat(locale(), Object.assign({ timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short' }, opts || {})).format(K.instant(key, '12:00', loc.zone));
 const titleDay = d => new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(K.instant(d, '12:00', loc.zone));
-const todayKey = () => K.dateKey(new Date(), loc.zone);
+const todayKey = () => K.dateKey(now(), loc.zone);
 const isToday = () => day === todayKey();
-const sample = () => (isToday() ? new Date() : K.instant(day, '12:00', loc.zone));
 const daysBetween = (a, b) => Math.round((Date.parse(b + 'T12:00Z') - Date.parse(a + 'T12:00Z')) / 864e5);
 const badge = n => `<span class="nature ${n}">${esc(L.nature(n))}</span>`;
 const hourOf = d => { const p = K.parts(d, loc.zone); return +p.hour + p.minute / 60 + p.second / 3600; };
@@ -79,11 +81,11 @@ function applyTheme() {
   if (prefs.theme === 'light' || prefs.theme === 'dark') root.setAttribute('data-theme', prefs.theme); else root.removeAttribute('data-theme');
   root.lang = L.lang;
 }
-function show(v) { if (v !== view) haptic('select'); view = v; render(); window.scrollTo(0, 0); }
-function setDay(d) { if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < '1900-01-01' || d > '2100-12-31') return; day = d; monthView = d.slice(0, 7); render(); }
+function show(v) { if (v !== view) { haptic('select'); if (v === 'moon') hour = null; } view = v; render(); window.scrollTo(0, 0); }
+function setDay(d) { if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < '1900-01-01' || d > '2100-12-31') return; if (d !== day) hour = null; day = d; monthView = d.slice(0, 7); render(); }
 function datebar() {
   const label = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(K.instant(day, '12:00', loc.zone));
-  return `<div class="datebar"><button aria-label="Previous day" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick">${icon('calendar')}<span>${esc(label)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button aria-label="Next day" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(K.dateKey(new Date(),loc.zone))">${esc(t('today2'))}</button>`}</div>`;
+  return `<div class="datebar"><button aria-label="Previous day" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick">${icon('calendar')}<span>${esc(label)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button aria-label="Next day" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>`}</div>`;
 }
 let lastPaint = '';
 function render() {
@@ -95,10 +97,13 @@ function render() {
   $('nav').innerHTML = tabs.map(([v, label]) => `<button class="${tabOf === v ? 'active' : ''}" aria-current="${tabOf === v ? 'page' : 'false'}" onclick="show('${v}')">${icon(v)}${esc(t(label))}</button>`).join('');
   // Entrance motion only when the screen changes, not on the minute tick.
   const paint = view + '|' + day + '|' + L.lang + '|' + prefs.layout;
+  // A repaint of the same screen (the minute tick) keeps whatever the reader had opened.
+  const opened = paint === lastPaint ? Array.from($('app').querySelectorAll('details')).map(x => x.open) : [];
   ({ today: todayView, calendar: calendarView, muhurat: muhuratView, moon: moonView, learn: learnView, personal: personalView })[view]();
   const app = $('app');
   app.classList.remove('enter', 'still');
   if (paint !== lastPaint) { void app.offsetWidth; app.classList.add('enter'); } else app.classList.add('still');
+  app.querySelectorAll('details').forEach((x, i) => { if (opened[i]) x.open = true; });
   lastPaint = paint;
   scheduleWidgetFeed();
 }
@@ -122,12 +127,14 @@ function stars(n, seed) { let s = '', x = seed; const r = () => { x = (x * 9301 
 
 /* The context every Today hero needs: the Vedic day in force now, the current Choghadiya, sky phase. */
 function heroContext(d) {
-  const live = isToday(), now = live ? new Date() : null, dd = live ? frameFor(now) : d;
-  const at = now || new Date(+d.frame.sunrise + 4 * 36e5);
-  const c = now ? P.at(dd.choghadiya, now) : null;
+  const live = isToday(), at0 = live ? now() : null, dd = live ? frameFor(at0) : d;
+  const at = at0 || new Date(+d.frame.sunrise + 4 * 36e5);
+  const c = at0 ? P.at(dd.choghadiya, at0) : null;
   const ti = K.tithi(at);
-  const sky = SomaDial.skyPhase(at, dd.frame.sunrise, dd.frame.sunset);
-  return { live, now, dd, c, ti, sky, at };
+  // Sky tint follows the civil day's own sunrise and sunset, so the hour before today's sunrise reads as dawn
+  // (the Vedic day in force then is yesterday's, whose sunrise was a day ago).
+  const sky = SomaDial.skyPhase(at, d.frame.sunrise, d.frame.sunset);
+  return { live, now: at0, dd, c, ti, sky, at };
 }
 function dialHero(d, v, cx, eyebrow) {
   const dial = SomaDial.svg({ size: 340, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, label: t('choghadiya') });
@@ -161,7 +168,7 @@ function skyHero(d, v, cx, eyebrow) {
   const big = cx.c ? L.chogName(cx.c.key) : tithi;
   const line = cx.c ? `${t('until')} ${fmt(cx.c.end)} · ${M.CHOG[cx.c.key].good}` : daySentence(v);
   const under = cx.c ? `<p class="tithiline">${esc(tithi)} · ${esc(daySentence(v))}</p>` : '';
-  const visual = night ? `<div class="skymoon">${SomaDial.moon(96, cx.ti.angle)}</div>` : horizonSvg((cx.at - f.sunrise) / (f.sunset - f.sunrise));
+  const visual = night ? `<div class="skymoon">${SomaDial.moon(96, cx.ti.angle)}</div>` : horizonSvg((cx.at - d.frame.sunrise) / (d.frame.sunset - d.frame.sunrise));
   return `<section class="skyhero" data-sky="${cx.sky}">${night ? stars(90, 7) : ''}<div class="eyebrow">${eyebrow}</div><h1 class="big${cx.c ? ' ' + cx.c.nature : ''}">${esc(big)}</h1><p class="lineone">${esc(line)}</p>${under}`
     + `${visual}${sunStrip(d, cx)}</section>`;
 }
@@ -228,7 +235,7 @@ function practiceCard(d) {
       const v = observances(day, 40).find(x => x.kind === 'vrat' && x.day >= day);
       body += v ? `<p>${esc(L.festName(v))} · ${dayLabel(v.day)}${v.parana ? ' · ' + esc(t('parana')) + ' ' + dayLabel(v.parana.day) + ' ' + span(v.parana) : ''}</p>` : '';
     } else {
-      const from = isToday() ? new Date() : d.frame.sunrise;
+      const from = isToday() ? now() : d.frame.sunrise;
       const wins = P.goodWindows(d, from, { accept: c => p.chog.indexOf(c.key) >= 0 }).slice(0, 3);
       const horas = d.hora.filter(h => h.end > from && p.hora.indexOf(h.lord) >= 0 && !h.night && !P.overlaps(h, d.periods.rahu)).slice(0, 2);
       body += `<div class="timeline"><i class="dot good"></i><div><strong>${esc(t('choghadiya'))}</strong><p>${wins.length ? wins.map(w => span(w) + ' ' + esc(L.chogName(w.key))).join(' · ') : esc(t('none'))}</p></div></div>`
@@ -241,7 +248,7 @@ function practiceCard(d) {
 function personalLine(d) {
   const bm = birthMoon();
   if (bm == null) return `<button class="lesson" onclick="editProfile()"><div class="eyebrow">${esc(t('forYou'))}</div><h3>${esc(t('addBirth'))} <span>›</span></h3><span>${esc(t('chandrabalam'))} · ${esc(t('tarabalam'))}</span></button>`;
-  const p = P.personal(bm, isToday() ? new Date() : d.frame.sunrise);
+  const p = P.personal(bm, isToday() ? now() : d.frame.sunrise);
   return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2><p>${esc(t('chandrabalam'))}: Moon ${p.chandraCount}${['th', 'st', 'nd', 'rd'][p.chandraCount % 10 > 3 || [11, 12, 13].indexOf(p.chandraCount) >= 0 ? 0 : p.chandraCount % 10]} from your ${esc(L.rashiName(p.janmaRashi))} · ${p.chandraGood ? esc(t('good')) : esc(t('bad'))}</p><p>${esc(t('tarabalam'))}: ${esc(M.TARA[p.tara.key])}</p></div>`;
 }
 function limbsCard(d, v) {
@@ -318,14 +325,16 @@ function muhuratDays(evKey, from, days) {
     const sun = P.sunSid(d.frame.sunrise), m = l.month.index, ti0 = l.tithi.index;
     if (ev.kharmas !== false && ((sun >= 240 && sun < 270) || sun >= 330)) continue;
     if (ev.chaturmas && ((m === 3 && ti0 >= 10) || m === 4 || m === 5 || m === 6 || (m === 7 && ti0 < 10))) continue;
-    const win = P.goodWindows(d, d.frame.sunrise, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0];
+    // On today only windows still ahead count; a morning that has passed is no muhurat.
+    const start = key === todayKey() ? new Date(Math.max(+d.frame.sunrise, +now())) : d.frame.sunrise;
+    const win = P.goodWindows(d, start, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0];
     if (win) out.push({ key, d, win, why: `${L.tithiName(l.tithi.index)} (${ti.group}) · ${L.nakName(l.nakshatra.index)} (${na.group}) · ${L.vaarName(d.frame.weekday)}` });
   }
   return out;
 }
 function muhuratView() {
-  const d = vedicDay(day), now = new Date();
-  const list = (items, nameOf, tipOf) => items.map(p => `<div class="timeline ${isToday() && p.start <= now && now < p.end ? 'current' : ''}"><i class="dot ${p.nature}"></i><div><strong>${esc(nameOf(p))}</strong><p>${esc(tipOf(p))}</p></div><div class="right">${span(p)}<br>${badge(p.nature)}</div></div>`).join('');
+  const d = vedicDay(day), at = now(), live = isToday();
+  const list = (items, nameOf, tipOf) => items.map(p => `<div class="timeline ${live && p.start <= at && at < p.end ? 'current' : live && p.end <= at ? 'past' : ''}"><i class="dot ${p.nature}"></i><div><strong>${esc(nameOf(p))}</strong><p>${esc(tipOf(p))}</p></div><div class="right">${span(p)}<br>${badge(p.nature)}</div></div>`).join('');
   const ev = muhuratDays(muhuratEvent, day, 60);
   const lead = `<div class="eyebrow">${esc(L.vaarName(d.frame.weekday))} · ${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</div><h1>${esc(t('muhurat'))}</h1>${datebar()}`
     + `<section class="section"><h2>${esc(t('findMuhurat'))}</h2><label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(e.en)}</option>`).join('')}</select></label>`
@@ -354,13 +363,21 @@ function drawMoon(id, angle) {
   }
   ctx.putImageData(img, 0, 0);
 }
+/* The Moon page's time of day: what the reader scrubbed to, else now on today and noon on any other day. */
+function moonHour() {
+  if (hour != null) return hour;
+  if (!isToday()) return 12;
+  const p = K.parts(now(), loc.zone);
+  return Math.min(23.75, Math.floor((+p.hour + p.minute / 60) * 4) / 4);
+}
 function moonView() {
-  const d = K.instant(day, String(Math.floor(hour)).padStart(2, '0') + ':' + String(Math.round((hour % 1) * 60)).padStart(2, '0'), loc.zone), ti = K.tithi(d), data = K.dayData(day, loc), illum = A.Illumination('Moon', d);
+  const h = moonHour(), live = hour == null && isToday();
+  const d = live ? now() : K.instant(day, String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0'), loc.zone), ti = K.tithi(d), data = K.dayData(day, loc), illum = A.Illumination('Moon', d);
   const nk = P.nakshatra(d), rashi = Math.floor(P.moonSid(d) / 30);
   const next = [0, 90, 180, 270].map((a, i) => ({ name: L.tithiName([29, 7, 14, 22][i]), d: A.SearchMoonPhase(a, d, 32).date })).sort((a, b) => a.d - b.d);
   const lead = `<div class="eyebrow">${esc(t('moonTitle'))}</div><h1>${esc(L.tithiName(ti.index))}</h1><p>${titleDay(day)}</p><div class="moonbox"><canvas width="420" height="420" id="largeMoon" aria-label="Moon illumination"></canvas></div>`
     + `<div style="text-align:center"><h2>${Math.round(illum.phase_fraction * 100)}%</h2><p>${esc(L.nakName(nk.index))} ${nk.pada} · ${esc(L.rashiName(rashi))}</p></div>`
-    + `<label>${esc(t('now'))} · <span id="scrubTime">${fmt(d)}</span><input aria-label="Time of day" type="range" min="0" max="23.75" step="0.25" value="${hour}" oninput="$('scrubTime').textContent=String(Math.floor(this.value)).padStart(2,'0')+':'+String(Math.round(this.value%1*60)).padStart(2,'0')" onchange="hour=+this.value;moonView()"></label>${datebar()}`;
+    + `<label>${live ? esc(t('now')) + ' · ' : ''}<span id="scrubTime">${fmt(d)}</span><input aria-label="Time of day" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="$('scrubTime').textContent=String(Math.floor(this.value)).padStart(2,'0')+':'+String(Math.round(this.value%1*60)).padStart(2,'0')" onchange="hour=+this.value;moonView()"></label>${datebar()}`;
   const rest = `<div class="grid2"><div class="card"><div class="caption">${esc(t('moonrise'))}</div><div class="value">${fmt(data.moonrise)}</div></div><div class="card"><div class="caption">${esc(t('moonset'))}</div><div class="value">${fmt(data.moonset)}</div></div></div>`
     + `<section class="section"><h2>${esc(t('comingUp'))}</h2><div class="list">${next.map(e => `<div class="timeline"><i class="dot"></i><div><strong>${esc(e.name)}</strong></div><div class="right">${full(e.d)}</div></div>`).join('')}</div></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
@@ -520,7 +537,7 @@ function personalView() {
   let natal = '';
   if (has) {
     const instant = K.instant(profile.date, profile.time || '12:00', profile.zone || 'Asia/Kolkata'), n = K.sidereal(instant), nak = Math.floor(n / (360 / 27));
-    const today = P.personal(n, new Date()), first = day.slice(0, 7) + '-01', count = new Date(+day.slice(0, 4), +day.slice(5, 7), 0).getDate(), good = [];
+    const today = P.personal(n, now()), first = day.slice(0, 7) + '-01', count = new Date(+day.slice(0, 4), +day.slice(5, 7), 0).getDate(), good = [];
     for (let i = 0; i < count; i++) { const key = K.addDay(first, i), r = K.dayData(key, loc).sunrise; if (r && P.personal(n, r).verdict === 'good') good.push(key); }
     natal = `<div class="grid2 section"><div class="card"><div class="caption">${esc(t('janmaRashi'))}</div><h2>${esc(L.rashiName(Math.floor(n / 30)))}</h2></div><div class="card"><div class="caption">${esc(t('janmaNak'))}</div><h2>${esc(L.nakName(nak))}</h2><p class="caption">Pada ${Math.floor((n % (360 / 27)) / (360 / 108)) + 1} · ${esc(M.nakshatra(nak).deity)}</p></div></div>`
       + `<div class="card personalDay ${today.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(today.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(today.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${today.chandraCount} · ${today.chandraGood ? esc(t('good')) : esc(t('bad'))}</p><p>${esc(t('tarabalam'))}: ${esc(M.TARA[today.tara.key])}</p></div>`
@@ -589,7 +606,7 @@ function finishOnboard(to) {
 // ---- Reminders and widget (native) ----------------------------------------------------------
 /* Local notifications for the next 30 days, computed here and handed to the native alarm scheduler. */
 function reminderPlan() {
-  const from = todayKey(), list = observances(from, 31), r = prefs.reminders, out = [], nowMs = Date.now();
+  const from = todayKey(), list = observances(from, 31), r = prefs.reminders, out = [], nowMs = Clock.ms();
   const add = (at, title, body, id) => { if (+at > nowMs) out.push({ id, at: +at, title, body }); };
   for (const f of list) {
     if (r.vrat && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), 'Tomorrow: ' + L.festName(f), f.key === 'ekadashi' ? 'The fast begins at sunrise.' + (f.parana ? ' Parana ' + dayLabel(f.parana.day) + ' ' + span(f.parana) + '.' : '') : (f.note || L.festName(f) + ' at ' + loc.name), 'eve-' + f.key + '-' + f.day);
@@ -634,10 +651,10 @@ function widgetFestivals(today) {
 }
 function pushWidgetFeed() {
   if (!window.SomaNative || !SomaNative.updateWidgetFeed || !window.SomaWidgetFeed) return;
-  const now = new Date(), today = K.dateKey(now, loc.zone);
-  const key = [loc.lat, loc.lon, loc.zone, loc.name, today, Math.floor(now.getTime() / 216e5), JSON.stringify(window.SomaFestivalSets || '')].join('|');
+  const at = now(), today = K.dateKey(at, loc.zone);
+  const key = [loc.lat, loc.lon, loc.zone, loc.name, today, Math.floor(at.getTime() / 216e5), JSON.stringify(window.SomaFestivalSets || '')].join('|');
   if (key === widgetKey) return;
-  try { SomaNative.updateWidgetFeed(JSON.stringify(SomaWidgetFeed.build(loc, now, widgetFestivals(today)))); widgetKey = key; }
+  try { SomaNative.updateWidgetFeed(JSON.stringify(SomaWidgetFeed.build(loc, at, widgetFestivals(today)))); widgetKey = key; }
   catch (e) { console.error('Widget feed failed: ' + e.message); }
 }
 function scheduleWidgetFeed() { clearTimeout(widgetTimer); widgetTimer = setTimeout(pushWidgetFeed, 400); }
@@ -651,7 +668,7 @@ function updatesOn() { const i = updateInfo(); return !!(i && i.enabled); }
 function checkUpdate(manual) {
   if (!updatesOn() || upd.state === 'checking' || upd.state === 'downloading') return;
   upd.manual = !!manual; upd.state = 'checking'; upd.message = '';
-  prefs.updateChecked = Date.now(); persist();
+  prefs.updateChecked = Clock.ms(); persist();
   if (manual) updateSheet();
   SomaNative.checkForUpdate();
 }
@@ -698,18 +715,35 @@ function showUpdateNote(f) {
 }
 function hideUpdateNote() { const el = $('updateNote'); if (el) el.style.display = 'none'; }
 /* A quiet look at most every 12 hours, when the app opens or comes back to the front. */
-function autoCheckUpdate() { if (updatesOn() && Date.now() - (prefs.updateChecked || 0) > 432e5) checkUpdate(false); }
+function autoCheckUpdate() { if (updatesOn() && Clock.ms() - (prefs.updateChecked || 0) > 432e5) checkUpdate(false); }
 
-window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(new Date()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
+window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(now()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
-function tick() {
-  const now = todayKey();
-  if (now !== lastToday) { if (day === lastToday) { day = now; monthView = now.slice(0, 7); } lastToday = now; scheduleNative(true); }
-  if (view === 'today' && !$('modal').open) render();
+/* The shared clock ticks just after every minute and whenever time may have moved under us (resume, focus,
+   clock or time-zone change). Each screen repaints only as often as what it shows can change. */
+let lastHourKey = '';
+function tick(at, reason) {
+  at = at || now();
+  const today = K.dateKey(at, loc.zone), dayChanged = today !== lastToday, hourKey = today + 'T' + K.parts(at, loc.zone).hour;
+  if (dayChanged) { if (day === lastToday) { day = today; monthView = today.slice(0, 7); hour = null; } lastToday = today; scheduleNative(true); }
+  const hourChanged = hourKey !== lastHourKey; lastHourKey = hourKey;
+  // Back from the background, focus, or a clock / time-zone change: time may have moved by hours, so repaint whatever is showing.
+  const jumped = !!reason && reason !== 'minute';
+  // Reminders are planned for the future only, so a changed clock re-plans them.
+  if ((reason === 'clock' || reason === 'jump') && !dayChanged) scheduleNative(true);
+  const live = day === today;
+  const due = view === 'today' || view === 'muhurat' ? live || dayChanged
+    : view === 'moon' ? (live && hour == null) || dayChanged
+    : view === 'calendar' ? dayChanged
+    : view === 'personal' ? hourChanged || dayChanged : false;
+  // Never repaint under the reader's hands: an open sheet or a focused field waits for the next tick.
+  const busy = $('modal').open || $('onboard').classList.contains('open') || (document.activeElement && $('app').contains(document.activeElement) && /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName));
+  if ((due || jumped) && !busy) render();
+  else scheduleWidgetFeed();
 }
-setInterval(tick, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); autoCheckUpdate(); } });
+Clock.onTick(tick);
+$('modal').addEventListener('close', () => tick(now(), 'manual'));
+document.addEventListener('visibilitychange', () => { if (!document.hidden) autoCheckUpdate(); });
 setTimeout(autoCheckUpdate, 3000);
-window.addEventListener('focus', tick);
 if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => { if (prefs.theme === 'auto') render(); }); }

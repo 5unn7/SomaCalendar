@@ -8,7 +8,7 @@ const w=dom.window;
 w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)}),putImageData(){}});
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.scrollTo=()=>{};
 const feeds=[];w.SomaNative={updateWidgetFeed(j){feeds.push(JSON.parse(j))},scheduleReminders(){},requestNotifications(){},appReady(){},appFailure(){},addCalendarEvent(){}};
-for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js']){const script=w.document.createElement('script');script.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(script);}
+for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js']){const script=w.document.createElement('script');script.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(script);}
 assert.equal(w.SomaPrototype.health().ready,true);
 // First launch: guided setup asks for language, then a place by name (never coordinates), then optional birth details.
 assert.ok(w.document.querySelector('#onboard').classList.contains('open'));
@@ -19,7 +19,7 @@ for(const lay of ['sky','folio','dial']){w.setLayout(lay);assert.ok(w.document.q
 {w.setLayout('sky');const hero=w.document.querySelector('.skyhero'),h1=hero.querySelector('h1').textContent;assert.equal(hero.textContent.split(h1).length-1,1,'sky headline is not repeated');w.setLayout('dial');}
 
 // Midnight rollover: when the clock crosses into a new local day, Today follows it.
-{const RealDate=w.Date,shift=864e5;w.show('today');const today=w.document.querySelector('#app input[type=date]').value;w.Date=class extends RealDate{constructor(...a){a.length?super(...a):super(RealDate.now()+shift)}static now(){return RealDate.now()+shift}};w.tick();const next=w.Kaal.addDay(today,1);assert.equal(w.document.querySelector('#app input[type=date]').value,next);w.Date=RealDate;w.tick();}
+{w.show('today');const today=w.document.querySelector('#app input[type=date]').value;w.SomaClock.advance(864e5);w.SomaClock.tick();const next=w.Kaal.addDay(today,1);assert.equal(w.document.querySelector('#app input[type=date]').value,next);w.SomaClock.reset();w.SomaClock.tick();}
 for(const view of ['today','calendar','muhurat','moon','learn','personal']){w.show(view);assert.ok(w.document.querySelector('#app h1'));}
 w.show('calendar');w.plan();w.document.querySelector('#eventTitle').value='<family & friends>';w.saveEvent({preventDefault(){}});assert.ok(w.document.querySelector('#app').textContent.includes('<family & friends>'));assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).events.length,1);assert.equal(w.document.querySelector('family'),null);
 w.show('personal');w.editProfile();w.document.querySelector('#birthDate').value='1993-08-18';w.document.querySelector('#birthTime').value='10:45';w.saveProfile({preventDefault(){}});assert.ok(w.document.querySelector('.natal svg'));assert.ok(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).profile.date);

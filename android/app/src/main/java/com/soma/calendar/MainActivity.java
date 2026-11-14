@@ -294,6 +294,32 @@ public final class MainActivity extends Activity {
     @JavascriptInterface public void installUpdate(){runOnUiThread(()->Updater.install(MainActivity.this,json->send("somaReceiveUpdate",json)));}
     private String safe(String v){if(v==null)return "";return v.length()>100?v.substring(0,100):v;}
   }
+  /* The web layer keeps one shared clock (clock.js). Tell it when time may have moved under it: coming back to the
+     front (timers are throttled in the background), and the phone's clock, date or time zone changing while open. */
+  private final android.content.BroadcastReceiver clockReceiver=new android.content.BroadcastReceiver(){
+    @Override public void onReceive(Context c,android.content.Intent i){clockChanged("clock");}
+  };
+  private boolean clockRegistered=false;
+  private void clockChanged(String why){
+    if(web!=null)web.evaluateJavascript("window.somaClockChanged && window.somaClockChanged("+JSONObject.quote(why)+")",null);
+  }
+  @Override protected void onResume() {
+    super.onResume();
+    if(!clockRegistered){
+      android.content.IntentFilter f=new android.content.IntentFilter();
+      f.addAction(android.content.Intent.ACTION_TIME_CHANGED);
+      f.addAction(android.content.Intent.ACTION_TIMEZONE_CHANGED);
+      f.addAction(android.content.Intent.ACTION_DATE_CHANGED);
+      if(Build.VERSION.SDK_INT>=33)registerReceiver(clockReceiver,f,Context.RECEIVER_NOT_EXPORTED);else registerReceiver(clockReceiver,f);
+      clockRegistered=true;
+    }
+    if(web!=null){web.onResume();clockChanged("resume");}
+  }
+  @Override protected void onPause() {
+    if(clockRegistered){try{unregisterReceiver(clockReceiver);}catch(IllegalArgumentException ignored){}clockRegistered=false;}
+    if(web!=null)web.onPause();
+    super.onPause();
+  }
   @Override protected void onDestroy() {
     if(web!=null){web.removeJavascriptInterface("SomaNative");web.destroy();web=null;}
     super.onDestroy();
