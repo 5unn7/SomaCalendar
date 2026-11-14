@@ -15,7 +15,7 @@ w.localStorage.setItem('soma-redesign-v1',JSON.stringify({loc:JAM,prefs:{onboard
 // Start the app at a known instant: 14 Nov 2026, 10:00 in Jamnagar.
 const load=f=>{const s=doc.createElement('script');s.textContent=readFileSync(base+f,'utf8');doc.body.appendChild(s);};
 load('clock.js');w.SomaClock.set(new Date('2026-11-14T04:30:00Z'));
-for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js'])load(f);
+for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','weather.js','app.js'])load(f);
 const C=w.SomaClock,K=w.Kaal,P=w.Panchang;
 const go=(d,why)=>{C.set(d);w.somaClockChanged(why||'clock');};
 const step=ms=>{C.advance(ms);C.tick();};

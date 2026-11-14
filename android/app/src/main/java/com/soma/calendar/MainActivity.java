@@ -262,35 +262,26 @@ public final class MainActivity extends Activity {
         else requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION},LOCATION_PERMISSION_REQUEST);
       });
     }
-    /** Opt-in weather query: coordinates go only to api.open-meteo.com, over HTTPS. */
-    @JavascriptInterface public void fetchWeather(double lat,double lon){
-      if(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){
-        sendError("somaReceiveWeather","Coordinates out of range.");return;
-      }
-      new Thread(()->{
-        HttpURLConnection conn=null;
-        try {
-          String params="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,uv_index,dew_point_2m,weather_code,is_day";
-          String endpoint=String.format(Locale.US,"https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f&current=%s&timezone=auto",lat,lon,params);
-          conn=(HttpURLConnection)new URL(endpoint).openConnection();
-          conn.setRequestMethod("GET");conn.setConnectTimeout(10000);conn.setReadTimeout(10000);
-          conn.setInstanceFollowRedirects(false);
-          conn.setRequestProperty("User-Agent","SomaCalendar/0.2 (Android; Open-Meteo attribution in app)");
-          if(conn.getResponseCode()!=200){sendError("somaReceiveWeather","Provider HTTP "+conn.getResponseCode());return;}
-          StringBuilder text=new StringBuilder();
-          try(BufferedReader reader=new BufferedReader(new InputStreamReader(conn.getInputStream(),"UTF-8"))){
-            String line;while((line=reader.readLine())!=null){
-              if(text.length()+line.length()>40000)throw new IllegalStateException("Weather response too large");
-              text.append(line);
-            }
-          }
-          JSONObject response=new JSONObject(text.toString());
-          if(!response.has("current"))throw new IllegalStateException("Weather fields missing");
-          send("somaReceiveWeather",response.toString());
-        }catch(Exception e){sendError("somaReceiveWeather","Weather unavailable. Try again later.");}
-        finally{if(conn!=null)conn.disconnect();}
-      }).start();
+    /**
+     * Live weather (opt-in). The app turns it on or off and says which place; only that place, rounded to about 1 km,
+     * goes to MET Norway (api.met.no) over HTTPS. Answers through window.somaReceiveWeather with the stored forecast.
+     */
+    @JavascriptInterface public void weatherConfigure(boolean on,String units,double lat,double lon){
+      Weather.configure(getApplicationContext(),on,units);
+      if(!on){runOnUiThread(() -> PanchangWidgets.refreshSky(MainActivity.this));send("somaReceiveWeather","");return;}
+      weatherRefresh(lat,lon);
     }
+    /** Fetch if due (new place, or MET's expiry passed and 30 minutes since the last try); always answers. */
+    @JavascriptInterface public void weatherRefresh(double lat,double lon){
+      final Context app=getApplicationContext();
+      Weather.refresh(app,lat,lon,false,changed -> {
+        JSONObject w=Weather.stored(app);
+        send("somaReceiveWeather",w==null?"":w.toString());
+        if(changed)runOnUiThread(() -> PanchangWidgets.refreshSky(app));
+      });
+    }
+    /** The stored forecast right now, or "" when weather is off or nothing is stored yet. */
+    @JavascriptInterface public String weatherNow(){JSONObject w=Weather.stored(getApplicationContext());return w==null?"":w.toString();}
     /** Preview builds only: {enabled, versionCode, versionName}. Store builds report enabled:false. */
     @JavascriptInterface public String updateInfo(){return Updater.info(MainActivity.this);}
     /** Reads the preview feed; answers through window.somaReceiveUpdate. */

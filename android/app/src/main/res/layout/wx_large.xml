@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/widgetRoot" android:layout_width="match_parent" android:layout_height="match_parent"
+  android:background="@drawable/wx_bg_night" android:clipToOutline="true">
+  <include layout="@layout/wx_fx_sq"/>
+  <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="16dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+      <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+        <TextView android:id="@+id/wPlace" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" android:letterSpacing="0.12"/>
+        <TextView android:id="@+id/wTemp" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="48sp" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-light" android:includeFontPadding="false"/>
+        <TextView android:id="@+id/wCond" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium"/>
+        <TextView android:id="@+id/wHiLo" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" />
+      </LinearLayout>
+      <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="end" android:layout_marginStart="10dp">
+        <ImageView android:id="@+id/wIcon" android:layout_width="48dp" android:layout_height="48dp" android:scaleType="fitCenter" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wRise" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="12sp" android:maxLines="1" android:layout_marginTop="4dp"/>
+        <TextView android:id="@+id/wSet" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="12sp" android:maxLines="1"/>
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="2dp">
+          <ImageView android:id="@+id/wMoon" android:layout_width="14dp" android:layout_height="14dp" android:importantForAccessibility="no"/>
+          <TextView android:id="@+id/wMoonText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="12sp" android:maxLines="1" android:layout_marginStart="5dp"/>
+        </LinearLayout>
+      </LinearLayout>
+    </LinearLayout>
+    <FrameLayout android:layout_width="1dp" android:layout_height="0dp" android:layout_weight="1"/>
+    <TextView android:id="@+id/wDetail" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="12sp" android:maxLines="1" android:ellipsize="end" android:layout_marginBottom="8dp"/>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="1dp" android:background="#33FFFFFF" android:layout_marginBottom="10dp"/>
+    <LinearLayout android:id="@+id/wHours" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+      <LinearLayout android:id="@+id/wC1" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI1" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC2" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI2" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC3" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI3" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC4" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI4" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC5" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI5" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT5" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC6" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI6" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC7" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI7" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT7" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+      <LinearLayout android:id="@+id/wC8" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center_horizontal">
+        <TextView android:id="@+id/wH8" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#E0FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="11sp" android:maxLines="1"/>
+        <ImageView android:id="@+id/wI8" android:layout_width="24dp" android:layout_height="24dp" android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/wT8" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#FFFFFF" android:shadowColor="#59000000" android:shadowRadius="6" android:shadowDy="1" android:textSize="13sp" android:maxLines="1" android:fontFamily="sans-serif-medium"/>
+      </LinearLayout>
+    </LinearLayout>
+  </LinearLayout>
+</FrameLayout>

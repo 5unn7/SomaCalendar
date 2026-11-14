@@ -41,19 +41,42 @@ import org.json.JSONObject;
 public final class PanchangWidgets {
   private PanchangWidgets() {}
   static final String ACTION_TICK = "com.soma.calendar.PANCHANG_WIDGET_TICK";
-  private static final Class<?>[] PROVIDERS = {Sun.class, Moon.class, Festival.class, Now.class, Day.class};
+  private static final Class<?>[] PROVIDERS = {Sun.class, Moon.class, Festival.class, Now.class, Day.class, Sky.class};
 
   /** Redraw every placed widget of this family and schedule the next wake-up. Called by the app after a new feed. */
-  static void refreshAll(Context c) {
+  static void refreshAll(Context c) { refreshAll(c, null); }
+
+  /**
+   * As above; when a Sky widget is placed and live weather is on and due, also fetch a new forecast and redraw again
+   * once it lands. A receiver passes its goAsync() result so the process stays alive for the fetch.
+   */
+  static void refreshAll(Context c, BroadcastReceiver.PendingResult pending) {
     AppWidgetManager m = AppWidgetManager.getInstance(c);
     long now = System.currentTimeMillis();
     Feed f = Feed.load(c, now);
-    boolean any = false;
+    boolean any = false, sky = false;
     for (Class<?> k : PROVIDERS) {
       int[] ids = m.getAppWidgetIds(new ComponentName(c, k));
-      for (int id : ids) { any = true; push(c, m, id, k, f); }
+      for (int id : ids) { any = true; if (k == Sky.class) sky = true; push(c, m, id, k, f); }
     }
-    schedule(c, any ? f.next : 0);
+    long next = any ? f.next : 0;
+    // The weather layer changes with the forecast hour, so a Sky widget wakes at least at the top of each hour.
+    if (sky) next = Math.min(next, (now / 3600_000L + 1) * 3600_000L);
+    schedule(c, next);
+    if (sky && Weather.due(c, f.lat, f.lon, now)) {
+      final Context app = c.getApplicationContext();
+      Weather.refresh(app, f.lat, f.lon, false, changed -> {
+        if (changed) refreshSky(app);
+        if (pending != null) pending.finish();
+      });
+    } else if (pending != null) pending.finish();
+  }
+
+  /** Redraw only the Sky widgets (after a new forecast). */
+  static void refreshSky(Context c) {
+    AppWidgetManager m = AppWidgetManager.getInstance(c);
+    Feed f = Feed.load(c, System.currentTimeMillis());
+    for (int id : m.getAppWidgetIds(new ComponentName(c, Sky.class))) push(c, m, id, Sky.class, f);
   }
 
   private static void push(Context c, AppWidgetManager m, int id, Class<?> k, Feed f) {
@@ -81,6 +104,7 @@ public final class PanchangWidgets {
     if (k == Moon.class) return new float[][]{{110, 110}, {250, 110}, {250, 250}};
     if (k == Festival.class) return new float[][]{{110, 110}, {250, 110}, {250, 250}};
     if (k == Now.class) return new float[][]{{110, 40}, {250, 40}, {250, 110}};
+    if (k == Sky.class) return new float[][]{{110, 110}, {250, 110}, {250, 250}, {450, 250}};
     return new float[][]{{250, 250}, {450, 300}};
   }
 
@@ -91,6 +115,7 @@ public final class PanchangWidgets {
     else if (k == Moon.class) v = moon(c, f, p, w, h);
     else if (k == Festival.class) v = festival(c, f, p, w, h);
     else if (k == Now.class) v = now(c, f, p, w, h);
+    else if (k == Sky.class) v = sky(c, f, w, h);
     else v = day(c, f, p, w, h);
     Intent open = new Intent(c, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
     v.setOnClickPendingIntent(R.id.widgetRoot, PendingIntent.getActivity(c, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT));
@@ -394,6 +419,150 @@ public final class PanchangWidgets {
     b.append(label).append("  ").append(f.range(r.optLong(0), r.optLong(1)));
   }
 
+  // ---- Sky and weather ----------------------------------------------------------------------------------------
+
+  private static final int[] HOUR_CELLS = {R.id.wC1, R.id.wC2, R.id.wC3, R.id.wC4, R.id.wC5, R.id.wC6, R.id.wC7, R.id.wC8};
+  private static final int[] HOUR_TIMES = {R.id.wH1, R.id.wH2, R.id.wH3, R.id.wH4, R.id.wH5, R.id.wH6, R.id.wH7, R.id.wH8};
+  private static final int[] HOUR_ICONS = {R.id.wI1, R.id.wI2, R.id.wI3, R.id.wI4, R.id.wI5, R.id.wI6, R.id.wI7, R.id.wI8};
+  private static final int[] HOUR_TEMPS = {R.id.wT1, R.id.wT2, R.id.wT3, R.id.wT4, R.id.wT5, R.id.wT6, R.id.wT7, R.id.wT8};
+  private static final int[] FX = {R.id.fxGlow, R.id.fxStars, R.id.fxFog, R.id.fxClouds, R.id.fxRain, R.id.fxSnow, R.id.fxWind, R.id.fxFlash};
+
+  /**
+   * Temperature and the sky as it is now: a time-of-day and weather gradient, moving rain, snow, wind, clouds, fog,
+   * lightning, a breathing sun or twinkling stars, plus sunrise, sunset and the moon. Without live weather (off, or
+   * no forecast yet) it is still a useful sun-and-moon widget, all offline.
+   */
+  private static RemoteViews sky(Context c, Feed f, float w, float h) {
+    boolean small = w < 250, large = !small && h >= 250, xl = large && w >= 450;
+    RemoteViews v = new RemoteViews(c.getPackageName(), small ? R.layout.wx_small : large ? R.layout.wx_large : R.layout.wx_wide);
+    boolean on = Weather.on(c), fahr = Weather.fahrenheit(c);
+    JSONObject civil = f.today != null ? f.today : f.vedic;
+    long rise = civil == null ? 0 : civil.optLong("rise"), set = civil == null ? 0 : civil.optLong("set");
+    long nextRise = f.now < rise ? rise : f.tomorrow != null ? f.tomorrow.optLong("rise") : 0;
+    boolean day = f.isDay(f.now);
+    String phase = rise > 0 && Math.abs(f.now - rise) < 40 * 60_000L ? "dawn" : set > 0 && Math.abs(f.now - set) < 40 * 60_000L ? "dusk" : day ? "day" : "night";
+    // Only a forecast for the place on the widget: right after a change of city the old one is not shown.
+    Weather.Now wx = Weather.Now.at(Weather.storedFor(c, f.lat, f.lon), f.now, f.endOfToday());
+    String kind = wx.ok ? wx.kind : "";
+
+    v.setInt(R.id.widgetRoot, "setBackgroundResource", background(kind, phase, day));
+    for (int id : FX) v.setViewVisibility(id, View.GONE);
+    if (wx.ok) effects(v, kind, day, wx.windy);
+    v.setImageViewResource(R.id.wIcon, icon(kind, day));
+
+    String place = f.city.isEmpty() ? "SKY" : f.city.toUpperCase(Locale.ROOT);
+    v.setTextViewText(R.id.wPlace, place);
+    String sunNext = !f.ok || civil == null ? "" : day ? "Sunset " + f.time(set) : nextRise > 0 ? "Sunrise " + f.time(nextRise) : "";
+    String sunIn = !f.ok || civil == null ? "" : day ? "Sunset in " + Feed.span(set - f.now) : nextRise > 0 ? "Sunrise in " + Feed.span(nextRise - f.now) : "";
+    String cond = wx.ok ? Weather.label(kind) + (wx.windy && !"thunder".equals(kind) ? " · Windy" : "") : "";
+    String hiLo = wx.ok ? "H " + Weather.deg(wx.hi, fahr) + "  L " + Weather.deg(wx.lo, fahr) : "";
+    String hint = on ? "Fetching the weather…" : "Turn on live weather in Soma";
+    if (!f.ok) hint = "Open Soma once to set your city";
+    if (wx.ok) {
+      v.setTextViewText(R.id.wTemp, Weather.deg(wx.temp, fahr));
+      v.setTextViewText(R.id.wCond, cond);
+    } else {
+      // No forecast: the next sun event takes the temperature's place.
+      v.setTextViewTextSize(R.id.wTemp, android.util.TypedValue.COMPLEX_UNIT_SP, small ? 24 : 30);
+      v.setTextViewText(R.id.wTemp, f.ok && civil != null ? f.time(day ? set : nextRise > 0 ? nextRise : set) : "—");
+      v.setTextViewText(R.id.wCond, f.ok ? sunIn : "Soma");
+    }
+    if (small) {
+      v.setTextViewText(R.id.wSun, wx.ok ? (day ? "↓ " + f.time(set) : nextRise > 0 ? "↑ " + f.time(nextRise) : hiLo) : hint);
+    } else {
+      v.setTextViewText(R.id.wHiLo, wx.ok ? hiLo : hint);
+      v.setTextViewText(R.id.wRise, civil == null ? "" : "↑ " + f.time(day || nextRise == 0 ? rise : nextRise));
+      v.setTextViewText(R.id.wSet, civil == null ? "" : "↓ " + f.time(set));
+      SomaWidget.Palette white = new SomaWidget.Palette();
+      white.ink = 0xFFF4EEDF; white.muted = 0xFFFFFFFF;
+      v.setImageViewBitmap(R.id.wMoon, f.art("skymoon", () -> SomaWidget.moon(f.tithiIndex, white, 64)));
+      v.setTextViewText(R.id.wMoonText, f.ok ? Math.round(f.illumination() * 100) + "%" : "");
+    }
+    if (large) {
+      StringBuilder d = new StringBuilder();
+      if (wx.ok) {
+        d.append("Wind ").append(fahr ? Math.round(wx.wind * 2.237) + " mph" : Math.round(wx.wind * 3.6) + " km/h");
+        d.append("  ·  Humidity ").append(wx.humidity).append('%');
+        JSONObject h0 = wx.hour(0);
+        double mm = h0 == null ? 0 : h0.optDouble("p");
+        if (mm >= 0.1) d.append("  ·  ").append(String.format(Locale.US, "%.1f mm", mm)).append(" this hour");
+      } else {
+        if (civil != null) d.append(Feed.span(set - rise)).append(" of daylight  ·  ");
+        d.append(SomaWidget.tithiEnglish(f.tithiIndex));
+      }
+      v.setTextViewText(R.id.wDetail, d.toString());
+      v.setViewVisibility(R.id.wHours, wx.ok ? View.VISIBLE : View.GONE);
+      for (int i = 0; i < HOUR_CELLS.length; i++) {
+        JSONObject x = wx.hour(i + 1);
+        boolean show = wx.ok && x != null && (i < 6 || xl);
+        v.setViewVisibility(HOUR_CELLS[i], show ? View.VISIBLE : View.GONE);
+        if (!show) continue;
+        long t = x.optLong("t");
+        v.setTextViewText(HOUR_TIMES[i], f.hourLabel(t));
+        v.setImageViewResource(HOUR_ICONS[i], icon(x.optString("k"), f.isDay(t + 1800_000L)));
+        v.setTextViewText(HOUR_TEMPS[i], Weather.deg(x.optDouble("c"), fahr));
+      }
+    }
+    v.setContentDescription(R.id.widgetRoot, f.city + ". " + (wx.ok ? Weather.deg(wx.temp, fahr) + ", " + cond + ". High " + Weather.deg(wx.hi, fahr) + ", low " + Weather.deg(wx.lo, fahr) + ". " : "") + sunNext + ".");
+    return v;
+  }
+
+  private static int background(String kind, String phase, boolean day) {
+    switch (kind) {
+      case "thunder": return R.drawable.wx_bg_storm;
+      case "drizzle": case "rain": case "heavyrain": case "showers": case "sleet": return day ? R.drawable.wx_bg_rain : R.drawable.wx_bg_night_cloud;
+      case "lightsnow": case "snow": case "heavysnow": return day ? R.drawable.wx_bg_snow : R.drawable.wx_bg_night_cloud;
+      case "fog": return day ? R.drawable.wx_bg_fog : R.drawable.wx_bg_night_cloud;
+      case "cloudy": return day ? R.drawable.wx_bg_cloud_day : R.drawable.wx_bg_night_cloud;
+      default:
+        if ("dawn".equals(phase)) return R.drawable.wx_bg_dawn;
+        if ("dusk".equals(phase)) return R.drawable.wx_bg_dusk;
+        return day ? R.drawable.wx_bg_clear_day : R.drawable.wx_bg_night;
+    }
+  }
+
+  /** Which moving layers the weather calls for, and how strong each one is. */
+  private static void effects(RemoteViews v, String kind, boolean day, boolean windy) {
+    int clouds = 0, rain = 0, snow = 0;
+    boolean clearish = false;
+    switch (kind) {
+      case "clear": clearish = true; break;
+      case "fair": clearish = true; clouds = 110; break;
+      case "partly": clearish = true; clouds = 200; break;
+      case "cloudy": clouds = 255; break;
+      case "fog": v.setViewVisibility(R.id.fxFog, View.VISIBLE); clouds = 120; break;
+      case "drizzle": clouds = 230; rain = 110; break;
+      case "showers": clouds = 200; rain = 190; break;
+      case "rain": clouds = 255; rain = 210; break;
+      case "heavyrain": clouds = 255; rain = 255; break;
+      case "sleet": clouds = 255; rain = 140; snow = 190; break;
+      case "lightsnow": clouds = 220; snow = 150; break;
+      case "snow": clouds = 255; snow = 220; break;
+      case "heavysnow": clouds = 255; snow = 255; break;
+      case "thunder": clouds = 255; rain = 230; v.setViewVisibility(R.id.fxFlash, View.VISIBLE); break;
+      default: break;
+    }
+    if (clearish) v.setViewVisibility(day ? R.id.fxGlow : R.id.fxStars, View.VISIBLE);
+    if (clouds > 0) { v.setViewVisibility(R.id.fxClouds, View.VISIBLE); v.setInt(R.id.fxCloud1, "setImageAlpha", clouds); v.setInt(R.id.fxCloud2, "setImageAlpha", clouds); }
+    if (rain > 0) { v.setViewVisibility(R.id.fxRain, View.VISIBLE); v.setInt(R.id.fxRain1, "setImageAlpha", rain); v.setInt(R.id.fxRain2, "setImageAlpha", rain); }
+    if (snow > 0) { v.setViewVisibility(R.id.fxSnow, View.VISIBLE); v.setInt(R.id.fxSnow1, "setImageAlpha", snow); v.setInt(R.id.fxSnow2, "setImageAlpha", snow); }
+    if (windy) v.setViewVisibility(R.id.fxWind, View.VISIBLE);
+  }
+
+  private static int icon(String kind, boolean day) {
+    switch (kind) {
+      case "fair": case "clear": case "": return day ? R.drawable.wx_ic_sun : R.drawable.wx_ic_moon;
+      case "partly": return day ? R.drawable.wx_ic_partly_day : R.drawable.wx_ic_partly_night;
+      case "fog": return R.drawable.wx_ic_fog;
+      case "drizzle": return R.drawable.wx_ic_drizzle;
+      case "rain": case "heavyrain": case "showers": return R.drawable.wx_ic_rain;
+      case "sleet": return R.drawable.wx_ic_sleet;
+      case "lightsnow": case "snow": case "heavysnow": return R.drawable.wx_ic_snow;
+      case "thunder": return R.drawable.wx_ic_thunder;
+      default: return R.drawable.wx_ic_cloud;
+    }
+  }
+
   // ---- Shared ------------------------------------------------------------------------------------------------
 
   static int alpha(int color, float a) { return (Math.round(a * 255) << 24) | (color & 0x00FFFFFF); }
@@ -419,8 +588,9 @@ public final class PanchangWidgets {
     int chogIdx = -1, tithiIndex = -1;
     long now, next;
     String city = "", todayKey = "", tomorrowKey = "";
+    double lat = Double.NaN, lon = Double.NaN;
     TimeZone tz = TimeZone.getDefault();
-    private SimpleDateFormat timeFmt, keyFmt, dayFmt, dateFmt;
+    private SimpleDateFormat timeFmt, keyFmt, dayFmt, dateFmt, hourFmt;
     /* Bitmaps are drawn once per refresh and shared by every size of every widget, keeping the parcel small. */
     private final Map<String, Bitmap> arts = new HashMap<>();
     interface Draw { Bitmap make(); }
@@ -440,8 +610,9 @@ public final class PanchangWidgets {
     private void fill(JSONObject j) throws Exception {
       feed = j;
       tz = TimeZone.getTimeZone(j.optString("zone", TimeZone.getDefault().getID()));
-      timeFmt = fmt("h:mm a"); keyFmt = fmt("yyyy-MM-dd"); dayFmt = fmt("EEE d MMM"); dateFmt = fmt("EEEE d MMMM");
+      timeFmt = fmt("h:mm a"); hourFmt = fmt("h a"); keyFmt = fmt("yyyy-MM-dd"); dayFmt = fmt("EEE d MMM"); dateFmt = fmt("EEEE d MMMM");
       city = j.optString("city", "");
+      lat = j.optDouble("lat", Double.NaN); lon = j.optDouble("lon", Double.NaN);
       long midnight = startOfNextDay();
       todayKey = keyFmt.format(new Date(now));
       tomorrowKey = keyFmt.format(new Date(midnight + 60_000L));
@@ -523,6 +694,20 @@ public final class PanchangWidgets {
     }
 
     String time(long t) { return timeFmt.format(new Date(t)).toLowerCase(Locale.ROOT); }
+    String hourLabel(long t) { return hourFmt.format(new Date(t)).toLowerCase(Locale.ROOT); }
+    long endOfToday() { return startOfNextDay(); }
+    /** Is the sun up at t? Uses the civil day that t falls in; polar days fall back to 6 am to 6 pm. */
+    boolean isDay(long t) {
+      JSONArray days = feed.optJSONArray("days");
+      String key = keyFmt.format(new Date(t));
+      if (days != null) for (int i = 0; i < days.length(); i++) {
+        JSONObject d = days.optJSONObject(i);
+        if (d != null && key.equals(d.optString("date"))) return d.optLong("rise") <= t && t < d.optLong("set");
+      }
+      Calendar cal = Calendar.getInstance(tz); cal.setTimeInMillis(t);
+      int hr = cal.get(Calendar.HOUR_OF_DAY);
+      return hr >= 6 && hr < 18;
+    }
     String range(long a, long b) { return time(a) + " – " + time(b); }
     String dateLabel() { return dateFmt.format(new Date(now)); }
     String dayLabel(String key) {
@@ -566,9 +751,13 @@ public final class PanchangWidgets {
   public static final class Festival extends Base {}
   public static final class Now extends Base {}
   public static final class Day extends Base {}
+  /** Sky and weather: needs the network now and then, so it keeps the process alive for a fetch. */
+  public static final class Sky extends Base {
+    @Override public void onUpdate(Context c, AppWidgetManager m, int[] ids) { refreshAll(c, goAsync()); }
+  }
 
   /** Alarm, boot and clock changes. */
   public static final class Tick extends BroadcastReceiver {
-    @Override public void onReceive(Context c, Intent i) { refreshAll(c); }
+    @Override public void onReceive(Context c, Intent i) { refreshAll(c, goAsync()); }
   }
 }
