@@ -4,3 +4,7 @@ android/**/build/
 android/app/src/main/assets/app.js
 *.apk
 .DS_Store
+android/app/src/main/assets/panchang.js
+android/app/src/main/assets/meanings.js
+android/app/src/main/assets/festivals.js
+android/app/src/main/assets/i18n.js
