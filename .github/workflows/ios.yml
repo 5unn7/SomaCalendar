@@ -1,0 +1,61 @@
+name: iOS build and simulator tests
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['ios/**', 'src/**', 'scripts/**', 'package*.json', 'android/app/src/main/assets/**', '.github/workflows/ios.yml']
+  push:
+    branches: [main, redesign/gujarati-time]
+    paths: ['ios/**', 'src/**', 'scripts/**', 'package*.json', 'android/app/src/main/assets/**', '.github/workflows/ios.yml']
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install JS dependencies
+        run: npm install --no-audit --no-fund
+      - name: Bundle shared Soma web app
+        run: npm run bundle
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Generate Xcode project
+        run: brew install xcodegen && cd ios && xcodegen generate
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "import json,sys;d=json.load(sys.stdin)['devices'];print(next(x['udid'] for k,v in sorted(d.items(),reverse=True) if 'iOS' in k for x in v if x['name'].startswith('iPhone')))")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices | grep "$UDID"
+      - name: Build and run unit + page tests
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild test -project Soma.xcodeproj -scheme Soma \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO | tee xcodebuild.log | grep -E '(error|warning: .*Soma|Test Case|Executed|\*\* )' || (tail -80 xcodebuild.log; exit 1)
+      - name: Launch Soma and take a screenshot
+        if: success()
+        run: |
+          xcrun simctl boot "${{ steps.sim.outputs.udid }}" 2>/dev/null || true
+          APP=$(find ios/build/Build/Products -name Soma.app -path '*iphonesimulator*' | head -1)
+          xcrun simctl install "${{ steps.sim.outputs.udid }}" "$APP"
+          xcrun simctl launch "${{ steps.sim.outputs.udid }}" app.soma.calendar
+          sleep 12
+          xcrun simctl io "${{ steps.sim.outputs.udid }}" screenshot soma-ios-today.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soma-ios-simulator
+          path: |
+            soma-ios-today.png
+            ios/xcodebuild.log
+          if-no-files-found: ignore
