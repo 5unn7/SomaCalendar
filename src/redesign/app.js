@@ -791,11 +791,11 @@ function checkUpdate(manual) {
   // A check that never answered (page paused mid-request) must not block every later one.
   const stuck = (upd.state === 'checking' && Date.now() - upd.asked > 30000) || (upd.state === 'downloading' && Date.now() - upd.asked > 600000);
   if ((upd.state === 'checking' || upd.state === 'downloading') && !stuck) { if (manual) updateSheet(); return; }
-  upd.manual = !!manual; upd.state = 'checking'; upd.message = ''; upd.asked = Date.now();
+  upd.manual = !!manual; upd.installing = false; upd.state = 'checking'; upd.message = ''; upd.asked = Date.now();
   if (manual) updateSheet();
   SomaNative.checkForUpdate();
 }
-function installUpdate() { if (!updatesOn()) return; upd.state = 'downloading'; upd.progress = -1; upd.asked = Date.now(); refreshUpdateUI(); SomaNative.installUpdate(); }
+function installUpdate() { if (!updatesOn()) return; upd.installing = true; upd.state = 'downloading'; upd.progress = -1; upd.asked = Date.now(); refreshUpdateUI(); SomaNative.installUpdate(); }
 window.somaReceiveUpdate = function (json) {
   let m; try { m = JSON.parse(json); } catch (e) { return; }
   upd.state = m.state;
@@ -803,7 +803,8 @@ window.somaReceiveUpdate = function (json) {
     upd.feed = m; prefs.updateFeed = { versionCode: m.versionCode, versionName: m.versionName, notes: m.notes || '', published: m.published || '' }; persist();
   }
   if (m.state === 'downloading') upd.progress = m.progress;
-  if (m.state === 'error') { upd.message = m.message || ''; if (!upd.manual && !($('modal').open && $('updateBody'))) upd.state = ''; }
+  if (m.state === 'error') { upd.message = m.message || ''; if (!upd.manual && !upd.installing && !($('modal').open && $('updateBody'))) upd.state = ''; }
+  if (m.state === 'done' || m.state === 'latest') upd.installing = false;
   refreshUpdateUI();
 };
 function refreshUpdateUI() {

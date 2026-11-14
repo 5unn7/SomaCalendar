@@ -61,7 +61,7 @@ w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:
 w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1043,versionName:'0.8.0-b43'}));assert.equal(note.style.display,'flex');assert.ok(/b43/.test(note.textContent));
 note.querySelector('.body').click();assert.equal(installs,2,'tapping the banner installs');
 w.somaReceiveUpdate(JSON.stringify({state:'downloading',progress:10}));assert.ok(/10%/.test(note.textContent));assert.equal(note.querySelector('.go'),null);
-w.somaReceiveUpdate(JSON.stringify({state:'error',message:'Network down'}));assert.equal(note.style.display,'flex');assert.ok(note.querySelector('.go'),'after an error the banner offers Update again');
+w.somaReceiveUpdate(JSON.stringify({state:'error',message:'Network down'}));assert.equal(note.style.display,'flex');assert.ok(note.querySelector('.go'),'after an error the banner offers Update again');assert.ok(/Network down/.test(note.textContent),'an install started from the banner keeps its error');
 note.querySelector('.x').click();assert.equal(note.style.display,'none');
 w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1043,versionName:'0.8.0-b43'}));assert.equal(note.style.display,'none','snoozed build stays hidden');
 w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1044,versionName:'0.8.0-b44'}));assert.equal(note.style.display,'flex','a newer build shows again');
