@@ -3,6 +3,7 @@ package com.soma.calendar;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.provider.CalendarContract;
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -10,7 +11,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.time.Instant;
 import org.json.JSONObject;
 
-/** Soma's own native calls, used by src/redesign/native.js: the home-screen widget feed and add-to-calendar. */
+/** Soma's own native calls, used by src/redesign/native.js: widget feed, add-to-calendar and preview self-updates. */
 @CapacitorPlugin(name = "Soma")
 public class SomaPlugin extends Plugin {
 
@@ -45,5 +46,33 @@ public class SomaPlugin extends Plugin {
     } catch (Exception e) {
       call.reject("Invalid event: " + e.getMessage());
     }
+  }
+
+  /** Preview builds only: {enabled, versionCode, versionName}. Store builds report enabled:false. */
+  @PluginMethod
+  public void updateInfo(PluginCall call) {
+    JSObject r = new JSObject();
+    r.put("json", Updater.info(getContext()));
+    call.resolve(r);
+  }
+
+  /** Reads the preview feed. Progress and results arrive as "update" events ({json}) for window.somaReceiveUpdate. */
+  @PluginMethod
+  public void checkForUpdate(PluginCall call) {
+    Updater.check(getContext().getApplicationContext(), this::sendUpdate);
+    call.resolve();
+  }
+
+  /** Downloads the newer preview build and opens Android's install prompt. */
+  @PluginMethod
+  public void installUpdate(PluginCall call) {
+    getActivity().runOnUiThread(() -> Updater.install(getActivity(), this::sendUpdate));
+    call.resolve();
+  }
+
+  private void sendUpdate(String json) {
+    JSObject e = new JSObject();
+    e.put("json", json);
+    notifyListeners("update", e);
   }
 }

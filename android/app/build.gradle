@@ -8,8 +8,10 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Preview id installs beside the old app. The permanent store id is set once Sunny picks it.
-        versionCode 8
-        versionName "0.8.0"
+        // CI sets SOMA_BUILD to its run number so every preview build counts up and can update the last one.
+        def somaBuild = (System.getenv('SOMA_BUILD') ?: '0').toInteger()
+        versionCode 1000 + somaBuild
+        versionName somaBuild > 0 ? "0.8.0-b${somaBuild}" : '0.8.0-dev'
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -27,10 +29,17 @@ android {
             keyPassword 'android'
         }
     }
+    buildFeatures { buildConfig true }
     buildTypes {
-        debug { signingConfig signingConfigs.debug }
+        // In-app updates are for sideloaded preview builds only. Store releases update through the store,
+        // so release has no feed (Updater switches off) and no REQUEST_INSTALL_PACKAGES (src/debug manifest).
+        debug {
+            signingConfig signingConfigs.debug
+            buildConfigField 'String', 'UPDATE_FEED', '"https://github.com/5unn7/SomaCalendar/releases/download/preview/version.json"'
+        }
         release {
             minifyEnabled false
+            buildConfigField 'String', 'UPDATE_FEED', '""'
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

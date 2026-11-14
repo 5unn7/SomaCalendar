@@ -1,6 +1,6 @@
 /* window.SomaNative on Capacitor (Android and iOS).
  * app.js talks to the phone only through window.SomaNative. This file builds that object from Capacitor plugins
- * plus Soma's own small native plugin ("Soma": widget feed and add-to-calendar), so app.js runs unchanged in a
+ * plus Soma's own small native plugin ("Soma": widget feed, add-to-calendar and preview self-updates), so app.js runs unchanged in a
  * browser, in the jsdom tests and in both apps. Bundled by scripts/build-redesign.mjs to an es2017 IIFE.
  * Nothing here talks to the network: Soma is offline.
  */
@@ -83,8 +83,18 @@ function haptic(kind) {
 function log(level, message) { (level === 'error' ? console.error : console.log)('SomaJS ' + message); }
 const quiet = p => { if (p && p.catch) p.catch(e => log('error', (e && e.message) || String(e))); };
 
+/* app.js reads updateInfo() synchronously; Capacitor calls are async, so ask once at start-up and keep the answer.
+ * Only Android preview (debug) builds have an update feed; iOS and store builds stay {enabled:false}. */
+let updateInfoJson = '{"enabled":false}';
+function loadUpdates(root) {
+  if (Capacitor.getPlatform() !== 'android') return;
+  quiet(Soma.updateInfo().then(r => { if (r && r.json) updateInfoJson = String(r.json); }));
+  quiet(Soma.addListener('update', e => root.somaReceiveUpdate && root.somaReceiveUpdate(String((e && e.json) || '{}'))));
+}
+
 export function install(root) {
   if (!Capacitor.isNativePlatform() || root.SomaNative) return;
+  loadUpdates(root);
   const api = {
     platform: Capacitor.getPlatform(),
     appReady() {
@@ -98,6 +108,9 @@ export function install(root) {
     updateWidgetFeed(json) { quiet(Soma.setWidgetFeed({ json: String(json || '') })); },
     addCalendarEvent(title, start, end, place, notes) { quiet(Soma.addCalendarEvent({ title, start, end, place, notes })); },
     haptic(kind) { quiet(haptic(kind)); },
+    updateInfo() { return updateInfoJson; },
+    checkForUpdate() { quiet(Soma.checkForUpdate()); },
+    installUpdate() { quiet(Soma.installUpdate()); },
     updateWidget() {}, updateAtmosphere() {},
   };
   Object.defineProperty(root, 'SomaNative', { value: Object.freeze(api), configurable: false, writable: false });
