@@ -37,16 +37,25 @@ for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js',
 const $$=s=>[...w.document.querySelectorAll(s)];
 w.SomaClock.set(Date.parse('2026-11-14T06:30:00Z'));w.SomaClock.tick();   // noon in Ahmedabad
 w.setDay('2026-11-14');w.show('muhurat');
-assert.equal($$('#app .daymap .blk.chog').length,8,'day half: eight Choghadiya');
-assert.ok($$('#app .daymap .blk.kaal').some(b=>/Rahu/.test(b.textContent)),'Rahu Kaal on the map');
-assert.ok(w.document.querySelector('#app .daymap .nowline'),'now line on today');
-assert.ok($$('#app .daymap .blk.current').length>=1,'running block marked');
-w.setMapHalf('night');assert.equal($$('#app .daymap .blk.chog').length,8,'night half: eight Choghadiya');assert.ok($$('#app .daymap .blk.kaal').some(b=>/Brahma/.test(b.textContent)),'next morning Brahma Muhurta on the night map');
-w.setMapHalf('day');
-$$('#app .daymap .blk.kaal')[0].click();assert.ok(w.document.querySelector('#modal').open);assert.ok(/What to do/.test(w.document.querySelector('#modal').textContent));w.document.querySelector('#modal').close();
-w.setDay('2026-11-24');w.show('muhurat');assert.ok(w.document.querySelector('#app .daymap .blk.bhadra'),'Bhadra lane on Kartik Purnima');
+const B='#app .boardsec ';
+assert.equal($$(B+'.ctile').length,16,'all 16 Choghadiya on the board');
+assert.ok($$(B+'.bcol.bad .brow').some(b=>/Rahu/.test(b.textContent)),'Rahu Kaal in the Avoid column');
+assert.ok($$(B+'.bcol.bad .brow').some(b=>/Dur Muhurta/.test(b.textContent)),'Dur Muhurta in the Avoid column');
+assert.ok($$(B+'.bcol.good .brow').some(b=>/Abhijit/.test(b.textContent)),'Abhijit in the Shubh column');
+assert.ok(!$$(B+'.bcol.good .brow').some(b=>/Rahu|Yamaganda|Gulika/.test(b.textContent)),'nothing to avoid in the Shubh column');
+assert.ok(w.document.querySelector(B+'.ribbon .now'),'now marker on the ribbon');
+assert.ok($$(B+'.ctile.current').length===1,'running Choghadiya marked');
+$$(B+'.bcol.bad .brow')[0].click();assert.ok(w.document.querySelector('#modal').open);assert.ok(/What to do/.test(w.document.querySelector('#modal').textContent));w.document.querySelector('#modal').close();
+$$(B+'.ctile')[0].click();assert.ok(/Choghadiya/.test(w.document.querySelector('#sheetTitle').textContent));w.document.querySelector('#modal').close();
+w.setDay('2026-11-24');w.show('muhurat');assert.ok($$(B+'.bcol.bad .brow').some(b=>/Bhadra/.test(b.textContent)),'Bhadra on Kartik Purnima');assert.ok(w.document.querySelector(B+'.ribbon .m.bh'),'Bhadra on the ribbon');
 w.setDay('2026-11-14');
 w.show('today');assert.ok(w.document.querySelector('#app .daystrip .segs .now'),'Today strip shows now');
+// Before sunrise the night still running is yesterday's: the board and strip show it, with the now marker.
+w.SomaClock.set(Date.parse('2026-11-13T20:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');   // 2:00 am in Ahmedabad
+w.show('muhurat');assert.ok(w.document.querySelector(B+'.ribbon .now'),'pre-dawn: now marker on last night');assert.ok($$(B+'.ctile.current').length===1,'pre-dawn: running Choghadiya marked');
+$$(B+'.ctile')[0].click();assert.ok(/13/.test(w.document.querySelector('#modal .eyebrow').textContent),'sheet names the Vedic day it belongs to');w.document.querySelector('#modal').close();
+w.show('today');assert.ok(w.document.querySelector('#app .daystrip .segs .now'),'pre-dawn: Today strip shows now');
+w.SomaClock.set(Date.parse('2026-11-14T06:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');
 // Calendar: "Coming up" starts today; the month's earlier festivals are folded away.
 w.show('calendar');
 const rows=$$('#app .section .list > .rowbtn').filter(r=>!r.closest('details'));
@@ -56,4 +65,4 @@ assert.ok($$('#app details .rowbtn.gone').length>0,'earlier festivals folded und
 w.changeMonth(-1);assert.equal($$('#app .rowbtn').filter(r=>!r.classList.contains('gone')).length,0,'a past month lists its festivals as gone');
 w.changeMonth(2);assert.equal($$('#app .rowbtn.gone').length,0,'a future month lists nothing as gone');
 assert.deepEqual(errors,[]);dom.window.close();
-console.log('PASS: Dur Muhurta and Bhadra, strict good windows, Muhurat day map (day, night, Bhadra, sheets), Today strip, Calendar coming up starts today');
+console.log('PASS: Dur Muhurta and Bhadra, strict good windows, Muhurat day board (columns, ribbon, Choghadiya grid, pre-dawn night, sheets), Today strip, Calendar coming up starts today');

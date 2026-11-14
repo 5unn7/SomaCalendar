@@ -462,58 +462,62 @@ html.bigtext .sunstrip .len{grid-column:1/-1;grid-row:2}
 .skyhero .sunstrip svg,.skyhero .sunstrip small{color:#ffe0a3}
 .skyhero .sunstrip .len,.skyhero .sunstrip .past b{color:#fff}
 
-/* ---- Day at a glance (Muhurat map, Today strip) ---- */
-.bestrow{margin-top:14px}
-.bestrow .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.bestchip{display:inline-flex;gap:6px;align-items:baseline;background:var(--good-soft);color:var(--ink);border-radius:12px;padding:6px 10px;font-size:.8125rem}
-.bestchip b{font-weight:700;color:var(--good-text);font-variant-numeric:tabular-nums}
-.bestrow .caption{margin-top:6px}
-.mapcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 12px 10px;margin-top:12px}
-.mapedge{display:flex;align-items:center;gap:8px;font:600 .8125rem var(--body);color:var(--muted);padding:4px 0}
-.mapedge svg{width:20px;height:20px;color:var(--accent)}
-.mapedge b{margin-left:auto;color:var(--ink);font-variant-numeric:tabular-nums}
-.maphead{display:grid;grid-template-columns:3.1rem 1fr 1.1fr 1.25rem;gap:4px;font:700 .625rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:6px 0 4px}
-html[lang=gu] .maphead,html[lang=hi] .maphead{letter-spacing:0;font-size:.6875rem}
-.daymap{--ph:3.4rem;position:relative;display:grid;grid-template-columns:3.1rem 1fr 1.1fr 1.25rem;gap:4px;min-height:24rem;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.daymap .ticks{position:absolute;inset:0;pointer-events:none}
-.daymap .tick{position:absolute;left:0;right:0;border-top:1px solid var(--line)}
-.daymap .tick.minor{left:3.1rem;border-top-style:dashed;opacity:.6}
-.daymap .tick b{position:absolute;left:0;top:-.55rem;background:var(--surface);padding-right:4px;font:600 .6875rem var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
-.daymap .lane{position:relative}
-.daymap .gut{grid-column:1}
-.daymap .bestbar{position:absolute;right:2px;width:4px;border-radius:2px;background:var(--good)}
-.blk{position:absolute;left:0;right:0;display:flex;align-items:flex-start;gap:6px;text-align:left;min-height:0;padding:5px 7px;border-radius:9px;overflow:hidden;font:inherit;color:var(--ink);border:1px solid transparent;transition:background .2s}
-.blk:active{transform:none;filter:brightness(.96)}
-.blk span{display:flex;flex-direction:column;min-width:0}
-.blk b{font:700 .8125rem/1.15 var(--body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.blk small{font:500 .6875rem/1.25 var(--body);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
-.blk .dot{margin-top:4px}
-.blk.chog{top:0;margin:1px 0}
-.blk.good{background:var(--good-soft)}
-.blk.neutral{background:var(--neutral-soft)}
-/* Avoid blocks carry a hatch as well as colour, so they read without colour too. */
-.blk.bad{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 6px,transparent 6px 11px),var(--surface);border-color:var(--bad-soft)}
-.blk.kaal{border-left:3px solid var(--bad)}
-.blk.kaal.good{border-left-color:var(--good);background:var(--good-soft)}
-.blk.kaal.neutral{border-left-color:var(--neutral)}
-.blk.thin{padding-top:2px;padding-bottom:2px}
-.blk.thin small{display:none}
-.blk.split{padding-left:5px;padding-right:4px}
-.blk.split .dot{display:none}
-.blk.split b{font-size:.75rem}
-.blk.past{background:var(--surface2);border-color:transparent}
-.blk.past .dot{background:var(--faint);border-color:var(--faint)}
-.blk.past b{color:var(--muted)}
-.blk.current{box-shadow:inset 0 0 0 2px var(--accent)}
-.blk.bhadra{justify-content:center;align-items:center;padding:0;border-radius:6px;background:repeating-linear-gradient(45deg,var(--bad-soft) 0 4px,transparent 4px 8px),var(--surface2);border:1px solid var(--bad-soft)}
-.blk.bhadra span{writing-mode:vertical-rl;font:700 .625rem var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--bad-text)}
-.blk.bhadra.past span{color:var(--muted)}
-.nowline{position:absolute;left:2.6rem;right:0;height:0;border-top:2px solid var(--accent);z-index:2;pointer-events:none}
-.nowline::before{content:'';position:absolute;left:-5px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
-.nowline span{position:absolute;right:0;top:-1.25rem;background:var(--accent-text);color:var(--accent-ink);font:700 .625rem var(--body);padding:2px 6px;border-radius:6px;font-variant-numeric:tabular-nums}
-.maplegend{justify-content:flex-start;margin-top:10px}
-.maplegend .best i{width:4px;height:12px;border-radius:2px;background:var(--good)}
-.maplegend .bh i{width:12px;height:12px;border-radius:3px;background:repeating-linear-gradient(45deg,var(--bad) 0 2px,transparent 2px 4px)}
+/* ---- Day at a glance: an information board (Muhurat) and a strip (Today) ---- */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:12px}
+.ribbon{position:relative;padding-bottom:1.6rem}
+.ribbon .over,.ribbon .under{position:relative;height:6px}
+.ribbon .over{margin-bottom:4px}.ribbon .under{margin-top:3px}
+.ribbon .over i,.ribbon .under i{position:absolute;top:0;height:5px;border-radius:3px}
+.ribbon .m.bad{background:repeating-linear-gradient(135deg,var(--bad) 0 3px,transparent 3px 5px)}
+.ribbon .m.bh{top:auto;bottom:0;height:2px;background:var(--bad);opacity:.55}
+.ribbon .m.good{background:var(--good)}.ribbon .m.neutral{background:var(--neutral)}
+.ribbon .u{background:var(--good);height:3px!important}
+.ribbon .track{position:relative;height:22px;border-radius:11px;overflow:hidden;background:var(--surface2)}
+.ribbon .track .s{position:absolute;top:3px;bottom:3px;border-right:1.5px solid var(--surface)}
+.ribbon .track .s.good{background:var(--good)}
+.ribbon .track .s.neutral{background:var(--neutral-soft);box-shadow:inset 0 0 0 1.5px var(--neutral)}
+.ribbon .track .s.bad{background:repeating-linear-gradient(135deg,var(--bad) 0 3px,var(--bad-soft) 3px 6px)}
+.ribbon .track .s.past{opacity:.3}
+.ribbon .nightband{position:absolute;top:0;bottom:0;right:0;background:var(--sky-night);opacity:.55}
+.ribbon .track .now{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--ink);box-shadow:0 0 0 2px var(--surface);z-index:2}
+.rlabels{position:absolute;left:0;right:0;bottom:0;height:1.3rem;font:600 .6875rem var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+.rlabels span{position:absolute;top:0;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.rlabels .mid{transform:translateX(-50%)}
+.rlabels .end{right:0}
+.rlabels svg{width:14px;height:14px;color:var(--accent)}
+.bcols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+.bhead{display:flex;align-items:center;gap:6px;font:700 .6875rem var(--body);letter-spacing:.1em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--line)}
+html[lang=gu] .bhead,html[lang=hi] .bhead{letter-spacing:0;font-size:.8125rem}
+.bcol.good .bhead{color:var(--good-text)}.bcol.bad .bhead{color:var(--bad-text)}
+.bhead i{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.bcol.bad .bhead i{background:var(--bad);border-radius:1.5px;transform:rotate(45deg) scale(.9)}
+.brow{position:relative;display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;background:transparent;border-radius:0;min-height:44px;padding:8px 0;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow:active{transform:none;background:var(--surface2)}
+.brow .nm{display:flex;align-items:center;gap:6px;font:600 .75rem/1.3 var(--body);color:var(--muted)}
+.brow .nm .dot{margin:0;width:6px;height:6px}
+.brow b{font:600 .9375rem/1.3 var(--body);font-variant-numeric:tabular-nums;color:var(--ink);margin-top:1px}
+.brow em{position:absolute;right:0;top:8px;font:700 .625rem var(--body);letter-spacing:.08em;text-transform:uppercase;font-style:normal;color:var(--accent-ink);background:var(--accent-text);border-radius:6px;padding:1px 6px}
+.brow.past b{color:var(--muted);font-weight:500;text-decoration:line-through;text-decoration-color:var(--faint)}
+.brow.past .dot{background:var(--faint);border-color:var(--faint)}
+.chogboard{padding:14px 16px}
+.over2{font:700 .6875rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+html[lang=gu] .over2,html[lang=hi] .over2{letter-spacing:0;font-size:.8125rem}
+.cgrid{margin-top:10px}
+.clabel{display:flex;align-items:center;gap:6px;font:600 .75rem var(--body);color:var(--muted);margin-bottom:6px}
+.clabel svg{width:15px;height:15px;color:var(--accent)}
+.ctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.ctile{display:flex;flex-direction:column;align-items:flex-start;min-height:48px;padding:7px 8px;border-radius:10px;text-align:left;border:1px solid transparent}
+.ctile:active{transform:none;filter:brightness(.96)}
+.ctile b{font:700 .8125rem/1.2 var(--body);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctile small{font:500 .6875rem/1.3 var(--body);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctile.good{background:var(--good-soft)}.ctile.good b{color:var(--good-text)}
+.ctile.neutral{background:var(--neutral-soft)}.ctile.neutral b{color:var(--neutral-text)}
+.ctile.bad{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 5px,transparent 5px 9px),var(--surface);border-color:var(--bad-soft)}.ctile.bad b{color:var(--bad-text)}
+.ctile.past{background:var(--surface2);border-color:transparent}.ctile.past b{color:var(--muted)}
+.ctile.current{box-shadow:inset 0 0 0 2px var(--accent)}
+html.bigtext .bcols{grid-template-columns:1fr}
+html.bigtext .ctiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 .msum{margin-top:14px}
 .msum .nowchog{display:flex;align-items:flex-start;gap:8px;margin-top:8px;color:var(--ink);font-weight:600}
 .msum .nowchog .dot{margin-top:8px}
@@ -575,6 +579,5 @@ html[lang=gu] .maphead,html[lang=hi] .maphead{letter-spacing:0;font-size:.6875re
 .rowbtn .when{margin-left:auto;padding-left:10px;font:700 .75rem var(--body);color:var(--accent-text);white-space:nowrap}
 .rowbtn .when+.chev{margin-left:0}
 .rowbtn.gone strong{color:var(--muted);font-weight:600}
-html.bigtext .daymap{--ph:4.4rem}
 html.bigtext .grid3{grid-template-columns:1fr}
 html.bigtext .pgrid{grid-template-columns:1fr}

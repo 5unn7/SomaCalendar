@@ -445,6 +445,7 @@
   Object.assign(STR.en, {
     dayMap: "Day at a glance",
     mapAbhijit: "Abhijit",
+    bestShort: "Best",
     bestOver: "Today’s shubh windows in this half are over.",
     mapBrahma: "Brahma",
     ovGlance: "At a glance",
@@ -483,6 +484,7 @@
   Object.assign(STR.gu, {
     dayMap: "આખો દિવસ એક નજરે",
     mapAbhijit: "અભિજિત",
+    bestShort: "શ્રેષ્ઠ",
     bestOver: "આ ભાગના આજના શુભ સમય પૂરા થયા.",
     mapBrahma: "બ્રહ્મ",
     ovGlance: "એક નજરે",
@@ -521,6 +523,7 @@
   Object.assign(STR.hi, {
     dayMap: "पूरा दिन एक नज़र में",
     mapAbhijit: "अभिजित",
+    bestShort: "श्रेष्ठ",
     bestOver: "इस भाग के आज के शुभ समय समाप्त हो गए।",
     mapBrahma: "ब्रह्म",
     ovGlance: "एक नज़र में",
