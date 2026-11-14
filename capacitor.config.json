@@ -1,0 +1,23 @@
+{
+  "appId": "com.soma.calendar.preview",
+  "appName": "Soma",
+  "webDir": "www",
+  "backgroundColor": "#101c1a",
+  "loggingBehavior": "debug",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "scheme": "Soma",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false,
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 0, "backgroundColor": "#101c1a", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#101c1a", "overlaysWebView": false },
+    "LocalNotifications": { "smallIcon": "ic_notify", "iconColor": "#DFC493" }
+  }
+}

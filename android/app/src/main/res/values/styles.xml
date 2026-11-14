@@ -1,10 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-  <style name="SomaTheme" parent="android:style/Theme.Material.Light.NoActionBar">
-    <item name="android:fontFamily">sans</item>
-    <item name="android:windowLightStatusBar">false</item>
+  <!-- Soma is dark-first: night-sky background, light system bar icons. -->
+  <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+    <item name="colorPrimary">#101C1A</item>
+    <item name="colorPrimaryDark">#101C1A</item>
+    <item name="colorAccent">#DFC493</item>
+    <item name="android:windowBackground">@color/ic_launcher_background</item>
     <item name="android:statusBarColor">#101C1A</item>
     <item name="android:navigationBarColor">#101C1A</item>
+    <item name="android:windowLightStatusBar">false</item>
     <item name="android:windowLightNavigationBar">false</item>
+  </style>
+  <style name="AppTheme.NoActionBar" parent="AppTheme">
+    <item name="windowActionBar">false</item>
+    <item name="windowNoTitle">true</item>
+    <item name="android:background">@null</item>
+  </style>
+  <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+    <item name="windowSplashScreenBackground">#101C1A</item>
+    <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+    <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
   </style>
 </resources>

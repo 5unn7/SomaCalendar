@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {JSDOM,VirtualConsole} from 'jsdom';
 import {readFileSync} from 'node:fs';
-const base='android/app/src/main/assets/';
+const base='www/';
 const errors=[];const vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
 const dom=new JSDOM(readFileSync(base+'index.html','utf8'),{runScripts:'dangerously',url:'https://soma.local',virtualConsole:vc});
 const w=dom.window;

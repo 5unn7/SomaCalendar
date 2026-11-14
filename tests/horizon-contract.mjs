@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-const html=readFileSync('android/app/src/main/assets/index.html','utf8');
+const html=readFileSync('www/index.html','utf8');
 for(const id of ['obsLocation','birthQuery','birthSearch','birthLat','birthLon','birthZone','birthResults','birthPlaceSummary','getWeather','timeScrub','natalChart','heroTitle','weatherSummary']){
  assert.ok(html.includes('id="'+id+'"'),'Missing Horizon element: '+id);
 }

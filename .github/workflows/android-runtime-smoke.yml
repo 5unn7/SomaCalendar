@@ -19,23 +19,21 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Test calendar calculations
         run: npm test
-      - name: Bundle redesigned Soma
-        run: npm run bundle
+      - name: Bundle redesigned Soma and sync it into the Capacitor apps
+        run: npm run bundle && npx cap sync android
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - name: Enable hardware acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.9'
       - name: Build debug APK
         working-directory: android
-        run: gradle --no-daemon assembleDebug
+        run: ./gradlew --no-daemon assembleDebug
       - name: Launch Android 29 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:

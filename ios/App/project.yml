@@ -1,0 +1,91 @@
+# Soma for iOS (Capacitor 8 + WidgetKit). Generate the Xcode project with:
+#   npm run bundle && npx cap sync ios && cd ios/App && xcodegen
+# The .xcodeproj is generated, not committed. CapApp-SPM/Package.swift is written by `npx cap sync`.
+name: App
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: ../debug.xcconfig
+settings:
+  base:
+    # Permanent once the first build is uploaded. Override with SOMA_BUNDLE_ID=... on the xcodebuild line.
+    SOMA_BUNDLE_ID: app.soma.calendar
+    MARKETING_VERSION: 0.8.0
+    CURRENT_PROJECT_VERSION: 8
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"
+packages:
+  CapApp-SPM:
+    path: CapApp-SPM
+targets:
+  App:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+        excludes: [public, capacitor.config.json, config.xml]
+      # Written by `npx cap sync ios` (gitignored): the bundled web app and Capacitor's config.
+      - path: App/public
+        type: folder
+        buildPhase: resources
+        optional: true
+      - path: App/capacitor.config.json
+        buildPhase: resources
+        optional: true
+      - path: App/config.xml
+        buildPhase: resources
+        optional: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(SOMA_BUNDLE_ID)
+        PRODUCT_NAME: App
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGN_ENTITLEMENTS: App/App.entitlements
+        INFOPLIST_FILE: App/Info.plist
+        LD_RUNPATH_SEARCH_PATHS: ["$(inherited)", "@executable_path/Frameworks"]
+    dependencies:
+      - package: CapApp-SPM
+        product: CapApp-SPM
+      - target: SomaWidget
+        embed: true
+  SomaWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: SomaWidget
+      - path: Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(SOMA_BUNDLE_ID).widget
+        PRODUCT_NAME: SomaWidget
+        CODE_SIGN_ENTITLEMENTS: SomaWidget/SomaWidget.entitlements
+        INFOPLIST_FILE: SomaWidget/Info.plist
+        SKIP_INSTALL: YES
+  AppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: AppTests
+      - path: Shared
+    dependencies:
+      - target: App
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: $(SOMA_BUNDLE_ID).tests
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/App.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/App
+        BUNDLE_LOADER: $(TEST_HOST)
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  App:
+    build:
+      targets:
+        App: all
+        AppTests: [test]
+    test:
+      targets:
+        - AppTests
+    archive:
+      config: Release
