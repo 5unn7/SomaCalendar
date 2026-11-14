@@ -1,6 +1,6 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {transform} from 'esbuild';
-const path='android/app/src/main/assets/index.html';
+const path='www/index.html';
 let html=readFileSync(path,'utf8');
 const scripts=[...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)];
 if(scripts.length<2)throw Error('Expected inlined Grahan and Soma scripts');

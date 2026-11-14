@@ -1,6 +1,7 @@
 import {copyFile,mkdir,readdir} from 'node:fs/promises';
 import {build} from 'esbuild';
-const dest='android/app/src/main/assets';
+// Capacitor webDir: `npx cap sync` copies it into the Android and iOS apps.
+const dest='www';
 await mkdir(dest,{recursive:true});
 await copyFile('THIRD_PARTY_NOTICES.md',dest+'/THIRD_PARTY_NOTICES.txt');
 for(const f of ['index.html','style.css','core.js']) await copyFile('src/redesign/'+f,dest+'/'+f);
@@ -13,3 +14,5 @@ await mkdir(dest+'/fonts',{recursive:true});
 for(const f of await readdir('src/redesign/fonts')) await copyFile('src/redesign/fonts/'+f,dest+'/fonts/'+f);
 await copyFile('node_modules/astronomy-engine/astronomy.browser.min.js',dest+'/astronomy.js');
 await build({entryPoints:['src/natal.js'],outfile:dest+'/natal.js',bundle:true,minify:true,target:'es2017',format:'iife'});
+// window.SomaNative on Capacitor (no-op in a browser).
+await build({entryPoints:['src/redesign/native.js'],outfile:dest+'/native.js',bundle:true,minify:true,target:'es2017',format:'iife'});

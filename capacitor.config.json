@@ -1,0 +1,26 @@
+{
+  "appId": "com.soma.calendar.preview",
+  "appName": "Soma",
+  "webDir": "www",
+  "loggingBehavior": "debug",
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": false,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "scheme": "Soma",
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false,
+    "scrollEnabled": true
+  },
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false
+    },
+    "LocalNotifications": {
+      "smallIcon": "ic_notify",
+      "iconColor": "#A8741C"
+    }
+  }
+}
