@@ -49,4 +49,6 @@ function saveProfile(e){e.preventDefault();try{const p={date:$('birthDate').valu
 function eraseProfile(){modal('<h2>Delete your birth details?</h2><p>This clears the profile and its calculated chart.</p><button class="primary" onclick="profile={};persist();document.querySelector(\'dialog\').close();personalView()">Delete profile</button>')}
 window.SomaPrototype={health:()=>({ready:true,version:'0.6.0',tithi:K.tithi(new Date()).label,location:loc.name})};
 try{render();if(window.SomaNative)SomaNative.appReady()}catch(e){$('app').textContent='Unable to load: '+e.message;if(window.SomaNative)SomaNative.appFailure(e.message)}
-setInterval(()=>{if(view==='today'&&!$('modal').open)render()},60000);
+let todayKey=day;
+function tick(){const now=K.dateKey(new Date(),loc.zone);if(now!==todayKey){if(day===todayKey){day=now;monthView=now.slice(0,7)}todayKey=now}if(view==='today'&&!$('modal').open)render()}
+setInterval(tick,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick()});window.addEventListener('focus',tick);
