@@ -136,8 +136,9 @@ function verdict(d) {
   const todays = observances(d.frame.day, 1).filter(x => x.day === d.frame.day && x.kind === 'festival');
   const festival = todays.find(x => MAJOR_FEST.indexOf(x.key) >= 0) || todays[0];
   if (festival) {
-    const note = festNote(festival), win = festWindow(d, festival);
-    return { nature: 'good', parva: true, festival, win, ti, na, yo,
+    const note = festNote(festival), win = (festival.rule === 'midnight' ? mark(festWindow(d, festival)) : festWindow(d, festival));
+    const next = win && win.passed ? P.goodWindows(d, now(), { accept: SHUBH_CHOG })[0] || null : null;
+    return { nature: 'good', parva: true, festival, win, next, ti, na, yo,
       good: note ? t('festGood', { f: L.festName(festival), note: note.replace(/[.।]$/, '') }) : L.festName(festival),
       avoid: t('festAvoid', { span: span(d.periods.rahu) }) };
   }
@@ -165,10 +166,17 @@ function festWindow(d, f) {
   const from = isToday() && now() > fr.sunrise ? now() : fr.sunrise;
   let wins = P.goodWindows(d, from, { accept: c => SHUBH_CHOG(c) && !c.night });
   if (rule === 'sunset') { const end = +fr.sunset + (fr.nextSunrise - fr.sunset) / 5; wins = P.goodWindows(d, fr.sunset, { accept: c => SHUBH_CHOG(c) && c.night }).filter(w => +w.start < end); }
-  // Late in the day the window may have passed; still name it rather than show nothing.
-  return wins.find(inTithi) || (rule !== 'sunset' && from > fr.sunrise ? P.goodWindows(d, fr.sunrise, { accept: c => SHUBH_CHOG(c) && !c.night }).find(inTithi) : null) || null;
+  // Late in the day the window may have passed: name it as passed (never as if it were still ahead).
+  return mark(wins.find(inTithi) || (rule !== 'sunset' && from > fr.sunrise ? P.goodWindows(d, fr.sunrise, { accept: c => SHUBH_CHOG(c) && !c.night }).find(inTithi) : null) || null);
 }
-const festWindowLine = v => v.win ? t('festWindow', { span: span(v.win), chog: v.win.key === 'nishita' ? t('nishita') : L.chogName(v.win.key) }) : '';
+// On today, a window that has already ended carries passed: true, so the hero says so and points at the next shubh time.
+function mark(w) { return w && isToday() && +w.end <= +now() ? Object.assign({}, w, { passed: true }) : w; }
+const festWindowLine = v => {
+  if (!v.win) return '';
+  const vars = { span: span(v.win), chog: v.win.key === 'nishita' ? t('nishita') : L.chogName(v.win.key) };
+  if (!v.win.passed) return t('festWindow', vars);
+  return t('festPassed', vars) + (v.next ? ' · ' + t('nextShubhAt', { time: fmt(v.next.start) }) : '');
+};
 const verdictWord = n => n === 'good' ? t('favourable') : n === 'bad' ? t('takeCare') : n === 'festival' ? t('parva') : t('mixed');
 const vWord = v => v.parva ? t('parva') : verdictWord(v.nature);
 /* Rahu Kaal as a gentle heads-up: only while it runs or in the 30 minutes before. */

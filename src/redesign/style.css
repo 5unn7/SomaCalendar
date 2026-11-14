@@ -17,7 +17,7 @@
   /* --accent fills rings, icons and buttons; --accent-text is the same gold darkened to 5.3:1 for words. */
   --accent:#a8741c;--accent-text:#855a10;--accent-ink:#fffaf0;--accent-soft:rgba(168,116,28,.13);
   /* Good and avoid differ in lightness as well as hue (greyscale-safe), and every status also carries a shape. Fills vs text tokens keep words at 4.5:1. */
-  --good:#2a6e4a;--bad:#d9603f;--neutral:#b8963f;--good-text:#2a6e4a;--bad-text:#a63a22;--neutral-text:#76591a;--good-soft:rgba(42,110,74,.12);--bad-soft:rgba(217,96,63,.12);--neutral-soft:rgba(184,150,63,.14);
+  --good:#2a6e4a;--bad:#d9603f;--neutral:#b8963f;--good-text:#235f3f;--bad-text:#a63a22;--neutral-text:#76591a;--good-soft:rgba(42,110,74,.12);--bad-soft:rgba(217,96,63,.12);--neutral-soft:rgba(184,150,63,.14);
   --ring:#e4ddcf;--nav:rgba(255,253,248,.82);--shadow:0 10px 30px -14px rgba(40,30,10,.28);
   --sky-dawn:#f6d6c3;--sky-day:#d9e7f3;--sky-dusk:#f1cbc4;--sky-night:#d8d7ec;
   --radius:22px;--gutter:20px;--moon-dark:#3b352c;--moon-lit:#fbf4e4;

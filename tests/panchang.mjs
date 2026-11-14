@@ -34,7 +34,7 @@ assert.ok(ek.some(e=>e.en==='Prabodhini (Dev Uthi) Ekadashi'&&e.day==='2026-11-2
 // Kshaya Ekadashi (20 Nov 2026 begins after sunrise): parana waits for the real Hari Vasara, which ends about 12:09 on 21 Nov.
 {const e=ek.find(x=>x.day==='2026-11-20');assert.ok(hm(e.parana.start)>='12:00',hm(e.parana.start));}
 // Sets and location defaults.
-assert.deepEqual(Fe.defaultSets(amd),['gujarati','india','vrat']);assert.deepEqual(Fe.defaultSets({lat:43.65,lon:-79.38,zone:'America/Toronto'}),['india','international','vrat']);
+assert.deepEqual(Fe.defaultSets(amd),['gujarati','india','vrat']);assert.deepEqual(Fe.defaultSets({lat:43.65,lon:-79.38,zone:'America/Toronto'}),['gujarati','india','international','vrat']);
 assert.equal(Fe.defaultMonthSystem(amd),'amanta');assert.equal(Fe.defaultMonthSystem({lat:28.61,lon:77.2,zone:'Asia/Kolkata'}),'purnimanta');
 assert.ok(Fe.visible(list,['gujarati']).every(x=>x.sets.indexOf('gujarati')>=0));
 // Diaspora: dates follow the local sunrise, so Bestu Varas falls a day earlier in Toronto.
