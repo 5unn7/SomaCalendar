@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <color name="widget_ink">#F3F0E5</color>
+  <color name="widget_muted">#9FAEA5</color>
+  <color name="widget_gold">#DFC493</color>
+  <color name="widget_good">#B8D6B4</color>
+  <color name="widget_bad">#E8A091</color>
+  <color name="widget_line">#2A3B36</color>
+  <string name="widget_description">Today\'s tithi, nakshatra, Choghadiya and Rahu Kaal right now, plus your next vrat.</string>
+</resources>

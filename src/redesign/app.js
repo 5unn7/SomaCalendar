@@ -68,6 +68,7 @@ function render() {
   $('nav').innerHTML = [['today', '◷'], ['calendar', '▦'], ['muhurat', '✦'], ['moon', '◐'], ['personal', '◎']]
     .map(([v, i]) => `<button class="${view === v ? 'active' : ''}" onclick="show('${v}')"><i>${i}</i>${esc(t(v))}</button>`).join('');
   ({ today: todayView, calendar: calendarView, muhurat: muhuratView, moon: moonView, learn: learnView, personal: personalView })[view]();
+  scheduleWidgetFeed();
 }
 
 // ---- Today --------------------------------------------------------------------------------------
@@ -418,14 +419,28 @@ function scheduleNative(force) {
   clearTimeout(nativeTimer);
   nativeTimer = setTimeout(() => {
     try {
-      // Classic widget fields; the richer widget feed lives in its own module.
-      const d = vedicDay(todayKey()), l = d.sunriseLimbs, f = observances(todayKey(), 40).find(x => x.day >= todayKey() && x.kind !== 'observance');
-      if (SomaNative.updateWidget) SomaNative.updateWidget(L.vaarName(d.frame.weekday) + ' · ' + dayLabel(todayKey(), { weekday: undefined }), f ? L.festName(f) + ' · ' + dayLabel(f.day) : t('rahu') + ' ' + span(d.periods.rahu), L.tithiName(l.tithi.index) + ' · ' + L.nakName(l.nakshatra.index), loc.name);
+      // The home-screen widget gets its own feed (pushWidgetFeed below).
       if (SomaNative.scheduleReminders) SomaNative.scheduleReminders(JSON.stringify(reminderPlan()));
       if (Object.values(prefs.reminders).some(Boolean)) askNotifications(false);
     } catch (e) { if (SomaNative.appFailure) SomaNative.appFailure('reminders: ' + e.message); }
   }, 400);
 }
+
+/* Home-screen widget: hand the native side a week of precomputed Panchang (widget.js) plus the user's festival list, so it shows what holds *now* without opening the app. Recomputed when the place, festival filter, local day or 6-hour bucket changes. */
+let widgetKey = '', widgetTimer = 0;
+function widgetFestivals(today) {
+  try { return window.SomaFestivals && typeof SomaFestivals.upcoming === 'function' ? SomaFestivals.upcoming(loc, today, 60) || [] : []; }
+  catch (e) { return []; }
+}
+function pushWidgetFeed() {
+  if (!window.SomaNative || !SomaNative.updateWidgetFeed || !window.SomaWidgetFeed) return;
+  const now = new Date(), today = K.dateKey(now, loc.zone);
+  const key = [loc.lat, loc.lon, loc.zone, loc.name, today, Math.floor(now.getTime() / 216e5), JSON.stringify(window.SomaFestivalSets || '')].join('|');
+  if (key === widgetKey) return;
+  try { SomaNative.updateWidgetFeed(JSON.stringify(SomaWidgetFeed.build(loc, now, widgetFestivals(today)))); widgetKey = key; }
+  catch (e) { console.error('Widget feed failed: ' + e.message); }
+}
+function scheduleWidgetFeed() { clearTimeout(widgetTimer); widgetTimer = setTimeout(pushWidgetFeed, 400); }
 
 window.SomaPrototype = { health: () => ({ ready: true, version: '0.7.0', tithi: K.tithi(new Date()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
 try { render(); if (window.SomaNative) SomaNative.appReady(); }

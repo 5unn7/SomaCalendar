@@ -7,7 +7,8 @@ const dom=new JSDOM(readFileSync(base+'index.html','utf8'),{runScripts:'dangerou
 const w=dom.window;
 w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)}),putImageData(){}});
 w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.scrollTo=()=>{};
-for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','i18n.js','natal.js','app.js']){const script=w.document.createElement('script');script.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(script);}
+const feeds=[];w.SomaNative={updateWidgetFeed(j){feeds.push(JSON.parse(j))},scheduleReminders(){},requestNotifications(){},appReady(){},appFailure(){},addCalendarEvent(){}};
+for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','app.js']){const script=w.document.createElement('script');script.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(script);}
 assert.equal(w.SomaPrototype.health().ready,true);
 // Midnight rollover: when the clock crosses into a new local day, Today follows it.
 {const RealDate=w.Date,shift=864e5;w.show('today');const today=w.document.querySelector('#app input[type=date]').value;w.Date=class extends RealDate{constructor(...a){a.length?super(...a):super(RealDate.now()+shift)}static now(){return RealDate.now()+shift}};w.tick();const next=w.Kaal.addDay(today,1);assert.equal(w.document.querySelector('#app input[type=date]').value,next);w.Date=RealDate;w.tick();}
@@ -28,4 +29,6 @@ w.settings();w.document.querySelector('#langPick').value='gu';w.document.querySe
 w.show('today');w.plan();assert.ok(w.document.querySelector('#timingCheck').textContent.length>10);
 // A time before sunrise is checked against the previous Vedic day, so it gets a real Choghadiya.
 w.document.querySelector('#eventTime').value='03:00';w.timingCheck();assert.ok(!/Choghadiya: —|ચોઘડિયું: —/.test(w.document.querySelector('#timingCheck').textContent));w.document.querySelector('#modal').close();
+// The widget feed follows the chosen place and carries the festival list.
+await new Promise(r=>setTimeout(r,600));assert.ok(feeds.length>=1&&feeds.at(-1).city==='Regina'&&feeds.at(-1).chog.length>50&&feeds.at(-1).vrat.length>0,'widget feed pushed for the chosen place');
 assert.deepEqual(errors,[]);dom.window.close();console.log('PASS: six screens, verdict and festivals without disclaimers, choghadiya, filters, language, reminders, muhurat check, escaped event creation/persistence, natal rendering, location independence and validation, midnight rollover');

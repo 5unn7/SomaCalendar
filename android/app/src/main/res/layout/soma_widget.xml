@@ -1,19 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Medium (about 4x2). Ids are shared with the small and large layouts; SomaWidget binds only what each layout has. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/widgetRoot" android:layout_width="match_parent" android:layout_height="match_parent"
-  android:padding="16dp" android:orientation="vertical" android:background="@drawable/widget_bg">
-  <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="SOMA / EARTH × SKY" android:textColor="#B5D2BF" android:textSize="11sp" android:letterSpacing=".12"/>
-  <TextView android:id="@+id/widgetDate" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="8dp" android:textColor="#FFFFFF" android:textSize="23sp" android:textStyle="bold"/>
-  <TextView android:id="@+id/widgetPhase" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="4dp" android:textColor="#EDF4ED" android:textSize="14sp"/>
-  <TextView android:id="@+id/widgetTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="3dp" android:textColor="#EDF4ED" android:textSize="12sp"/>
-  <TextView android:id="@+id/widgetWeather" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="7dp" android:textColor="#F2DCA9" android:textSize="14sp"/>
-  <TextView android:id="@+id/widgetWeatherLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:textColor="#B5D2BF" android:textSize="10sp"/>
-  <TextView android:id="@+id/widgetCity" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="7dp" android:textColor="#B5D2BF" android:textSize="10sp"/>
+  android:orientation="vertical" android:padding="14dp" android:background="@drawable/widget_bg">
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+    <TextView android:id="@+id/wCity" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+      android:text="સોમ · SOMA" android:textColor="@color/widget_gold" android:textSize="10sp" android:letterSpacing=".12"
+      android:maxLines="1" android:ellipsize="end"/>
+    <TextView android:id="@+id/wDate" android:layout_width="wrap_content" android:layout_height="wrap_content"
+      android:textColor="@color/widget_muted" android:textSize="11sp" android:maxLines="1"/>
+  </LinearLayout>
+  <LinearLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+    android:layout_marginTop="6dp" android:orientation="horizontal" android:gravity="center_vertical">
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1.1" android:layout_height="wrap_content" android:orientation="vertical">
+      <TextView android:id="@+id/wTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Today's Panchang" android:textColor="@color/widget_ink" android:textSize="21sp" android:maxLines="1" android:ellipsize="end"/>
+      <TextView android:id="@+id/wTithiSub" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Open Soma once to begin" android:textColor="@color/widget_muted" android:textSize="11sp" android:maxLines="1" android:ellipsize="end"/>
+      <TextView android:id="@+id/wNak" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" android:textColor="@color/widget_ink" android:textSize="12sp" android:maxLines="1" android:ellipsize="end"/>
+    </LinearLayout>
+    <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+      android:layout_marginStart="10dp" android:orientation="vertical">
+      <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="ચોઘડિયું · NOW" android:textColor="@color/widget_muted" android:textSize="9sp" android:letterSpacing=".1"/>
+      <TextView android:id="@+id/wChog" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/widget_good" android:textSize="17sp" android:maxLines="1" android:ellipsize="end"/>
+      <TextView android:id="@+id/wChogSub" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:textColor="@color/widget_muted" android:textSize="11sp" android:maxLines="2" android:ellipsize="end"/>
+      <ProgressBar android:id="@+id/wChogBar" style="@android:style/Widget.Material.ProgressBar.Horizontal"
+        android:layout_width="match_parent" android:layout_height="3dp" android:layout_marginTop="4dp"
+        android:max="100" android:progress="0" android:progressTint="@color/widget_gold" android:progressBackgroundTint="@color/widget_line"/>
+    </LinearLayout>
+  </LinearLayout>
+  <TextView android:id="@+id/wRahu" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="6dp" android:textColor="@color/widget_muted" android:textSize="11sp" android:maxLines="1" android:ellipsize="end"/>
+  <TextView android:id="@+id/wVrat" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="2dp" android:textColor="@color/widget_gold" android:textSize="11sp" android:maxLines="1" android:ellipsize="end"/>
 </LinearLayout>
