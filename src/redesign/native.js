@@ -8,7 +8,6 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Geolocation } from '@capacitor/geolocation';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
-import { StatusBar, Style } from '@capacitor/status-bar';
 
 const Soma = registerPlugin('Soma');
 /* iOS keeps at most 64 pending local notifications per app; stay under it on both platforms. */
@@ -91,7 +90,6 @@ export function install(root) {
     appReady() {
       log('info', 'Astronomical app initialized');
       try { log('info', 'Horizon health ' + JSON.stringify(root.SomaPrototype && root.SomaPrototype.health())); } catch (e) {}
-      quiet(StatusBar.setStyle({ style: Style.Dark }));
     },
     appFailure(detail) { log('error', 'App initialization error: ' + detail); },
     requestLocation() { quiet(requestLocation()); },
