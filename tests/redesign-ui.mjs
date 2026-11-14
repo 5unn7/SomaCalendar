@@ -15,7 +15,7 @@ assert.ok(w.document.querySelector('#onboard').classList.contains('open'));
 w.onboard(2);w.placeSearch('jamn','loc');assert.ok(w.document.querySelector('#locResults').textContent.includes('Jamnagar'));w.pickPlace(0,'loc');
 assert.ok(w.document.querySelector('#onboard #birthDate'),'birth step follows the place step');w.finishOnboard('today');assert.ok(!w.document.querySelector('#onboard').classList.contains('open'));
 assert.ok(w.document.querySelector('#app .dial'),'Today shows the Kaal Chakra dial');
-for(const lay of ['sky','folio','dial']){w.setLayout(lay);assert.ok(w.document.querySelector('#app h1'),lay+' layout renders');assert.ok(/(Sunrise|Sunrise tomorrow).*Sunset/.test(w.document.querySelector('#app .sunstrip').textContent),lay+' shows sunrise and sunset');assert.ok(!/\d{4}-\d{2}-\d{2}/.test(w.document.querySelector('.datepick span').textContent),'date bar shows a readable date');}
+for(const lay of ['sky','folio','dial']){w.setLayout(lay);assert.ok(w.document.querySelector('#app h1'),lay+' layout renders');{const g=[...w.document.querySelectorAll('#app .sunstrip [role=group]')].map(e=>e.getAttribute('aria-label')).join('|');assert.ok(/Sunrise.*\d.*\|Sunset.*\d/.test(g),lay+' shows sunrise and sunset: '+g);assert.ok(w.document.querySelector('#app .sunstrip svg'),'sun times use icons');}assert.ok(!/\d{4}-\d{2}-\d{2}/.test(w.document.querySelector('.datepick span').textContent),'date bar shows a readable date');}
 {w.setLayout('sky');const hero=w.document.querySelector('.skyhero'),h1=hero.querySelector('h1').textContent;assert.equal(hero.textContent.split(h1).length-1,1,'sky headline is not repeated');w.setLayout('dial');}
 
 // Midnight rollover: when the clock crosses into a new local day, Today follows it.
