@@ -63,6 +63,11 @@
 
   /* Screen text added with the Kaal Chakra redesign: setup, settings, the dial and the new tabs. */
   Object.assign(STR.en, {
+    updTitle: 'Updates', updCheck: 'Check for updates', updInstall: 'Download and install', updChecking: 'Looking for a newer build…',
+    updReady: 'New build ready: {v}', updLatest: 'You have the newest build.', updDownloading: 'Downloading…', updInstalling: 'Opening the installer. Tap Update to finish.',
+    updPermission: 'Allow “Install unknown apps” for Soma Preview, come back, then tap Download and install again.', updCancelled: 'Install cancelled. Tap again when ready.',
+    updThisPhone: 'On this phone', updNewest: 'Newest build', updWhatsNew: 'What changed', updView: 'View', updLater: 'Not now',
+    updHow: 'Your places, plans and birth details stay. Soma downloads the build from GitHub and Android asks you to confirm.',
     you: 'You', welcome: 'Welcome to Soma', tagline: 'Your daily panchang, festivals and muhurat', chooseLanguage: 'Choose your language',
     continue: 'Continue', skip: 'Skip for now', step: 'Step {n} of {m}', whereAreYou: 'Where are you?',
     whereWhy: 'Sunrise, Rahu Kaal and festival dates depend on your city.', useMyLocation: 'Use my current location', orSearch: 'or search for your city',
@@ -83,6 +88,11 @@
     hourByHour: 'The day, hour by hour', moreTimes: 'More times', moonPage: 'Moon phase and nakshatra', goToDay: 'Open this day', remindMe: 'Remind me'
   });
   Object.assign(STR.gu, {
+    updTitle: 'અપડેટ', updCheck: 'અપડેટ તપાસો', updInstall: 'ડાઉનલોડ કરીને ઇન્સ્ટોલ કરો', updChecking: 'નવું બિલ્ડ શોધાય છે…',
+    updReady: 'નવું બિલ્ડ તૈયાર: {v}', updLatest: 'તમારી પાસે સૌથી નવું બિલ્ડ છે.', updDownloading: 'ડાઉનલોડ થાય છે…', updInstalling: 'ઇન્સ્ટોલર ખૂલે છે. પૂરું કરવા Update દબાવો.',
+    updPermission: 'Soma Preview માટે “Install unknown apps” ચાલુ કરો, પાછા આવો અને ફરી દબાવો.', updCancelled: 'ઇન્સ્ટોલ રદ થયું. તૈયાર હો ત્યારે ફરી દબાવો.',
+    updThisPhone: 'આ ફોનમાં', updNewest: 'સૌથી નવું', updWhatsNew: 'શું બદલાયું', updView: 'જુઓ', updLater: 'પછી',
+    updHow: 'તમારાં સ્થાન, કાર્યક્રમ અને જન્મ વિગત સચવાઈ રહે છે. Android ખાતરી માટે પૂછશે.',
     you: 'તમે', welcome: 'સોમમાં આપનું સ્વાગત છે', tagline: 'રોજનું પંચાંગ, તહેવાર અને મુહૂર્ત', chooseLanguage: 'ભાષા પસંદ કરો',
     continue: 'આગળ', skip: 'પછી કરીશ', step: 'પગલું {n} / {m}', whereAreYou: 'તમે ક્યાં છો?',
     whereWhy: 'સૂર્યોદય, રાહુ કાળ અને તહેવારની તારીખ તમારા શહેર પર આધાર રાખે છે.', useMyLocation: 'મારું હાલનું સ્થાન વાપરો', orSearch: 'અથવા તમારું શહેર શોધો',
@@ -103,6 +113,11 @@
     hourByHour: 'કલાકે કલાકનો દિવસ', moreTimes: 'વધુ સમય', moonPage: 'ચંદ્ર કળા અને નક્ષત્ર', goToDay: 'આ દિવસ ખોલો', remindMe: 'યાદ અપાવો'
   });
   Object.assign(STR.hi, {
+    updTitle: 'अपडेट', updCheck: 'अपडेट देखें', updInstall: 'डाउनलोड करके इंस्टॉल करें', updChecking: 'नया बिल्ड खोजा जा रहा है…',
+    updReady: 'नया बिल्ड तैयार: {v}', updLatest: 'आपके पास सबसे नया बिल्ड है।', updDownloading: 'डाउनलोड हो रहा है…', updInstalling: 'इंस्टॉलर खुल रहा है। पूरा करने के लिए Update दबाएँ।',
+    updPermission: 'Soma Preview के लिए “Install unknown apps” चालू करें, वापस आएँ और फिर दबाएँ।', updCancelled: 'इंस्टॉल रद्द हुआ। तैयार हों तब फिर दबाएँ।',
+    updThisPhone: 'इस फ़ोन में', updNewest: 'सबसे नया', updWhatsNew: 'क्या बदला', updView: 'देखें', updLater: 'बाद में',
+    updHow: 'आपके स्थान, योजनाएँ और जन्म विवरण बने रहते हैं। Android पुष्टि के लिए पूछेगा।',
     you: 'आप', welcome: 'सोम में आपका स्वागत है', tagline: 'रोज़ का पंचांग, पर्व और मुहूर्त', chooseLanguage: 'भाषा चुनें',
     continue: 'आगे', skip: 'बाद में', step: 'चरण {n} / {m}', whereAreYou: 'आप कहाँ हैं?',
     whereWhy: 'सूर्योदय, राहु काल और पर्व की तिथि आपके शहर पर निर्भर है।', useMyLocation: 'मेरा वर्तमान स्थान लें', orSearch: 'या अपना शहर खोजें',

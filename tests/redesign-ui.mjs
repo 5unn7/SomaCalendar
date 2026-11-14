@@ -40,4 +40,13 @@ w.show('today');w.plan();assert.ok(w.document.querySelector('#timingCheck').text
 w.document.querySelector('#eventTime').value='03:00';w.timingCheck();assert.ok(!/Choghadiya: —|ચોઘડિયું: —/.test(w.document.querySelector('#timingCheck').textContent));w.document.querySelector('#modal').close();
 // The widget feed follows the chosen place and carries the festival list.
 await new Promise(r=>setTimeout(r,600));assert.ok(feeds.length>=1&&feeds.at(-1).city==='Regina'&&feeds.at(-1).chog.length>50&&feeds.at(-1).vrat.length>0,'widget feed pushed for the chosen place');
-assert.deepEqual(errors,[]);dom.window.close();console.log('PASS: six screens, verdict and festivals without disclaimers, choghadiya, filters, language, reminders, muhurat check, escaped event creation/persistence, natal rendering, location independence and validation, midnight rollover');
+// Preview updates: off unless the native shell says so; when on, You lists Updates, a newer build shows a gentle note, and Install hands off to native.
+{w.setLang('en');w.show('personal');assert.ok(!/Updates/.test(w.document.querySelector('#app').textContent),'no update row without the native updater');
+let checks=0,installs=0;Object.assign(w.SomaNative,{updateInfo:()=>JSON.stringify({enabled:true,versionCode:1040,versionName:'0.8.0-b40'}),checkForUpdate(){checks++},installUpdate(){installs++}});
+w.show('personal');assert.ok(/Updates/.test(w.document.querySelector('#app').textContent));
+w.autoCheckUpdate();assert.equal(checks,1);w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1042,versionName:'0.8.0-b42',notes:'Fix <b>widget</b>'}));
+const note=w.document.querySelector('#updateNote');assert.ok(note&&note.style.display==='flex'&&/0\.8\.0-b42/.test(note.textContent));
+w.updateSheet();assert.ok(/Fix <b>widget<\/b>/.test(w.document.querySelector('#updateBody').textContent));assert.equal(w.document.querySelector('#updateBody b'),null);
+w.installUpdate();assert.equal(installs,1);w.somaReceiveUpdate(JSON.stringify({state:'downloading',progress:40}));assert.ok(/40%/.test(w.document.querySelector('#updateBody').textContent));
+w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));assert.ok(/newest build/.test(w.document.querySelector('#updateBody').textContent));w.document.querySelector('#modal').close();}
+assert.deepEqual(errors,[]);dom.window.close();console.log('PASS: six screens, verdict and festivals without disclaimers, choghadiya, filters, language, reminders, muhurat check, escaped event creation/persistence, natal rendering, location independence and validation, midnight rollover, preview updates');

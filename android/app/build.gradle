@@ -6,9 +6,12 @@ android {
     applicationId 'com.soma.calendar.preview'
     minSdk 26
     targetSdk 35
-    versionCode 7
-    versionName '0.7.0'
+    // CI sets SOMA_BUILD to its run number so every preview build counts up and can update the last one.
+    def somaBuild = (System.getenv('SOMA_BUILD') ?: '0').toInteger()
+    versionCode 1000 + somaBuild
+    versionName somaBuild > 0 ? "0.8.0-b${somaBuild}" : '0.8.0-dev'
   }
+  buildFeatures { buildConfig true }
   // One shared debug key so every CI build installs over the last one and keeps the app's data.
   // Debug/preview only: never use this key for a Play Store release.
   signingConfigs {
@@ -20,8 +23,16 @@ android {
     }
   }
   buildTypes {
-    debug { signingConfig signingConfigs.debug }
-    release { minifyEnabled false }
+    // In-app updates are for sideloaded preview builds only. Store releases update through the store,
+    // so release has no feed (Updater switches off) and no REQUEST_INSTALL_PACKAGES (src/debug manifest).
+    debug {
+      signingConfig signingConfigs.debug
+      buildConfigField 'String', 'UPDATE_FEED', '"https://github.com/5unn7/SomaCalendar/releases/download/preview/version.json"'
+    }
+    release {
+      minifyEnabled false
+      buildConfigField 'String', 'UPDATE_FEED', '""'
+    }
   }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }

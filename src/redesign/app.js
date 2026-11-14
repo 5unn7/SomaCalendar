@@ -511,7 +511,7 @@ function personalView() {
   const options = `<section class="section"><h2>${esc(t('appearance'))}</h2><div class="card"><label style="margin-top:0">${esc(t('language'))}${seg(t('language'), prefs.lang, LANGS, 'setLang')}</label>`
     + `<label>${esc(t('theme'))}${seg(t('theme'), prefs.theme, [['auto', t('themeAuto')], ['light', t('themeLight')], ['dark', t('themeDark')]], 'setTheme')}</label>`
     + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label></div></section>`
-    + `<section class="section"><h2>${esc(t('settings'))}</h2><div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button></div>`
+    + `<section class="section"><h2>${esc(t('settings'))}</h2><div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button>${updatesOn() ? `<button onclick="updateSheet()">${esc(t('updTitle'))}<span>${esc((updateInfo() || {}).versionName || '')} ›</span></button>` : ''}</div>`
     + (has ? `<button class="quiet section" onclick="eraseProfile()">${esc(t('deleteBirth'))}</button>` : '') + `</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${head}${options}</div><div class="rest">${natal || `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>Janma rashi, nakshatra, Chandrabalam and Tarabalam.</span></button>`}</div></div>`;
 }
@@ -615,6 +615,64 @@ function pushWidgetFeed() {
 }
 function scheduleWidgetFeed() { clearTimeout(widgetTimer); widgetTimer = setTimeout(pushWidgetFeed, 400); }
 
+// ---- Updates for preview builds (sideloaded APKs) ------------------------------------------
+/* Preview builds read the newest build from GitHub, download it and open Android's installer.
+   Store builds report enabled:false and update through the store, so none of this shows there. */
+const upd = { state: '', feed: null, progress: -1, message: '', manual: false };
+function updateInfo() { try { return window.SomaNative && SomaNative.updateInfo ? JSON.parse(SomaNative.updateInfo()) : null; } catch (e) { return null; } }
+function updatesOn() { const i = updateInfo(); return !!(i && i.enabled); }
+function checkUpdate(manual) {
+  if (!updatesOn() || upd.state === 'checking' || upd.state === 'downloading') return;
+  upd.manual = !!manual; upd.state = 'checking'; upd.message = '';
+  prefs.updateChecked = Date.now(); persist();
+  if (manual) updateSheet();
+  SomaNative.checkForUpdate();
+}
+function installUpdate() { if (!updatesOn()) return; hideUpdateNote(); upd.state = 'downloading'; upd.progress = -1; updateSheet(); SomaNative.installUpdate(); }
+window.somaReceiveUpdate = function (json) {
+  let m; try { m = JSON.parse(json); } catch (e) { return; }
+  upd.state = m.state;
+  if (m.state === 'available' || m.state === 'latest') upd.feed = m;
+  if (m.state === 'downloading') upd.progress = m.progress;
+  if (m.state === 'error') upd.message = m.message || '';
+  const open = $('modal').open && $('updateBody');
+  if (open) updateSheet();
+  else if (m.state === 'available' && !upd.manual && prefs.updateSkipped !== m.versionCode) showUpdateNote(m);
+  else if (m.state === 'error' && !upd.manual) upd.state = '';
+};
+function updateStatus() {
+  const f = upd.feed, s = upd.state;
+  if (s === 'checking') return t('updChecking');
+  if (s === 'available') return t('updReady', { v: f.versionName });
+  if (s === 'latest') return t('updLatest');
+  if (s === 'downloading') return upd.progress >= 0 ? t('updDownloading') + ' ' + upd.progress + '%' : t('updDownloading');
+  if (s === 'installing' || s === 'confirm') return t('updInstalling');
+  if (s === 'permission') return t('updPermission');
+  if (s === 'cancelled') return t('updCancelled');
+  if (s === 'error') return upd.message;
+  return '';
+}
+function updateSheet() {
+  const i = updateInfo() || {}, f = upd.feed, s = upd.state;
+  const action = s === 'available' || s === 'cancelled' || s === 'permission' || (s === 'error' && f && f.versionCode > i.versionCode)
+    ? `<button class="primary gold" onclick="installUpdate()">${esc(t('updInstall'))}</button>`
+    : s === 'checking' || s === 'downloading' || s === 'installing' || s === 'confirm' ? ''
+    : `<button class="primary" onclick="checkUpdate(true)">${esc(t('updCheck'))}</button>`;
+  const notes = f && f.versionCode > i.versionCode && f.notes ? `<p class="caption">${esc(t('updWhatsNew'))}: ${esc(f.notes)}</p>` : '';
+  modal(`<div id="updateBody"><div class="eyebrow">Soma Preview</div><h2>${esc(t('updTitle'))}</h2>`
+    + `<div class="group"><div class="item">${esc(t('updThisPhone'))}<span>${esc(i.versionName || '')}</span></div>${f ? `<div class="item">${esc(t('updNewest'))}<span>${esc(f.versionName)}${f.published ? ' · ' + esc(dayLabel(String(f.published).slice(0, 10), { weekday: undefined })) : ''}</span></div>` : ''}</div>`
+    + `<p class="notice" role="status">${esc(updateStatus())}</p>${notes}${action}<p class="caption">${esc(t('updHow'))}</p></div>`);
+}
+function showUpdateNote(f) {
+  let el = $('updateNote');
+  if (!el) { el = document.createElement('div'); el.id = 'updateNote'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.innerHTML = `<span>${esc(t('updReady', { v: f.versionName }))}</span><button class="quiet" onclick="updateSheet()">${esc(t('updView'))}</button><button class="quiet" aria-label="${esc(t('updLater'))}" onclick="prefs.updateSkipped=${+f.versionCode};persist();hideUpdateNote()">✕</button>`;
+  el.style.display = 'flex';
+}
+function hideUpdateNote() { const el = $('updateNote'); if (el) el.style.display = 'none'; }
+/* A quiet look at most every 12 hours, when the app opens or comes back to the front. */
+function autoCheckUpdate() { if (updatesOn() && Date.now() - (prefs.updateChecked || 0) > 432e5) checkUpdate(false); }
+
 window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(new Date()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
@@ -625,6 +683,7 @@ function tick() {
   if (view === 'today' && !$('modal').open) render();
 }
 setInterval(tick, 60000);
-document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); autoCheckUpdate(); } });
+setTimeout(autoCheckUpdate, 3000);
 window.addEventListener('focus', tick);
 if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => { if (prefs.theme === 'auto') render(); }); }
