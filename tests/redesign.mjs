@@ -12,4 +12,7 @@ assert.ok(K.dayData('2026-11-07',india).sunrise);assert.ok(K.dayData('2026-11-07
 assert.equal(K.dayData('2026-06-21',{lat:80,lon:20,zone:'Europe/Oslo'}).sunrise,null);
 assert.equal(K.reduce('1994-03-14'),4);assert.equal(K.reduce('14'),5);
 assert.equal(K.month(new Date('2026-11-10T12:00Z')),'કારતક');
-console.log('PASS: phase fixtures, 120 tithi boundaries, DST days, fractional zones, polar handling, Gujarati month and numerology');
+// Known adhik months: Adhik Shravan 2023 (Jul 18 - Aug 16) and Adhik Jyeshtha 2026 (May 17 - Jun 15), each followed by the nija month.
+assert.equal(K.month(new Date('2023-07-25T12:00Z')),'અધિક શ્રાવણ');assert.equal(K.month(new Date('2023-08-25T12:00Z')),'શ્રાવણ');assert.equal(K.month(new Date('2023-07-05T12:00Z')),'અષાઢ');
+assert.equal(K.month(new Date('2026-06-01T12:00Z')),'અધિક જેઠ');assert.equal(K.month(new Date('2026-06-25T12:00Z')),'જેઠ');
+console.log('PASS: phase fixtures, 120 tithi boundaries, DST days, fractional zones, polar handling, Gujarati and adhik months, numerology');
