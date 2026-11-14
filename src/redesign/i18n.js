@@ -60,6 +60,68 @@
       janmaRashi: 'जन्म राशि', janmaNak: 'जन्म नक्षत्र', none: 'कुछ विशेष नहीं', learnMore: 'पंचांग समझें', method: 'सोम कैसे गणना करता है'
     }
   };
+
+  /* Screen text added with the Kaal Chakra redesign: setup, settings, the dial and the new tabs. */
+  Object.assign(STR.en, {
+    you: 'You', welcome: 'Welcome to Soma', tagline: 'Your daily panchang, festivals and muhurat', chooseLanguage: 'Choose your language',
+    continue: 'Continue', skip: 'Skip for now', step: 'Step {n} of {m}', whereAreYou: 'Where are you?',
+    whereWhy: 'Sunrise, Rahu Kaal and festival dates depend on your city.', useMyLocation: 'Use my current location', orSearch: 'or search for your city',
+    searchCity: 'Search city or town', noMatch: 'No match. Try the nearest bigger town.', advanced: 'Advanced: coordinates and time zone',
+    latitude: 'Latitude', longitude: 'Longitude', timeZone: 'Time zone', placeName: 'Place name', useThis: 'Use this place',
+    birthTitle: 'When and where were you born?', birthWhy: 'For your rashi, nakshatra, Chandrabalam and kundali. It stays on this phone.',
+    dateOfBirth: 'Date of birth', timeOfBirth: 'Time of birth', dontKnowTime: 'I don’t know the exact time', placeOfBirth: 'Place of birth',
+    timeUnknownNote: 'Without a birth time, rashi and nakshatra are usually right but the lagna (ascendant) is not shown.',
+    seeMySky: 'See my rashi and nakshatra', editBirth: 'Edit birth details', addBirth: 'Add your birth details', deleteBirth: 'Delete birth details',
+    appearance: 'Appearance', theme: 'Theme', themeAuto: 'Match phone', themeLight: 'Light', themeDark: 'Dark',
+    layout: 'Today layout', layoutDial: 'Dial', layoutSky: 'Sky', layoutFolio: 'Folio', about: 'About',
+    nowAndNext: 'Now and next', inMin: 'in {n} min', inHr: 'in {h} h {m} min', endsIn: 'ends in {n} min', running: 'now',
+    goodDayTo: 'A good day for', careDay: 'A day for care', mixedDay: 'A mixed day', details: 'Full panchang', sunMoon: 'Sun and moon',
+    yourSky: 'Your birth sky', moonTitle: 'Chandra Darshan', learnTitle: 'Gyan', learnSub: 'The meaning behind each part of the day.',
+    birthStays: 'Stays on this phone', lessons: 'Learn', tapMoon: 'Moon', today2: 'Today', locating: 'Finding your location…',
+    nearPlace: 'Near {p}', locFailed: 'Location is unavailable. Search for your city instead.', festivalsTitle: 'Festivals', changePlace: 'Change place',
+    numerology: 'Ankshastra', mulank: 'Mulank', bhagyank: 'Bhagyank', folioGood: 'A good day to *begin.*', folioMixed: 'A mixed day. *Choose your hour.*', folioBad: 'A day for *care.*',
+    hourByHour: 'The day, hour by hour', moreTimes: 'More times', moonPage: 'Moon phase and nakshatra', goToDay: 'Open this day', remindMe: 'Remind me'
+  });
+  Object.assign(STR.gu, {
+    you: 'તમે', welcome: 'સોમમાં આપનું સ્વાગત છે', tagline: 'રોજનું પંચાંગ, તહેવાર અને મુહૂર્ત', chooseLanguage: 'ભાષા પસંદ કરો',
+    continue: 'આગળ', skip: 'પછી કરીશ', step: 'પગલું {n} / {m}', whereAreYou: 'તમે ક્યાં છો?',
+    whereWhy: 'સૂર્યોદય, રાહુ કાળ અને તહેવારની તારીખ તમારા શહેર પર આધાર રાખે છે.', useMyLocation: 'મારું હાલનું સ્થાન વાપરો', orSearch: 'અથવા તમારું શહેર શોધો',
+    searchCity: 'શહેર કે ગામ શોધો', noMatch: 'મળ્યું નહીં. નજીકનું મોટું શહેર લખો.', advanced: 'વધુ: અક્ષાંશ, રેખાંશ અને સમય વિસ્તાર',
+    latitude: 'અક્ષાંશ', longitude: 'રેખાંશ', timeZone: 'સમય વિસ્તાર', placeName: 'સ્થાનનું નામ', useThis: 'આ સ્થાન રાખો',
+    birthTitle: 'તમારો જન્મ ક્યારે અને ક્યાં થયો?', birthWhy: 'રાશિ, નક્ષત્ર, ચંદ્રબળ અને કુંડળી માટે. આ માહિતી ફોનમાં જ રહે છે.',
+    dateOfBirth: 'જન્મ તારીખ', timeOfBirth: 'જન્મ સમય', dontKnowTime: 'ચોક્કસ સમય ખબર નથી', placeOfBirth: 'જન્મ સ્થળ',
+    timeUnknownNote: 'જન્મ સમય વગર રાશિ અને નક્ષત્ર મોટે ભાગે સાચાં રહે છે, પણ લગ્ન બતાવાતું નથી.',
+    seeMySky: 'મારી રાશિ અને નક્ષત્ર જુઓ', editBirth: 'જન્મ વિગત બદલો', addBirth: 'જન્મ વિગત ઉમેરો', deleteBirth: 'જન્મ વિગત કાઢો',
+    appearance: 'દેખાવ', theme: 'થીમ', themeAuto: 'ફોન મુજબ', themeLight: 'આછી', themeDark: 'ઘેરી',
+    layout: 'આજનું લેઆઉટ', layoutDial: 'ચક્ર', layoutSky: 'આકાશ', layoutFolio: 'પાનું', about: 'વિશે',
+    nowAndNext: 'અત્યારે અને પછી', inMin: '{n} મિનિટમાં', inHr: '{h} કલાક {m} મિનિટમાં', endsIn: '{n} મિનિટમાં પૂરું', running: 'ચાલુ',
+    goodDayTo: 'આજે શુભ છે', careDay: 'આજે સાવધાની રાખો', mixedDay: 'મિશ્ર દિવસ', details: 'સંપૂર્ણ પંચાંગ', sunMoon: 'સૂર્ય અને ચંદ્ર',
+    yourSky: 'તમારું જન્મ આકાશ', moonTitle: 'ચંદ્ર દર્શન', learnTitle: 'જ્ઞાન', learnSub: 'દિવસના દરેક અંગનો અર્થ.',
+    birthStays: 'ફોનમાં જ રહે છે', lessons: 'જ્ઞાન', tapMoon: 'ચંદ્ર', today2: 'આજે', locating: 'સ્થાન શોધાય છે…',
+    nearPlace: '{p} પાસે', locFailed: 'સ્થાન મળ્યું નહીં. શહેર શોધો.', festivalsTitle: 'તહેવાર', changePlace: 'સ્થાન બદલો',
+    numerology: 'અંકશાસ્ત્ર', mulank: 'મૂળાંક', bhagyank: 'ભાગ્યાંક', folioGood: 'આજે શુભ *શરૂઆતનો* દિવસ', folioMixed: 'મિશ્ર દિવસ. *સમય જોઈને* કામ કરો.', folioBad: 'આજે *સાવધાની* રાખો.',
+    hourByHour: 'કલાકે કલાકનો દિવસ', moreTimes: 'વધુ સમય', moonPage: 'ચંદ્ર કળા અને નક્ષત્ર', goToDay: 'આ દિવસ ખોલો', remindMe: 'યાદ અપાવો'
+  });
+  Object.assign(STR.hi, {
+    you: 'आप', welcome: 'सोम में आपका स्वागत है', tagline: 'रोज़ का पंचांग, पर्व और मुहूर्त', chooseLanguage: 'भाषा चुनें',
+    continue: 'आगे', skip: 'बाद में', step: 'चरण {n} / {m}', whereAreYou: 'आप कहाँ हैं?',
+    whereWhy: 'सूर्योदय, राहु काल और पर्व की तिथि आपके शहर पर निर्भर है।', useMyLocation: 'मेरा वर्तमान स्थान लें', orSearch: 'या अपना शहर खोजें',
+    searchCity: 'शहर या कस्बा खोजें', noMatch: 'नहीं मिला। पास का बड़ा शहर लिखें।', advanced: 'उन्नत: अक्षांश, देशांतर और समय क्षेत्र',
+    latitude: 'अक्षांश', longitude: 'देशांतर', timeZone: 'समय क्षेत्र', placeName: 'स्थान का नाम', useThis: 'यह स्थान रखें',
+    birthTitle: 'आपका जन्म कब और कहाँ हुआ?', birthWhy: 'राशि, नक्षत्र, चंद्रबल और कुंडली के लिए। यह जानकारी फ़ोन में ही रहती है।',
+    dateOfBirth: 'जन्म तिथि', timeOfBirth: 'जन्म समय', dontKnowTime: 'सटीक समय नहीं पता', placeOfBirth: 'जन्म स्थान',
+    timeUnknownNote: 'जन्म समय के बिना राशि और नक्षत्र प्रायः सही रहते हैं, पर लग्न नहीं दिखाया जाता।',
+    seeMySky: 'मेरी राशि और नक्षत्र देखें', editBirth: 'जन्म विवरण बदलें', addBirth: 'जन्म विवरण जोड़ें', deleteBirth: 'जन्म विवरण हटाएँ',
+    appearance: 'रूप', theme: 'थीम', themeAuto: 'फ़ोन के अनुसार', themeLight: 'हल्की', themeDark: 'गहरी',
+    layout: 'आज का लेआउट', layoutDial: 'चक्र', layoutSky: 'आकाश', layoutFolio: 'पन्ना', about: 'परिचय',
+    nowAndNext: 'अभी और आगे', inMin: '{n} मिनट में', inHr: '{h} घंटे {m} मिनट में', endsIn: '{n} मिनट में समाप्त', running: 'चालू',
+    goodDayTo: 'आज शुभ है', careDay: 'आज सावधानी रखें', mixedDay: 'मिश्र दिन', details: 'पूरा पंचांग', sunMoon: 'सूर्य और चंद्र',
+    yourSky: 'आपका जन्म आकाश', moonTitle: 'चंद्र दर्शन', learnTitle: 'ज्ञान', learnSub: 'दिन के हर अंग का अर्थ।',
+    birthStays: 'फ़ोन में ही रहता है', lessons: 'ज्ञान', tapMoon: 'चंद्र', today2: 'आज', locating: 'स्थान खोजा जा रहा है…',
+    nearPlace: '{p} के पास', locFailed: 'स्थान नहीं मिला। शहर खोजें।', festivalsTitle: 'पर्व', changePlace: 'स्थान बदलें',
+    numerology: 'अंकशास्त्र', mulank: 'मूलांक', bhagyank: 'भाग्यांक', folioGood: 'आज *शुभारंभ* का दिन है।', folioMixed: 'मिश्र दिन। *समय देखकर* काम करें।', folioBad: 'आज *सावधानी* रखें।',
+    hourByHour: 'घंटे-घंटे का दिन', moreTimes: 'और समय', moonPage: 'चंद्र कला और नक्षत्र', goToDay: 'यह दिन खोलें', remindMe: 'याद दिलाएँ'
+  });
   const MONTHS = {
     en: ['Chaitra', 'Vaishakh', 'Jyeshtha', 'Ashadh', 'Shravan', 'Bhadrapad', 'Ashvin', 'Kartik', 'Margashirsha', 'Paush', 'Magh', 'Phalgun'],
     gu: ['ચૈત્ર', 'વૈશાખ', 'જેઠ', 'અષાઢ', 'શ્રાવણ', 'ભાદરવો', 'આસો', 'કારતક', 'માગશર', 'પોષ', 'મહા', 'ફાગણ'],
