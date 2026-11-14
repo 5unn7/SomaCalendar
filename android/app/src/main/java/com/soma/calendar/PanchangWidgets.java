@@ -441,7 +441,8 @@ public final class PanchangWidgets {
     long nextRise = f.now < rise ? rise : f.tomorrow != null ? f.tomorrow.optLong("rise") : 0;
     boolean day = f.isDay(f.now);
     String phase = rise > 0 && Math.abs(f.now - rise) < 40 * 60_000L ? "dawn" : set > 0 && Math.abs(f.now - set) < 40 * 60_000L ? "dusk" : day ? "day" : "night";
-    Weather.Now wx = Weather.Now.at(Weather.stored(c), f.now, f.endOfToday());
+    // Only a forecast for the place on the widget: right after a change of city the old one is not shown.
+    Weather.Now wx = Weather.Now.at(Weather.storedFor(c, f.lat, f.lon), f.now, f.endOfToday());
     String kind = wx.ok ? wx.kind : "";
 
     v.setInt(R.id.widgetRoot, "setBackgroundResource", background(kind, phase, day));

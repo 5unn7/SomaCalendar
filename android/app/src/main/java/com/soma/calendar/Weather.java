@@ -30,7 +30,7 @@ import org.json.JSONObject;
 final class Weather {
   private Weather() {}
   static final String PREFS = "soma_weather";
-  private static final String ON = "on", DATA = "data", LAST_MODIFIED = "lm", EXPIRES = "exp", TRIED = "tried", KEY = "key", UNITS = "units";
+  private static final String ON = "on", DATA = "data", LAST_MODIFIED = "lm", EXPIRES = "exp", TRIED = "tried", TRIED_KEY = "triedKey", KEY = "key", UNITS = "units";
   private static final String USER_AGENT = "SomaCalendar/0.8 (+https://github.com/5unn7/SomaCalendar)";
   /** A forecast is shown for this long after it was fetched; after that the widget falls back to sun and moon only. */
   static final long SHOW_FOR = 12 * 3600_000L;
@@ -39,6 +39,8 @@ final class Weather {
   /** Windy from Beaufort 5 (fresh breeze) up. */
   static final double WINDY_MS = 8.0;
   private static volatile boolean busy = false;
+  /** Bumped whenever the person changes the setting, so a fetch already in flight cannot write after weather is off. */
+  private static int generation = 0;
 
   static SharedPreferences prefs(Context c) { return c.getSharedPreferences(PREFS, Context.MODE_PRIVATE); }
   static boolean on(Context c) { return prefs(c).getBoolean(ON, false); }
@@ -49,14 +51,22 @@ final class Weather {
   }
 
   /** Called by the app. Turning weather off forgets the stored forecast at once. */
-  static void configure(Context c, boolean on, String units) {
+  static synchronized void configure(Context c, boolean on, String units) {
+    if (on != on(c)) generation++;
     SharedPreferences.Editor e = prefs(c).edit().putBoolean(ON, on);
     if (units != null && (units.equals("c") || units.equals("f") || units.isEmpty())) e.putString(UNITS, units);
-    if (!on) e.remove(DATA).remove(LAST_MODIFIED).remove(EXPIRES).remove(TRIED).remove(KEY);
+    if (!on) e.remove(DATA).remove(LAST_MODIFIED).remove(EXPIRES).remove(TRIED).remove(TRIED_KEY).remove(KEY);
     e.apply();
   }
 
   /** The stored forecast, or null when weather is off or nothing usable is stored. */
+  /** The stored forecast if it is for this place (within ~2 km), else null. */
+  static JSONObject storedFor(Context c, double lat, double lon) {
+    JSONObject d = stored(c);
+    if (d == null || !valid(lat, lon)) return null;
+    return Math.abs(d.optDouble("lat", 999) - lat) <= 0.02 && Math.abs(d.optDouble("lon", 999) - lon) <= 0.02 ? d : null;
+  }
+
   static JSONObject stored(Context c) {
     if (!on(c)) return null;
     String raw = prefs(c).getString(DATA, null);
@@ -72,8 +82,10 @@ final class Weather {
     if (!on(c) || !valid(lat, lon)) return false;
     SharedPreferences p = prefs(c);
     String key = String.format(Locale.US, "%.2f,%.2f", coarse(lat), coarse(lon));
+    // A failed try for this same place still waits MIN_GAP before the next one.
+    boolean triedHere = key.equals(p.getString(TRIED_KEY, ""));
+    if (triedHere && now - p.getLong(TRIED, 0) < MIN_GAP) return false;
     if (!key.equals(p.getString(KEY, ""))) return true;
-    if (now - p.getLong(TRIED, 0) < MIN_GAP) return false;
     return p.getString(DATA, null) == null || now >= p.getLong(EXPIRES, 0);
   }
 
@@ -103,7 +115,9 @@ final class Weather {
     String key = String.format(Locale.US, "%.2f,%.2f", lat, lon);
     boolean samePlace = key.equals(p.getString(KEY, ""));
     long now = System.currentTimeMillis();
-    p.edit().putLong(TRIED, now).apply();
+    final int gen;
+    synchronized (Weather.class) { gen = generation; }
+    p.edit().putLong(TRIED, now).putString(TRIED_KEY, key).apply();
     HttpURLConnection conn = null;
     try {
       URL url = new URL(String.format(Locale.US, "https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=%.2f&lon=%.2f", lat, lon));
@@ -127,8 +141,12 @@ final class Weather {
       }
       JSONObject summary = summarise(new JSONObject(text.toString()), lat, lon, now);
       if (summary == null) return false;
-      p.edit().putString(DATA, summary.toString()).putString(KEY, key).putLong(EXPIRES, expires)
-        .putString(LAST_MODIFIED, conn.getHeaderField("Last-Modified") == null ? "" : conn.getHeaderField("Last-Modified")).apply();
+      synchronized (Weather.class) {
+        // Turned off (or toggled) while this request was in flight: drop the answer, keep nothing.
+        if (gen != generation || !on(c)) return false;
+        p.edit().putString(DATA, summary.toString()).putString(KEY, key).putLong(EXPIRES, expires)
+          .putString(LAST_MODIFIED, conn.getHeaderField("Last-Modified") == null ? "" : conn.getHeaderField("Last-Modified")).commit();
+      }
       return true;
     } finally { if (conn != null) conn.disconnect(); }
   }
