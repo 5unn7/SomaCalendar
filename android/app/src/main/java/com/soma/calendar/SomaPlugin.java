@@ -24,6 +24,7 @@ public class SomaPlugin extends Plugin {
     getContext().getSharedPreferences(SomaWidget.PREFS, android.content.Context.MODE_PRIVATE)
       .edit().putString(SomaWidget.FEED, json).apply();
     SomaWidget.refreshAll(getContext());
+    PanchangWidgets.refreshAll(getContext());
     call.resolve();
   }
 

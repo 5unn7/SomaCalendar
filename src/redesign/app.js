@@ -11,7 +11,7 @@ let loc = saved.loc || DEFAULT_LOC, profile = saved.profile || {}, events = save
 let prefs = Object.assign({ lang: 'en', theme: 'auto', layout: 'dial', month: null, sets: null, custom: false, reminders: { vrat: true, parana: true, daily: false, rahu: false } }, saved.prefs || {});
 // People who already set a place before the guided setup existed skip it.
 if (saved.loc && prefs.onboarded == null) prefs.onboarded = true;
-let view = 'today', day = K.dateKey(new Date(), loc.zone), monthView = day.slice(0, 7), hour = 12, practice = null, muhuratEvent = 'griha';
+let view = 'today', day = K.dateKey(new Date(), loc.zone), lastToday = day, monthView = day.slice(0, 7), hour = 12, practice = null, muhuratEvent = 'griha';
 let L = I18n.make(prefs.lang);
 const t = (k, v) => L.t(k, v);
 function applyLocationDefaults() {
@@ -57,6 +57,8 @@ const ICON = {
   muhurat: '<path d="M12 3.2l2.3 5.4 5.8.6-4.4 3.9 1.3 5.7L12 15.9l-5 2.9 1.3-5.7-4.4-3.9 5.8-.6z"/>',
   moon: '<path d="M19.5 14.6A8 8 0 1 1 9.4 4.5a6.4 6.4 0 0 0 10.1 10.1z"/>',
   personal: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c1.4-3.8 4.2-5.6 7.5-5.6s6.1 1.8 7.5 5.6"/>',
+  sunrise: '<path d="M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0M12 3.5v6M9.2 6.3 12 3.5l2.8 2.8M4.6 12.6l1.5 1.5M19.4 12.6l-1.5 1.5"/>',
+  sunset: '<path d="M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0M12 3.5v6M9.2 6.7 12 9.5l2.8-2.8M4.6 12.6l1.5 1.5M19.4 12.6l-1.5 1.5"/>',
   pin: '<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>'
 };
 const icon = (k, cls) => `<svg viewBox="0 0 24 24" class="${cls || ''}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
@@ -80,7 +82,8 @@ function applyTheme() {
 function show(v) { if (v !== view) haptic('select'); view = v; render(); window.scrollTo(0, 0); }
 function setDay(d) { if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < '1900-01-01' || d > '2100-12-31') return; day = d; monthView = d.slice(0, 7); render(); }
 function datebar() {
-  return `<div class="datebar"><button aria-label="Previous day" onclick="setDay(K.addDay(day,-1))">‹</button><input aria-label="Selected date" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"><button aria-label="Next day" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(K.dateKey(new Date(),loc.zone))">${esc(t('today2'))}</button>`}</div>`;
+  const label = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(K.instant(day, '12:00', loc.zone));
+  return `<div class="datebar"><button aria-label="Previous day" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick">${icon('calendar')}<span>${esc(label)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button aria-label="Next day" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(K.dateKey(new Date(),loc.zone))">${esc(t('today2'))}</button>`}</div>`;
 }
 let lastPaint = '';
 function render() {
@@ -129,33 +132,49 @@ function heroContext(d) {
 function dialHero(d, v, cx, eyebrow) {
   const dial = SomaDial.svg({ size: 340, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, label: t('choghadiya') });
   const chogLine = cx.c ? `<div class="chognow ${cx.c.nature}">${esc(L.chogName(cx.c.key))} · ${esc(t('until'))} ${fmt(cx.c.end)}</div>` : `<div class="chognow ${v.nature}">${esc(verdictWord(v.nature))}</div>`;
-  const sub = v.festival ? L.festName(v.festival) : (v.nature === 'good' ? t('goodDayTo') + ' ' + v.good : v.nature === 'bad' ? t('careDay') : t('mixedDay'));
+  const sub = daySentence(v);
   return `<section class="sky" data-sky="${cx.sky}"><div class="dateline"><span class="eyebrow">${eyebrow}</span></div>`
     + `<div class="dialwrap">${dial.svg}<button class="dialcore" onclick="show('moon')" aria-label="${esc(t('moonPage'))}">${SomaDial.moon(44, cx.ti.angle)}<h1 class="tithi">${esc(L.tithiName(cx.ti.index))}</h1>${chogLine}</button></div>`
-    + `<div class="daytitle"><p>${esc(sub)}</p></div></section>`;
+    + `<div class="daytitle"><p>${esc(sub)}</p></div>${sunStrip(d, cx)}</section>`;
+}
+/* Sunrise, length of daylight and sunset, with a countdown on today. After sunset the sunrise slot looks ahead to tomorrow. */
+function sunStrip(d, cx) {
+  const f = d.frame, len = Math.round((f.sunset - f.sunrise) / 6e4);
+  const late = cx.now && cx.now > f.sunset, rise = late ? vedicDay(K.addDay(day, 1)).frame.sunrise : f.sunrise;
+  const cell = (k, label, at) => { const r = rel({ start: at, end: at }, cx.now); return `<div class="${k}${cx.now && at <= cx.now ? ' past' : ''}"><span class="lbl">${icon(k)}${esc(label)}</span><b>${fmt(at)}</b><small>${r ? esc(r) : '&nbsp;'}</small></div>`; };
+  return `<div class="sunstrip">${cell('sunrise', late ? t('tomorrowRise') : t('sunrise'), rise)}<div class="len"><span class="lbl">${esc(t('daylight'))}</span><b>${esc(t('hm', { h: Math.floor(len / 60), m: len % 60 }))}</b></div>${cell('sunset', t('sunset'), f.sunset)}</div>`;
+}
+/* What the day is for, in one line: the festival, else what it is good for, else what to avoid. */
+function daySentence(v) {
+  if (v.festival) return L.festName(v.festival);
+  const first = s => String(s || '').split(';')[0].trim();
+  return v.nature === 'bad' ? t('avoid') + ': ' + first(v.avoid) : (v.nature === 'mixed' ? t('mixedDay') + ' · ' : '') + t('goodFor') + ': ' + first(v.good);
 }
 function horizonSvg(frac) {
-  const w = 320, h = 110, b = (x0, c, x1, tt) => (1 - tt) * (1 - tt) * x0 + 2 * (1 - tt) * tt * c + tt * tt * x1, f = Math.min(1, Math.max(0, frac));
-  const x = b(10, w / 2, w - 10, f), y = b(h - 10, -h * 0.55, h - 10, f);
-  return `<svg class="horizon" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true"><path d="M10 ${h - 10} Q ${w / 2} ${-h * 0.55} ${w - 10} ${h - 10}" stroke-dasharray="3 5"/><line x1="0" y1="${h - 10}" x2="${w}" y2="${h - 10}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="16" fill="#fff" opacity=".25"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="9" fill="#fff"/></svg>`;
+  const w = 320, h = 96, b = (x0, c, x1, tt) => (1 - tt) * (1 - tt) * x0 + 2 * (1 - tt) * tt * c + tt * tt * x1, f = Math.min(1, Math.max(0, frac));
+  const x = b(12, w / 2, w - 12, f), y = b(h - 8, -h * 0.6, h - 8, f);
+  return `<svg class="horizon" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="M12 ${h - 8} Q ${w / 2} ${-h * 0.6} ${w - 12} ${h - 8}" stroke-dasharray="3 5"/><line x1="0" y1="${h - 8}" x2="${w}" y2="${h - 8}"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="13" class="halo"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7.5" class="sun"/></svg>`;
 }
 function skyHero(d, v, cx, eyebrow) {
-  const night = cx.sky === 'night', f = cx.dd.frame;
-  const word = cx.c ? L.chogName(cx.c.key) : L.tithiName(cx.ti.index);
-  const line = cx.c ? `${t('choghadiya')} ${t('until')} ${fmt(cx.c.end)} · ${M.CHOG[cx.c.key].good}` : verdictWord(v.nature);
-  const visual = night ? `<div style="display:flex;justify-content:center;margin-top:18px">${SomaDial.moon(120, cx.ti.angle)}</div>` : horizonSvg((cx.at - f.sunrise) / (f.sunset - f.sunrise)) + `<div class="times"><span>${esc(t('sunrise'))} ${fmt(f.sunrise)}</span><span>${esc(t('sunset'))} ${fmt(f.sunset)}</span></div>`;
-  return `<section class="skyhero" data-sky="${cx.sky}">${night ? stars(90, 7) : ''}<div class="eyebrow">${eyebrow}</div><h1 class="big">${esc(word)}</h1><p>${esc(line)}</p>`
-    + `<p style="font-weight:700;margin-top:14px">${esc(L.tithiName(cx.ti.index))}${v.festival ? ' · ' + esc(L.festName(v.festival)) : ''}</p>${visual}</section>`;
+  const night = cx.sky === 'night', f = cx.dd.frame, tithi = L.tithiName(cx.ti.index);
+  // Live: the running Choghadiya is the headline and the tithi sits under it. Another day: the tithi is the headline.
+  const big = cx.c ? L.chogName(cx.c.key) : tithi;
+  const line = cx.c ? `${t('until')} ${fmt(cx.c.end)} · ${M.CHOG[cx.c.key].good}` : daySentence(v);
+  const under = cx.c ? `<p class="tithiline">${esc(tithi)} · ${esc(daySentence(v))}</p>` : '';
+  const visual = night ? `<div class="skymoon">${SomaDial.moon(96, cx.ti.angle)}</div>` : horizonSvg((cx.at - f.sunrise) / (f.sunset - f.sunrise));
+  return `<section class="skyhero" data-sky="${cx.sky}">${night ? stars(90, 7) : ''}<div class="eyebrow">${eyebrow}</div><h1 class="big${cx.c ? ' ' + cx.c.nature : ''}">${esc(big)}</h1><p class="lineone">${esc(line)}</p>${under}`
+    + `${visual}${sunStrip(d, cx)}</section>`;
 }
 function folioHero(d, v, cx, eyebrow, monthName) {
   const head = v.nature === 'good' ? t('folioGood') : v.nature === 'bad' ? t('folioBad') : t('folioMixed');
   const lede = v.festival ? L.festName(v.festival) + (v.festival.note ? '. ' + v.festival.note : '') : (v.nature === 'bad' ? t('avoid') + ': ' + v.avoid : t('goodFor') + ': ' + v.good) + '.';
-  const items = d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}">${esc(L.nature(c.nature))}</span>` }))
+  const sun = [{ at: d.frame.sunrise, html: `<span>${icon('sunrise', 'ic')} ${esc(t('sunrise'))}</span><span class="k"></span>` }, { at: d.frame.sunset, html: `<span>${icon('sunset', 'ic')} ${esc(t('sunset'))}</span><span class="k"></span>` }];
+  const items = sun.concat(d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}">${esc(L.nature(c.nature))}</span>` })))
     .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad">→ ${fmt(d.periods.rahu.end)}</span>` }])
     .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good">→ ${fmt(d.periods.abhijit.end)}</span>` }])
     .sort((a, b) => a.at - b.at);
   return `<section class="folio"><div class="row"><span class="eyebrow">${eyebrow}</span></div><div class="rule"></div>`
-    + `<div class="eyebrow" style="color:var(--accent)">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>`
+    + `<div class="eyebrow" style="color:var(--accent)">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>${sunStrip(d, cx)}`
     + `<div class="hairline"></div><div class="eyebrow">${esc(t('hourByHour'))}</div>${items.map(i => `<div class="tl"><span class="t">${fmt(i.at)}</span>${i.html}</div>`).join('')}</section>`;
 }
 function festivalToday(key) {
@@ -395,12 +414,20 @@ function locationFields() {
     + `<details><summary>${esc(t('advanced'))}</summary><label>${esc(t('placeName'))}<input id="place" value="${esc(loc.name)}" maxlength="70"></label><div class="grid2"><label>${esc(t('latitude'))}<input id="lat" type="number" step="any" value="${loc.lat}"></label><label>${esc(t('longitude'))}<input id="lon" type="number" step="any" value="${loc.lon}"></label></div><label>${esc(t('timeZone'))}<input id="zone" value="${esc(loc.zone)}" placeholder="Asia/Kolkata"></label><button class="primary" type="button" onclick="saveLocation()">${esc(t('useThis'))}</button></details>`;
 }
 function locationSheet() { modal(`<div class="eyebrow">${esc(t('location'))}</div><h2>${esc(t('whereAreYou'))}</h2><p>${esc(t('whereWhy'))}</p>${locationFields()}`); }
+/* Switch place. If the screen was on today, stay on today in the new place's time zone. */
+function setLoc(next) {
+  const wasToday = isToday();
+  loc = next;
+  if (wasToday) { day = todayKey(); monthView = day.slice(0, 7); }
+  lastToday = todayKey();
+  memo.clear();
+}
 function saveLocation() {
   try {
     const lat = Number($('lat').value), lon = Number($('lon').value), zone = $('zone').value.trim();
     if (!$('lat').value || !$('lon').value || !Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) || Math.abs(lon) > 180) throw Error();
     new Intl.DateTimeFormat('en', { timeZone: zone });
-    loc = { name: $('place').value.trim() || 'Custom location', lat, lon, zone };
+    setLoc({ name: $('place').value.trim() || 'Custom location', lat, lon, zone });
     applyLocationDefaults(); persist(); haptic('success');
     if ($('modal').open) $('modal').close();
     scheduleNative(true);
@@ -418,7 +445,7 @@ function receiveGPS(p) {
   if (p.error) { toast(t('locFailed')); return; }
   const near = Places.nearest(p.lat, p.lon);
   const name = near ? (near.km > 15 ? t('nearPlace', { p: near.name }) : near.name) : 'Current location';
-  loc = { name, lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), zone: p.zone || (near && near.zone) || 'Asia/Kolkata' };
+  setLoc({ name, lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), zone: p.zone || (near && near.zone) || 'Asia/Kolkata' });
   applyLocationDefaults(); persist(); haptic('success');
   if ($('modal').open) $('modal').close();
   scheduleNative(true);
@@ -676,7 +703,6 @@ function autoCheckUpdate() { if (updatesOn() && Date.now() - (prefs.updateChecke
 window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(new Date()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
-let lastToday = day;
 function tick() {
   const now = todayKey();
   if (now !== lastToday) { if (day === lastToday) { day = now; monthView = now.slice(0, 7); } lastToday = now; scheduleNative(true); }
