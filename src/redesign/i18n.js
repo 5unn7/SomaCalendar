@@ -63,7 +63,7 @@
 
   /* Screen text added with the Kaal Chakra redesign: setup, settings, the dial and the new tabs. */
   Object.assign(STR.en, {
-    updTitle: 'Updates', updCheck: 'Check for updates', updInstall: 'Download and install', updChecking: 'Looking for a newer build…',
+    updNow: 'Update', updNew: 'New', updTitle: 'Updates', updCheck: 'Check for updates', updInstall: 'Download and install', updChecking: 'Looking for a newer build…',
     updReady: 'New build ready: {v}', updLatest: 'You have the newest build.', updDownloading: 'Downloading…', updInstalling: 'Opening the installer. Tap Update to finish.',
     updPermission: 'Allow “Install unknown apps” for Soma Preview, come back, then tap Download and install again.', updCancelled: 'Install cancelled. Tap again when ready.',
     updThisPhone: 'On this phone', updNewest: 'Newest build', updWhatsNew: 'What changed', updView: 'View', updLater: 'Not now',
@@ -88,7 +88,7 @@
     hourByHour: 'The day, hour by hour', moreTimes: 'More times', moonPage: 'Moon phase and nakshatra', goToDay: 'Open this day', remindMe: 'Remind me'
   });
   Object.assign(STR.gu, {
-    updTitle: 'અપડેટ', updCheck: 'અપડેટ તપાસો', updInstall: 'ડાઉનલોડ કરીને ઇન્સ્ટોલ કરો', updChecking: 'નવું બિલ્ડ શોધાય છે…',
+    updNow: 'અપડેટ કરો', updNew: 'નવું', updTitle: 'અપડેટ', updCheck: 'અપડેટ તપાસો', updInstall: 'ડાઉનલોડ કરીને ઇન્સ્ટોલ કરો', updChecking: 'નવું બિલ્ડ શોધાય છે…',
     updReady: 'નવું બિલ્ડ તૈયાર: {v}', updLatest: 'તમારી પાસે સૌથી નવું બિલ્ડ છે.', updDownloading: 'ડાઉનલોડ થાય છે…', updInstalling: 'ઇન્સ્ટોલર ખૂલે છે. પૂરું કરવા Update દબાવો.',
     updPermission: 'Soma Preview માટે “Install unknown apps” ચાલુ કરો, પાછા આવો અને ફરી દબાવો.', updCancelled: 'ઇન્સ્ટોલ રદ થયું. તૈયાર હો ત્યારે ફરી દબાવો.',
     updThisPhone: 'આ ફોનમાં', updNewest: 'સૌથી નવું', updWhatsNew: 'શું બદલાયું', updView: 'જુઓ', updLater: 'પછી',
@@ -113,7 +113,7 @@
     hourByHour: 'કલાકે કલાકનો દિવસ', moreTimes: 'વધુ સમય', moonPage: 'ચંદ્ર કળા અને નક્ષત્ર', goToDay: 'આ દિવસ ખોલો', remindMe: 'યાદ અપાવો'
   });
   Object.assign(STR.hi, {
-    updTitle: 'अपडेट', updCheck: 'अपडेट देखें', updInstall: 'डाउनलोड करके इंस्टॉल करें', updChecking: 'नया बिल्ड खोजा जा रहा है…',
+    updNow: 'अपडेट करें', updNew: 'नया', updTitle: 'अपडेट', updCheck: 'अपडेट देखें', updInstall: 'डाउनलोड करके इंस्टॉल करें', updChecking: 'नया बिल्ड खोजा जा रहा है…',
     updReady: 'नया बिल्ड तैयार: {v}', updLatest: 'आपके पास सबसे नया बिल्ड है।', updDownloading: 'डाउनलोड हो रहा है…', updInstalling: 'इंस्टॉलर खुल रहा है। पूरा करने के लिए Update दबाएँ।',
     updPermission: 'Soma Preview के लिए “Install unknown apps” चालू करें, वापस आएँ और फिर दबाएँ।', updCancelled: 'इंस्टॉल रद्द हुआ। तैयार हों तब फिर दबाएँ।',
     updThisPhone: 'इस फ़ोन में', updNewest: 'सबसे नया', updWhatsNew: 'क्या बदला', updView: 'देखें', updLater: 'बाद में',

@@ -56,5 +56,18 @@ w.autoCheckUpdate();assert.equal(checks,1);w.somaReceiveUpdate(JSON.stringify({s
 const note=w.document.querySelector('#updateNote');assert.ok(note&&note.style.display==='flex'&&/0\.8\.0-b42/.test(note.textContent));
 w.updateSheet();assert.ok(/Fix <b>widget<\/b>/.test(w.document.querySelector('#updateBody').textContent));assert.equal(w.document.querySelector('#updateBody b'),null);
 w.installUpdate();assert.equal(installs,1);w.somaReceiveUpdate(JSON.stringify({state:'downloading',progress:40}));assert.ok(/40%/.test(w.document.querySelector('#updateBody').textContent));
-w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));assert.ok(/newest build/.test(w.document.querySelector('#updateBody').textContent));w.document.querySelector('#modal').close();}
+w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));assert.ok(/newest build/.test(w.document.querySelector('#updateBody').textContent));w.document.querySelector('#modal').close();
+// The banner appears by itself for a newer build; one tap on it installs, it shows progress, and ✕ only hides that build for a while.
+w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1043,versionName:'0.8.0-b43'}));assert.equal(note.style.display,'flex');assert.ok(/b43/.test(note.textContent));
+note.querySelector('.body').click();assert.equal(installs,2,'tapping the banner installs');
+w.somaReceiveUpdate(JSON.stringify({state:'downloading',progress:10}));assert.ok(/10%/.test(note.textContent));assert.equal(note.querySelector('.go'),null);
+w.somaReceiveUpdate(JSON.stringify({state:'error',message:'Network down'}));assert.equal(note.style.display,'flex');assert.ok(note.querySelector('.go'),'after an error the banner offers Update again');
+note.querySelector('.x').click();assert.equal(note.style.display,'none');
+w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1043,versionName:'0.8.0-b43'}));assert.equal(note.style.display,'none','snoozed build stays hidden');
+w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1044,versionName:'0.8.0-b44'}));assert.equal(note.style.display,'flex','a newer build shows again');
+assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).prefs.updateFeed.versionCode,1044,'last answer kept for the next launch');
+w.show('personal');assert.ok(w.document.querySelector('#app .newdot'),'Updates row is marked New');
+// A return to the app looks again (not once per 12 hours).
+{const c=checks;w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));const RealNow=w.Date.now;w.Date.now=()=>RealNow()+120000;w.somaClockChanged('resume');w.Date.now=RealNow;assert.equal(checks,c+1,'resume triggers a check');}
+w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));}
 assert.deepEqual(errors,[]);dom.window.close();console.log('PASS: six screens, verdict and festivals without disclaimers, choghadiya, filters, language, reminders, muhurat check, escaped event creation/persistence, natal rendering, location independence and validation, midnight rollover, preview updates');

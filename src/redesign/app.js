@@ -651,7 +651,7 @@ function personalView() {
     + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label>`
     + (L.lang !== 'en' ? `<label>${esc(t('digits'))}${seg(t('digits'), prefs.digits === 'native' ? 'native' : 'latin', [['latin', t('digitsLatin')], ['native', L.lang === 'gu' ? '૧ ૨ ૩' : '१ २ ३']], 'setDigits')}</label>` : '')
     + `<p class="caption" style="margin-top:12px">${esc(t('textSize'))}</p></div></section>`
-    + `<section class="section">${groupHead(t('ovApp'), esc(t('settings')))}<div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button>${updatesOn() ? `<button onclick="updateSheet()">${esc(t('updTitle'))}<span>${esc((updateInfo() || {}).versionName || '')} ›</span></button>` : ''}</div>`
+    + `<section class="section">${groupHead(t('ovApp'), esc(t('settings')))}<div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button>${updatesOn() ? `<button onclick="updateSheet()">${esc(t('updTitle'))}<span>${pendingUpdate() ? `<b class="newdot">${esc(t('updNew'))}</b> ` : ''}${esc((updateInfo() || {}).versionName || '')} ›</span></button>` : ''}</div>`
     + (has ? `<button class="quiet section" onclick="eraseProfile()">${esc(t('deleteBirth'))}</button>` : '') + `</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${head}${options}</div><div class="rest">${natal || `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>${esc(t('birthLessonSub'))}</span></button>`}</div></div>`;
 }
@@ -778,28 +778,41 @@ function scheduleWidgetFeed() { clearTimeout(widgetTimer); widgetTimer = setTime
 // ---- Updates for preview builds (sideloaded APKs) ------------------------------------------
 /* Preview builds read the newest build from GitHub, download it and open Android's installer.
    Store builds report enabled:false and update through the store, so none of this shows there. */
-const upd = { state: '', feed: null, progress: -1, message: '', manual: false };
+const upd = { state: '', feed: null, progress: -1, message: '', manual: false, asked: 0, lastAuto: 0 };
 function updateInfo() { try { return window.SomaNative && SomaNative.updateInfo ? JSON.parse(SomaNative.updateInfo()) : null; } catch (e) { return null; } }
 function updatesOn() { const i = updateInfo(); return !!(i && i.enabled); }
+/* A newer build than this phone has, from the last answer (kept across launches so the banner shows at once). */
+function pendingUpdate() {
+  const i = updateInfo(), f = upd.feed || prefs.updateFeed;
+  return i && i.enabled && f && f.versionCode > i.versionCode ? f : null;
+}
 function checkUpdate(manual) {
-  if (!updatesOn() || upd.state === 'checking' || upd.state === 'downloading') return;
-  upd.manual = !!manual; upd.state = 'checking'; upd.message = '';
-  prefs.updateChecked = Clock.ms(); persist();
+  if (!updatesOn()) return;
+  // A check that never answered (page paused mid-request) must not block every later one.
+  const stuck = (upd.state === 'checking' && Date.now() - upd.asked > 30000) || (upd.state === 'downloading' && Date.now() - upd.asked > 600000);
+  if ((upd.state === 'checking' || upd.state === 'downloading') && !stuck) { if (manual) updateSheet(); return; }
+  upd.manual = !!manual; upd.state = 'checking'; upd.message = ''; upd.asked = Date.now();
   if (manual) updateSheet();
   SomaNative.checkForUpdate();
 }
-function installUpdate() { if (!updatesOn()) return; hideUpdateNote(); upd.state = 'downloading'; upd.progress = -1; updateSheet(); SomaNative.installUpdate(); }
+function installUpdate() { if (!updatesOn()) return; upd.state = 'downloading'; upd.progress = -1; upd.asked = Date.now(); refreshUpdateUI(); SomaNative.installUpdate(); }
 window.somaReceiveUpdate = function (json) {
   let m; try { m = JSON.parse(json); } catch (e) { return; }
   upd.state = m.state;
-  if (m.state === 'available' || m.state === 'latest') upd.feed = m;
+  if (m.state === 'available' || m.state === 'latest') {
+    upd.feed = m; prefs.updateFeed = { versionCode: m.versionCode, versionName: m.versionName, notes: m.notes || '', published: m.published || '' }; persist();
+  }
   if (m.state === 'downloading') upd.progress = m.progress;
-  if (m.state === 'error') upd.message = m.message || '';
-  const open = $('modal').open && $('updateBody');
-  if (open) updateSheet();
-  else if (m.state === 'available' && !upd.manual && prefs.updateSkipped !== m.versionCode) showUpdateNote(m);
-  else if (m.state === 'error' && !upd.manual) upd.state = '';
+  if (m.state === 'error') { upd.message = m.message || ''; if (!upd.manual && !($('modal').open && $('updateBody'))) upd.state = ''; }
+  refreshUpdateUI();
 };
+function refreshUpdateUI() {
+  if ($('modal').open && $('updateBody')) updateSheet();
+  const f = pendingUpdate(), s = upd.state;
+  if (s === 'downloading' || s === 'installing' || s === 'confirm' || s === 'permission' || (s === 'error' && f)) showUpdateNote(f);
+  else if (f && !(prefs.updateSnooze && prefs.updateSnooze.code === f.versionCode && Date.now() < prefs.updateSnooze.until)) showUpdateNote(f);
+  else hideUpdateNote();
+}
 function updateStatus() {
   const f = upd.feed, s = upd.state;
   if (s === 'checking') return t('updChecking');
@@ -813,25 +826,37 @@ function updateStatus() {
   return '';
 }
 function updateSheet() {
-  const i = updateInfo() || {}, f = upd.feed, s = upd.state;
-  const action = s === 'available' || s === 'cancelled' || s === 'permission' || (s === 'error' && f && f.versionCode > i.versionCode)
-    ? `<button class="primary gold" onclick="installUpdate()">${esc(t('updInstall'))}</button>`
-    : s === 'checking' || s === 'downloading' || s === 'installing' || s === 'confirm' ? ''
+  const i = updateInfo() || {}, f = upd.feed || prefs.updateFeed, s = upd.state, newer = !!(f && f.versionCode > i.versionCode);
+  const action = s === 'checking' || s === 'downloading' || s === 'installing' || s === 'confirm' ? ''
+    : newer ? `<button class="primary gold" onclick="installUpdate()">${esc(t('updInstall'))}</button>`
     : `<button class="primary" onclick="checkUpdate(true)">${esc(t('updCheck'))}</button>`;
-  const notes = f && f.versionCode > i.versionCode && f.notes ? `<p class="caption">${esc(t('updWhatsNew'))}: ${esc(f.notes)}</p>` : '';
+  const notes = newer && f.notes ? `<p class="caption">${esc(t('updWhatsNew'))}: ${esc(f.notes)}</p>` : '';
   modal(`<div id="updateBody"><div class="eyebrow">Soma Preview</div><h2>${esc(t('updTitle'))}</h2>`
     + `<div class="group"><div class="item">${esc(t('updThisPhone'))}<span>${esc(i.versionName || '')}</span></div>${f ? `<div class="item">${esc(t('updNewest'))}<span>${esc(f.versionName)}${f.published ? ' · ' + esc(dayLabel(String(f.published).slice(0, 10), { weekday: undefined })) : ''}</span></div>` : ''}</div>`
-    + `<p class="notice" role="status">${esc(updateStatus())}</p>${notes}${action}<p class="caption">${esc(t('updHow'))}</p></div>`);
+    + `<p class="notice" role="status">${esc(updateStatus() || (newer ? t('updReady', { v: f.versionName }) : ''))}</p>${notes}${action}<p class="caption">${esc(t('updHow'))}</p></div>`);
 }
+/* The banner: one tap on it downloads and installs. While it works it shows progress; ✕ hides this build for six hours. */
 function showUpdateNote(f) {
   let el = $('updateNote');
   if (!el) { el = document.createElement('div'); el.id = 'updateNote'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
-  el.innerHTML = `<span>${esc(t('updReady', { v: f.versionName }))}</span><button class="quiet" onclick="updateSheet()">${esc(t('updView'))}</button><button class="quiet" aria-label="${esc(t('updLater'))}" onclick="prefs.updateSkipped=${+f.versionCode};persist();hideUpdateNote()">✕</button>`;
+  const s = upd.state, working = s === 'downloading' || s === 'installing' || s === 'confirm';
+  const label = working || s === 'permission' || s === 'error' ? updateStatus() : t('updReady', { v: f ? f.versionName : '' });
+  const go = working ? '' : `<button class="go" onclick="installUpdate()">${esc(t('updNow'))}</button>`;
+  const close = working ? '' : `<button class="x" aria-label="${esc(t('updLater'))}" onclick="snoozeUpdate()">✕</button>`;
+  el.innerHTML = `<button class="body" onclick="${working ? 'updateSheet()' : 'installUpdate()'}">${esc(label)}</button>${go}${close}`;
+  el.classList.toggle('working', working);
   el.style.display = 'flex';
 }
 function hideUpdateNote() { const el = $('updateNote'); if (el) el.style.display = 'none'; }
-/* A quiet look at most every 12 hours, when the app opens or comes back to the front. */
-function autoCheckUpdate() { if (updatesOn() && Clock.ms() - (prefs.updateChecked || 0) > 432e5) checkUpdate(false); }
+function snoozeUpdate() { const f = pendingUpdate(); if (f) { prefs.updateSnooze = { code: f.versionCode, until: Date.now() + 216e5 }; persist(); } upd.state = ''; hideUpdateNote(); }
+/* Look on every launch and every return to the app (at most once a minute), so a new build shows within moments. */
+function autoCheckUpdate() {
+  if (!updatesOn()) return;
+  refreshUpdateUI();
+  if (Date.now() - upd.lastAuto < 60000) return;
+  upd.lastAuto = Date.now(); checkUpdate(false);
+}
+setInterval(() => { if (!document.hidden) autoCheckUpdate(); }, 30 * 60000);
 
 /* Text size follows the phone. Android hands over its font scale; iOS WebKit already sized the root from Dynamic Type.
    Either way html.bigtext switches tight rows (sun strip, calendar cells, dial core) to wrapping layouts. */
@@ -870,5 +895,7 @@ function tick(at, reason) {
 Clock.onTick(tick);
 $('modal').addEventListener('close', () => tick(now(), 'manual'));
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { applyTextScale(); autoCheckUpdate(); } });
-setTimeout(autoCheckUpdate, 3000);
+// The native shell reports a return to the app as a 'resume' tick, which WebView's visibility event can miss.
+Clock.onTick((at, reason) => { if (reason === 'resume' || reason === 'focus') autoCheckUpdate(); });
+setTimeout(autoCheckUpdate, 1500);
 if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => { if (prefs.theme === 'auto') render(); }); }
