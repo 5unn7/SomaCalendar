@@ -36,11 +36,16 @@ public final class MainActivity extends Activity {
   private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
-    getWindow().setStatusBarColor(0xff101c1a);
-    getWindow().setNavigationBarColor(0xff101c1a);
-    getWindow().getDecorView().setSystemUiVisibility(0);
+    // Bars and WebView ground follow the phone's light/dark setting (Kaal Chakra: bone paper or OLED black).
+    boolean night=(getResources().getConfiguration().uiMode&android.content.res.Configuration.UI_MODE_NIGHT_MASK)==android.content.res.Configuration.UI_MODE_NIGHT_YES;
+    int ground=night?0xff050505:0xfff3efe7;
+    getWindow().setStatusBarColor(ground);
+    getWindow().setNavigationBarColor(ground);
+    int ui=0;
+    if(!night){ui|=android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;if(Build.VERSION.SDK_INT>=26)ui|=android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;}
+    getWindow().getDecorView().setSystemUiVisibility(ui);
     web=new WebView(this);
-    web.setBackgroundColor(0xff101c1a);
+    web.setBackgroundColor(ground);
     WebSettings s=web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
