@@ -6,6 +6,8 @@
   <string name="widget_label_festival">Soma · Festival countdown</string>
   <string name="widget_label_now">Soma · Choghadiya now</string>
   <string name="widget_label_day">Soma · Today\'s Panchang</string>
+  <string name="widget_label_sky">Soma · Sky and weather</string>
+  <string name="widget_desc_sky">Temperature, the sky as it is now with moving rain, snow, wind and clouds, sunrise, sunset and the moon.</string>
   <string name="widget_desc_sun">Sunrise, sunset, the sun\'s path today and Brahma muhurat.</string>
   <string name="widget_desc_moon">Tonight\'s moon, how much is lit, and the next Purnima or Amavasya.</string>
   <string name="widget_desc_festival">Days to your next festival or vrat, with what to do.</string>

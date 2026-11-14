@@ -12,7 +12,7 @@ for(const loc of [{name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'}
   const w=dom.window;w.localStorage.setItem('soma-redesign-v1',JSON.stringify({loc,prefs:{onboarded:true,lang:'en',custom:true,sets:['gujarati','india','international','vrat']}}));
   w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)}),putImageData(){}});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.scrollTo=()=>{};
-  for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js']){const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);}
+  for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','weather.js','app.js']){const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);}
   const fests=w.eval("Fe.visible(Fe.list('2026-01-01',365,loc),Fe.SETS)").filter(f=>f.kind==='festival');
   assert.ok(fests.length>30,'a year of festivals: '+fests.length);
   for(const f of fests){

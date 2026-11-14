@@ -193,6 +193,94 @@ function heroContext(d) {
   const sky = SomaDial.skyPhase(at, d.frame.sunrise, d.frame.sunset);
   return { live, now: at0, dd, c, ti, sky, at };
 }
+// ---- Live weather (opt-in; the native shell fetches from MET Norway, weather.js reads it) --------------------
+const Wx = window.SomaWeather || null;
+let wxData = null, wxAsked = 0;
+const wxNative = () => !!(Wx && window.SomaNative && SomaNative.weatherConfigure && SomaNative.weatherNow);
+const wxFahr = () => prefs.units === 'f' || (prefs.units !== 'c' && !!Wx && Wx.fahrenheitFor(loc.zone));
+const wxDeg = c => Wx.deg(c, wxFahr());
+function wxLoad() {
+  wxData = null;
+  if (!wxNative() || !prefs.weather) return;
+  try { const s = SomaNative.weatherNow(); wxData = s ? JSON.parse(s) : null; } catch (e) { wxData = null; }
+}
+/* Ask the shell for a fresh forecast at most every 5 minutes; it also honours MET's own expiry. */
+function wxRequest(force) {
+  if (!wxNative() || !prefs.weather) return;
+  const n = Date.now();
+  if (!force && n - wxAsked < 3e5) return;
+  wxAsked = n;
+  // configure (not just refresh) so the widget follows a change of place or units too.
+  try { SomaNative.weatherConfigure(true, wxFahr() ? 'f' : 'c', loc.lat, loc.lon); } catch (e) {}
+}
+window.somaReceiveWeather = function (json) {
+  try { wxData = json && json.charAt(0) === '{' ? JSON.parse(json) : null; } catch (e) { wxData = null; }
+  if ($('modal').open && $('dialogBody').querySelector('.wxsheet')) { weatherSheet(); return; }
+  if (view === 'today' && !$('modal').open && !$('onboard').classList.contains('open')) render();
+};
+const sunUp = (d, at) => at >= d.frame.sunrise && at < d.frame.sunset;
+/* The weather that holds now, for the place on screen; null when off, stale, for another place, or another day. */
+function wxCurrent(d, cx) {
+  if (!Wx || !wxData || !cx.live || !prefs.weather) return null;
+  if (Math.abs(wxData.lat - loc.lat) > 0.02 || Math.abs(wxData.lon - loc.lon) > 0.02) return null;
+  const n = Wx.at(wxData, cx.now, +K.instant(K.addDay(day, 1), '00:00', loc.zone));
+  if (!n.ok) return null;
+  n.day = sunUp(d, cx.now);
+  n.cond = t('wx')[n.kind] || n.kind;
+  n.tint = Wx.tint(n.kind, n.day) || (n.day ? '' : 'night');
+  return n;
+}
+/* The chip on every Today layout: an invitation until weather is on, then temperature, condition, high and low. */
+function wxChip(d, cx) {
+  if (!wxNative() || !cx.live) return '';
+  if (!prefs.weather) return prefs.wxDismissed ? '' : `<button class="wxchip invite" onclick="weatherSheet()"><span>＋ ${esc(t('wxAdd'))}</span></button>`;
+  const n = wxCurrent(d, cx);
+  if (!n) return wxData && Math.abs(wxData.lat - loc.lat) <= 0.02 ? '' : `<button class="wxchip" data-tint="${sunUp(d, cx.now) ? '' : 'night'}" onclick="weatherSheet()"><span>${esc(t('wxLoading'))}</span></button>`;
+  const label = t('wxSummary', { temp: wxDeg(n.temp), cond: n.cond + (n.windy ? ', ' + t('wxWindy') : ''), hi: wxDeg(n.hi), lo: wxDeg(n.lo) });
+  return `<button class="wxchip" data-tint="${n.tint}" onclick="weatherSheet()" aria-label="${esc(label)}"><span>${Wx.icon(n.kind, n.day, 22)}<b>${esc(wxDeg(n.temp))}</b><span>${esc(n.cond)}</span><small>${esc(wxDeg(n.hi))} / ${esc(wxDeg(n.lo))}</small></span></button>`;
+}
+function wxLayer(d, cx) {
+  const n = wxCurrent(d, cx);
+  return n ? { fx: Wx.fx(n.kind, n.day, n.windy), tint: Wx.tint(n.kind, n.day), n } : { fx: '', tint: '', n: null };
+}
+function weatherSheet() {
+  if (!wxNative()) return;
+  if (!prefs.weather) {
+    modal(`<div class="wxsheet"><div class="eyebrow">${esc(t('wxTitle'))}</div><h2 id="sheetTitle">${esc(t('wxLive'))}</h2><p>${esc(t('wxWhy'))}</p>`
+      + `<button class="primary" onclick="setWeather(true)">${esc(t('wxOn'))}</button><button class="quiet" onclick="dismissWeather()">${esc(t('wxNotNow'))}</button><p class="credit">${esc(t('wxCredit'))}</p></div>`);
+    return;
+  }
+  const d = vedicDay(todayKey()), cx = { live: true, now: now() }, n = wxCurrent(d, cx);
+  let body;
+  if (!n) body = `<p>${esc(wxData ? t('wxStale') : t('wxLoading'))}</p>`;
+  else {
+    const tomorrow = vedicDay(K.addDay(todayKey(), 1));
+    const wind = wxFahr() ? Math.round(n.wind * 2.237) + ' ' + t('mph') : Math.round(n.wind * 3.6) + ' ' + t('kmh');
+    const facts = [t('wxHiLo', { hi: wxDeg(n.hi), lo: wxDeg(n.lo) }), t('wxWind', { v: wind }), t('wxHum', { v: n.humidity })].concat(n.precip >= 0.1 ? [t('wxRain', { v: n.precip.toFixed(1) })] : []);
+    const hours = n.next.slice(0, 12).map(h => { const at = new Date(h.t + 18e5), up = sunUp(d, at) || sunUp(tomorrow, at);
+      return `<div role="group" aria-label="${esc(fmt(new Date(h.t)) + ' ' + wxDeg(h.c) + ' ' + (t('wx')[h.k] || ''))}"><span>${esc(fmt(new Date(h.t), { hour: 'numeric' }))}</span>${Wx.icon(h.k, up, 24)}<b>${esc(wxDeg(h.c))}</b></div>`; }).join('');
+    body = `<div class="wxnow" data-tint="${n.tint}">${Wx.fx(n.kind, n.day, n.windy)}${Wx.icon(n.kind, n.day, 56)}<div><div class="t">${esc(wxDeg(n.temp))}</div><p><b>${esc(n.cond)}</b>${n.windy ? ' · ' + esc(t('wxWindy')) : ''}</p></div></div>`
+      + `<p>${facts.map(esc).join(' · ')}</p>${hours ? `<div class="eyebrow section">${esc(t('wxNext'))}</div><div class="hours">${hours}</div>` : ''}`
+      + `<p class="caption">${esc(t('wxUpdated', { t: fmt(new Date(wxData.at)) }))} · ${esc(loc.name)}</p><p class="caption">${esc(t('wxWidget'))}</p>`;
+  }
+  modal(`<div class="wxsheet"><div class="eyebrow">${esc(t('wxTitle'))} · ${esc(loc.name)}</div><h2 id="sheetTitle">${esc(t('wxLive'))}</h2>${body}`
+    + `<label>${esc(t('wxUnits'))}${seg(t('wxUnits'), wxFahr() ? 'f' : 'c', [['c', '°C'], ['f', '°F']], 'setUnits')}</label>`
+    + `<button class="quiet" onclick="setWeather(false)">${esc(t('wxOff'))}</button><p class="credit">${esc(t('wxCredit'))}</p></div>`);
+}
+function setWeather(on, quiet) {
+  prefs.weather = !!on;
+  if (on) prefs.wxDismissed = false;
+  persist(); haptic('select');
+  if (!wxNative()) return;
+  if (!on) wxData = null;
+  wxAsked = Date.now();
+  try { SomaNative.weatherConfigure(!!on, wxFahr() ? 'f' : 'c', loc.lat, loc.lon); } catch (e) {}
+  if (quiet) return;
+  if (on) weatherSheet(); else $('modal').close();
+  render();
+}
+function setUnits(u) { prefs.units = u; persist(); haptic('select'); wxRequest(true); weatherSheet(); render(); }
+function dismissWeather() { prefs.wxDismissed = true; persist(); $('modal').close(); render(); }
 /* A spoken summary of the dial, so VoiceOver and TalkBack hear what the ring shows. */
 function dialLabel(d, cx, next) {
   const rahu = span(d.periods.rahu);
@@ -209,8 +297,8 @@ function dialHero(d, v, cx, eyebrow) {
     : cx.c ? `<div class="chognow ${cx.c.nature}">${g(cx.c.nature)}${esc(L.chogName(cx.c.key))} · ${esc(until(cx.c.end))}</div>`
     : `<div class="chognow ${v.parva ? 'good' : v.nature}">${esc(vWord(v))}</div>`;
   const title = v.parva ? `<h2 class="festhead">${esc(L.festName(v.festival))}</h2><p>${esc(festWindowLine(v) || v.good)}</p>` : `<p>${esc(daySentence(v))}</p>`;
-  const pill = rahuPill(d, cx);
-  return `<section class="sky" data-sky="${cx.sky}"><div class="dateline"><span class="eyebrow">${eyebrow}</span></div>`
+  const pill = rahuPill(d, cx), wx = wxLayer(d, cx);
+  return `<section class="sky" data-sky="${cx.sky}"${wx.tint ? ` data-tint="${wx.tint}"` : ''}>${wx.fx}<div class="dateline"><span class="eyebrow">${eyebrow}</span>${wxChip(d, cx)}</div>`
     + `<div class="dialwrap">${dial.svg}<h1 class="tithi dialtitle">${esc(L.tithiName(cx.ti.index))}</h1><button class="dialcore" onclick="show('moon')" aria-label="${esc(t('moonPage'))}">${SomaDial.moon(44, cx.ti.angle)}<span class="tithi" aria-hidden="true">${esc(L.tithiName(cx.ti.index))}</span>${chogLine}</button></div>`
     + dialLegend() + `<div class="daytitle">${title}${pill ? `<div class="pillrow">${pill}</div>` : ''}</div>${sunStrip(d, cx)}</section>`;
 }
@@ -257,7 +345,8 @@ function skyHero(d, v, cx, eyebrow) {
   const line = v.parva ? (festWindowLine(v) || v.good) : leadNext ? tr(M.CHOG[next.key].good) + ' · ' + t('nowChog', { chog: L.chogName(cx.c.key), time: fmt(cx.c.end) }) : cx.c ? tr(M.CHOG[cx.c.key].good) : daySentence(v);
   const visual = night ? `<div class="skymoon">${SomaDial.moon(88, cx.ti.angle)}</div>` : horizonSvg((cx.at - f.sunrise) / (f.sunset - f.sunrise));
   const facts = `<div class="facts"><button onclick="show('moon')">${SomaDial.moon(18, cx.ti.angle)}<span>${esc(tithi)}</span></button><span>${esc(L.nakName(d.sunriseLimbs.nakshatra.index))}</span>${rahuPill(d, cx)}</div>`;
-  return `<section class="skyhero" data-sky="${cx.sky}">${night ? stars(70, 7) : ''}<div class="eyebrow">${eyebrow}</div>${status}<h1 class="big">${esc(big)}</h1><p class="lineone">${esc(line)}</p>`
+  const wx = wxLayer(d, cx), chip = wxChip(d, cx);
+  return `<section class="skyhero" data-sky="${cx.sky}"${wx.tint ? ` data-tint="${wx.tint}"` : ''}>${night && !wx.tint ? stars(70, 7) : ''}${wx.fx}<div class="eyebrow">${eyebrow}</div>${chip ? `<div class="wxrow">${chip}</div>` : ''}${status}<h1 class="big">${esc(big)}</h1><p class="lineone">${esc(line)}</p>`
     + `${visual}<div class="skyfoot">${sunStrip(d, cx)}${facts}</div></section>`;
 }
 function folioHero(d, v, cx, eyebrow, monthName) {
@@ -268,7 +357,8 @@ function folioHero(d, v, cx, eyebrow, monthName) {
     .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad">→ ${fmt(d.periods.rahu.end)}</span>` }])
     .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good">→ ${fmt(d.periods.abhijit.end)}</span>` }])
     .sort((a, b) => a.at - b.at);
-  return `<section class="folio"><div class="row"><span class="eyebrow">${eyebrow}</span></div><div class="rule"></div>`
+  const chip = wxChip(d, cx);
+  return `<section class="folio"><div class="row"><span class="eyebrow">${eyebrow}</span></div><div class="rule"></div>${chip ? `<div class="wxrow">${chip}</div>` : ''}`
     + `<div class="eyebrow accent">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>${sunStrip(d, cx)}`
     + `<div class="hairline"></div><div class="eyebrow">${esc(t('hourByHour'))}</div>${items.map(i => `<div class="tl"><span class="t">${fmt(i.at)}</span>${i.html}</div>`).join('')}</section>`;
 }
@@ -363,6 +453,7 @@ function todayView() {
     + fest.html + nowNext(d, cx) + comingUp(day, fest.list) + `<section class="section">${personalLine(d)}</section>` + practiceCard(d) + limbsCard(d, v)
     + `<div class="tiles section"><button onclick="plan()">${icon('calendar')}<b>${esc(t('planEvent'))}</b></button><button onclick="show('learn')">${icon('moon')}<b>${esc(t('learnMore'))}</b></button></div></div></div>`;
   scheduleNative();
+  wxRequest();
 }
 
 // ---- Calendar ---------------------------------------------------------------------------------
@@ -531,6 +622,7 @@ function setLoc(next) {
   if (wasToday) { day = todayKey(); monthView = day.slice(0, 7); }
   lastToday = todayKey();
   memo.clear();
+  wxAsked = 0;
 }
 function saveLocation() {
   try {
@@ -577,6 +669,7 @@ function settings() {
     + `<h2 class="section">${esc(t('language'))}</h2><select id="langPick" aria-label="${esc(t('language'))}">${LANGS.map(([k, n]) => `<option value="${k}" ${prefs.lang === k ? 'selected' : ''}>${n}</option>`).join('')}</select>`
     + `<h2 class="section">${esc(t('monthSystem'))}</h2><select id="monthPick" aria-label="${esc(t('monthSystem'))}"><option value="amanta" ${prefs.month === 'amanta' ? 'selected' : ''}>${esc(t('amanta'))}</option><option value="purnimanta" ${prefs.month === 'purnimanta' ? 'selected' : ''}>${esc(t('purnimanta'))}</option></select>`
     + `<h2 class="section">${esc(t('festivalSets'))}</h2><div class="card">${Fe.SETS.map(s => `<label class="check"><input type="checkbox" id="set_${s}" ${prefs.sets.indexOf(s) >= 0 ? 'checked' : ''}> ${esc(t('sets')[s])}</label>`).join('')}</div>`
+    + (wxNative() ? `<h2 class="section">${esc(t('wxTitle'))}</h2><div class="card"><label class="check"><input type="checkbox" id="wxOn" ${prefs.weather ? 'checked' : ''}> ${esc(t('wxLive'))}</label><p class="caption">${esc(t('wxWhy'))}</p></div>` : '')
     + `<h2 class="section">${esc(t('reminders'))}</h2><div class="card">${check('vrat', t('remVrat'))}${check('parana', t('remParana'))}${check('daily', t('remDaily'))}${check('rahu', t('remRahu'))}</div>`
     + `<button class="primary" onclick="savePrefs()">${esc(t('save'))}</button><button class="lesson" onclick="lesson(8)"><h3>${esc(t('method'))} <span>›</span></h3></button>`);
 }
@@ -586,6 +679,8 @@ function savePrefs() {
   prefs.sets = sets; prefs.month = $('monthPick').value; prefs.lang = $('langPick').value;
   for (const k of ['vrat', 'parana', 'daily', 'rahu']) prefs.reminders[k] = $('rem_' + k).checked;
   L = I18n.make(prefs.lang);
+  const wxWant = !!($('wxOn') && $('wxOn').checked);
+  if (wxNative() && $('wxOn') && wxWant !== !!prefs.weather) setWeather(wxWant, true);
   if (persist()) {
     if (Object.values(prefs.reminders).some(Boolean)) askNotifications(true);
     $('modal').close(); scheduleNative(true); render();
@@ -869,6 +964,7 @@ function applyTextScale() {
 }
 applyTextScale();
 window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(now()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
+wxLoad();
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
 /* The shared clock ticks just after every minute and whenever time may have moved under us (resume, focus,
