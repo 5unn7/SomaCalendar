@@ -41,8 +41,8 @@ go(new Date(+f.sunrise+3*36e5));assert.equal($('.sky').dataset.sky,'day');
 
 // The running Choghadiya on the dial and in its headline changes when a boundary passes.
 {const day=P.choghadiya(f).filter(c=>!c.night);go(new Date(+day[2].end-30e3));
- const before=txt('.chognow');assert.match(before,new RegExp('until '+fmt(day[2].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- step(6e4);const after=txt('.chognow');assert.notEqual(after,before,'Choghadiya headline moves on at the boundary');assert.match(after,new RegExp('until '+fmt(day[3].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ const before=txt('.dialcore');assert.match(before,new RegExp('until '+fmt(day[2].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ step(6e4);const after=txt('.dialcore');assert.notEqual(after,before,'Choghadiya headline moves on at the boundary');assert.match(after,new RegExp('until '+fmt(day[3].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  // The dial hand is redrawn for the new minute.
  assert.ok($('.dial .dial-hand'));}
 

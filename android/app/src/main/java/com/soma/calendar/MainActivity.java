@@ -54,6 +54,9 @@ public final class MainActivity extends Activity {
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
     s.setJavaScriptCanOpenWindowsAutomatically(false);
+    // The page scales its own rem type from fontScale() (so it can cap the dial core and reflow tight rows);
+    // keep WebView's own text zoom at 100 so the phone's text size is not applied twice.
+    s.setTextZoom(100);
     web.addJavascriptInterface(new Bridge(),"SomaNative");
 
     web.setWebChromeClient(new WebChromeClient() {
@@ -164,6 +167,8 @@ public final class MainActivity extends Activity {
         } catch(Exception e) { android.widget.Toast.makeText(MainActivity.this,"No calendar app available. Your plan is still saved in Soma.",android.widget.Toast.LENGTH_LONG).show(); }
       });
     }
+    /** The phone's text size (Settings › Display › Font size), 1.0 = default. */
+    @JavascriptInterface public float fontScale(){return getResources().getConfiguration().fontScale;}
     @JavascriptInterface public void appReady(){
       Log.i("SomaJS","Astronomical app initialized");
       runOnUiThread(()->{

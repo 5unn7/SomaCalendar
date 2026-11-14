@@ -27,23 +27,38 @@ window.SomaFestivalSets = prefs.sets;
 function persist() {
   window.SomaFestivalSets = prefs.sets;
   try { localStorage.setItem(STORE, JSON.stringify({ loc, profile, events, prefs })); return true; }
-  catch (e) { toast('Storage is full or unavailable. Changes were not saved.'); return false; }
+  catch (e) { toast(t('errStorage')); return false; }
 }
 let toastTimer = 0;
 function toast(s) { $('toast').textContent = s; $('toast').style.display = 'block'; clearTimeout(toastTimer); toastTimer = setTimeout(() => ($('toast').style.display = 'none'), 4000); }
 function haptic(kind) { try { if (window.SomaNative && SomaNative.haptic) SomaNative.haptic(kind || 'select'); } catch (e) {} }
-const locale = () => (L.lang === 'gu' ? 'gu-IN' : L.lang === 'hi' ? 'hi-IN' : 'en-IN');
-const fmt = (d, opts = {}) => d ? new Intl.DateTimeFormat('en-IN', { timeZone: loc.zone, hour: 'numeric', minute: '2-digit', ...opts }).format(d) : '—';
+/* Dates and times speak the reader's language: "3:09 pm", "3:09 બપોરે", "दोपहर 3:09". Digits stay 0-9 unless the reader
+   turns on Gujarati or Devanagari digits (You > Appearance). Formatters are cached: the dial and lists format hundreds of times. */
+const locale = () => (L.lang === 'gu' ? 'gu-IN' : L.lang === 'hi' ? 'hi-IN' : 'en-IN') + '-u-nu-' + (prefs.digits === 'native' && L.lang !== 'en' ? (L.lang === 'gu' ? 'gujr' : 'deva') : 'latn');
+const fmtCache = new Map();
+function fmtIn(d, zone, opts) {
+  if (!d) return '—';
+  const key = locale() + '|' + zone + '|' + JSON.stringify(opts || {});
+  let f = fmtCache.get(key);
+  if (!f) { f = new Intl.DateTimeFormat(locale(), Object.assign({ timeZone: zone, hour: 'numeric', minute: '2-digit' }, L.lang === 'en' ? {} : { dayPeriod: 'short' }, opts || {})); if (fmtCache.size > 200) fmtCache.clear(); fmtCache.set(key, f); }
+  return f.format(d);
+}
+const fmt = (d, opts) => fmtIn(d, loc.zone, opts);
+const num = n => L.lang === 'en' || prefs.digits !== 'native' ? String(n) : new Intl.NumberFormat(locale(), { useGrouping: false }).format(n);
+const until = d => t('untilT', { time: fmt(d) });
 const span = p => p ? fmt(p.start) + ' – ' + fmt(p.end) : '—';
 const full = d => fmt(d, { day: 'numeric', month: 'short' });
+const tr = x => L.tr(x);
 const dayLabel = (key, opts) => new Intl.DateTimeFormat(locale(), Object.assign({ timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short' }, opts || {})).format(K.instant(key, '12:00', loc.zone));
 const titleDay = d => new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(K.instant(d, '12:00', loc.zone));
 const todayKey = () => K.dateKey(now(), loc.zone);
 const isToday = () => day === todayKey();
 const daysBetween = (a, b) => Math.round((Date.parse(b + 'T12:00Z') - Date.parse(a + 'T12:00Z')) / 864e5);
-const badge = n => `<span class="nature ${n}">${esc(L.nature(n))}</span>`;
+/* Status never rides on colour alone: every badge and dot carries a shape (✓ shubh, ◆ neutral, ✕ avoid). */
+const GLYPH = { good: '✓', bad: '✕', neutral: '◆', mixed: '◆', festival: '✦' };
+const badge = n => `<span class="nature ${n}"><span class="g" aria-hidden="true">${GLYPH[n] || '◆'}</span>${esc(L.nature(n))}</span>`;
 const hourOf = d => { const p = K.parts(d, loc.zone); return +p.hour + p.minute / 60 + p.second / 3600; };
-const methodChip = () => `<button class="chip method" onclick="settings()">Drik · Lahiri · ${prefs.month === 'purnimanta' ? 'Purnimanta' : 'Amanta'} · ${esc(loc.name)}</button>`;
+const methodChip = () => `<button class="chip method" onclick="settings()">${esc(t('methodBase'))} · ${esc(t(prefs.month === 'purnimanta' ? 'purnimantaShort' : 'amantaShort'))} · ${esc(loc.name)}</button>`;
 const emph = s => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
 /* "in 35 min", "in 2 h 5 min" or "ends in 12 min" for a period, relative to now. Empty when it is over or the day is not today. */
 function rel(p, now) {
@@ -78,6 +93,9 @@ function frameFor(at) { const d = vedicDay(day); return at < d.frame.sunrise ? v
 // ---- Shell ------------------------------------------------------------------------------------
 function applyTheme() {
   const root = document.documentElement;
+  const close = document.querySelector('#modal > .close'); if (close) { close.setAttribute('aria-label', t('close')); }
+  const closeBottom = document.querySelector('#modal > .quiet'); if (closeBottom) closeBottom.textContent = t('close');
+  $('nav').setAttribute('aria-label', t('mainNav'));
   if (prefs.theme === 'light' || prefs.theme === 'dark') root.setAttribute('data-theme', prefs.theme); else root.removeAttribute('data-theme');
   root.lang = L.lang;
 }
@@ -85,7 +103,7 @@ function show(v) { if (v !== view) { haptic('select'); if (v === 'moon') hour = 
 function setDay(d) { if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || d < '1900-01-01' || d > '2100-12-31') return; if (d !== day) hour = null; day = d; monthView = d.slice(0, 7); render(); }
 function datebar() {
   const label = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(K.instant(day, '12:00', loc.zone));
-  return `<div class="datebar"><button aria-label="Previous day" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick">${icon('calendar')}<span>${esc(label)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button aria-label="Next day" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>`}</div>`;
+  return `<div class="datebar"><button aria-label="${esc(t('prevDay'))}" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick">${icon('calendar')}<span>${esc(label)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button aria-label="${esc(t('nextDay'))}" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>`}</div>`;
 }
 let lastPaint = '';
 function render() {
@@ -109,20 +127,44 @@ function render() {
 }
 
 // ---- Today --------------------------------------------------------------------------------------
-/* One sentence that says what kind of day it is, built from the tithi, nakshatra and yoga at sunrise. */
+/* What kind of day it is, built from the tithi, nakshatra and yoga at sunrise, in the reader's language.
+   A festival day is a sacred day whatever its limbs say: the festival *is* the muhurat. It is never "mixed" or "take care",
+   and its avoid line only keeps the timing (do not begin the puja in Rahu Kaal), never the activity the festival exists for. */
 function verdict(d) {
   const l = d.sunriseLimbs, ti = M.tithi(l.tithi.index), na = M.nakshatra(l.nakshatra.index), yo = M.YOGA[l.yoga.index], ka = M.KARANA[l.karana.index];
   const bad = [ti.nature, na.nature, yo.nature].filter(n => n === 'bad').length + (ka.nature === 'bad' && l.karana.index === 6 ? 1 : 0);
-  // A festival day is a sacred day whatever its limbs say; the limbs then only shape the timing.
   const festival = observances(d.frame.day, 1).find(x => x.day === d.frame.day && x.kind === 'festival');
-  const nature = bad === 0 ? 'good' : bad === 1 || festival ? 'mixed' : 'bad';
-  const good = festival ? L.festName(festival) + (festival.note ? ': ' + festival.note.replace(/\.$/, '').toLowerCase() : '') + '; ' + (ti.nature === 'good' ? ti.good : na.good)
-    : ti.nature === 'bad' && na.nature !== 'bad' ? na.good : ti.nature === 'good' ? ti.good : na.good;
-  const avoid = [ti.nature === 'bad' ? ti.avoid : '', na.nature === 'bad' ? na.avoid : '', yo.nature === 'bad' ? 'starting important work during ' + yo.en + ' yoga (until ' + fmt(l.yoga.end) + ')' : '']
-    .filter(Boolean).join('; ') || ti.avoid;
-  return { nature, good, avoid, ti, na, yo, festival };
+  if (festival) {
+    const note = festNote(festival), win = festWindow(d);
+    return { nature: 'good', parva: true, festival, win, ti, na, yo,
+      good: note ? t('festGood', { f: L.festName(festival), note: note.replace(/[.।]$/, '') }) : L.festName(festival),
+      avoid: t('festAvoid', { span: span(d.periods.rahu) }) };
+  }
+  const nature = bad === 0 ? 'good' : bad === 1 ? 'mixed' : 'bad';
+  const good = tr(ti.nature === 'bad' && na.nature !== 'bad' ? na.good : ti.nature === 'good' ? ti.good : na.good);
+  const avoid = [ti.nature === 'bad' ? tr(ti.avoid) : '', na.nature === 'bad' ? tr(na.avoid) : '', yo.nature === 'bad' ? t('yogaAvoid', { yoga: L.yogaName(l.yoga.index), time: fmt(l.yoga.end) }) : '']
+    .filter(Boolean).join('; ') || tr(ti.avoid);
+  return { nature, good, avoid, ti, na, yo, festival: null };
 }
-const verdictWord = n => n === 'good' ? t('favourable') : n === 'bad' ? t('takeCare') : t('mixed');
+const festNote = f => f.note ? tr(f.note) : '';
+/* The festival's own time today: the first Amrit, Shubh or Labh Choghadiya of the day, clear of Rahu Kaal, Yamaganda and Gulika. */
+function festWindow(d) {
+  const from = isToday() && now() > d.frame.sunrise ? now() : d.frame.sunrise;
+  return P.goodWindows(d, from, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0]
+    || P.goodWindows(d, d.frame.sunrise, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0] || null;
+}
+const festWindowLine = v => v.win ? t('festWindow', { span: span(v.win), chog: L.chogName(v.win.key) }) : '';
+const verdictWord = n => n === 'good' ? t('favourable') : n === 'bad' ? t('takeCare') : n === 'festival' ? t('parva') : t('mixed');
+const vWord = v => v.parva ? t('parva') : verdictWord(v.nature);
+/* Rahu Kaal as a gentle heads-up: only while it runs or in the 30 minutes before. */
+function rahuPill(d, cx) {
+  const r = d.periods.rahu, at = cx.now; if (!at || !r) return '';
+  if (r.start <= at && at < r.end) return `<span class="pill rahu bad"><i aria-hidden="true"></i>${esc(t('rahuNow', { time: fmt(r.end) }))}</span>`;
+  const m = Math.round((r.start - at) / 6e4);
+  return m > 0 && m <= 30 ? `<span class="pill rahu bad"><i aria-hidden="true"></i>${esc(t('rahuIn', { n: m }))}</span>` : '';
+}
+/* The next shubh Choghadiya from now (today's, else the Vedic day in force). */
+const nextShubh = cx => cx.now ? (P.goodWindows(cx.dd, cx.now)[0] || null) : null;
 function stars(n, seed) { let s = '', x = seed; const r = () => { x = (x * 9301 + 49297) % 233280; return x / 233280; }; for (let i = 0; i < n; i++) s += `<circle cx="${(r() * 400).toFixed(1)}" cy="${(r() * 300).toFixed(1)}" r="${(r() * 1.2 + 0.2).toFixed(2)}" fill="#fff" opacity="${(r() * 0.7 + 0.15).toFixed(2)}"/>`; return `<svg class="stars" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${s}</svg>`; }
 
 /* The context every Today hero needs: the Vedic day in force now, the current Choghadiya, sky phase. */
@@ -136,14 +178,29 @@ function heroContext(d) {
   const sky = SomaDial.skyPhase(at, d.frame.sunrise, d.frame.sunset);
   return { live, now: at0, dd, c, ti, sky, at };
 }
-function dialHero(d, v, cx, eyebrow) {
-  const dial = SomaDial.svg({ size: 340, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, label: t('choghadiya') });
-  const chogLine = cx.c ? `<div class="chognow ${cx.c.nature}">${esc(L.chogName(cx.c.key))} · ${esc(t('until'))} ${fmt(cx.c.end)}</div>` : `<div class="chognow ${v.nature}">${esc(verdictWord(v.nature))}</div>`;
-  const sub = daySentence(v);
-  return `<section class="sky" data-sky="${cx.sky}"><div class="dateline"><span class="eyebrow">${eyebrow}</span></div>`
-    + `<div class="dialwrap">${dial.svg}<button class="dialcore" onclick="show('moon')" aria-label="${esc(t('moonPage'))}">${SomaDial.moon(44, cx.ti.angle)}<h1 class="tithi">${esc(L.tithiName(cx.ti.index))}</h1>${chogLine}</button></div>`
-    + `<div class="daytitle"><p>${esc(sub)}</p></div>${sunStrip(d, cx)}</section>`;
+/* A spoken summary of the dial, so VoiceOver and TalkBack hear what the ring shows. */
+function dialLabel(d, cx, next) {
+  const rahu = span(d.periods.rahu);
+  if (!cx.c) return t('dialSummaryDay', { d: dayLabel(day), rahu });
+  return t('dialSummary', { chog: L.chogName(cx.c.key), nature: L.nature(cx.c.nature), time: fmt(cx.c.end), next: next ? L.chogName(next.key) + ' ' + span(next) : t('none'), rahu });
 }
+function dialHero(d, v, cx, eyebrow) {
+  const next = nextShubh(cx);
+  const dial = SomaDial.svg({ size: 340, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, label: dialLabel(d, cx, next) });
+  // Lead with what to do: while a bad Choghadiya runs, the core names the next shubh time; the bad one is a quiet second line.
+  const g = n => `<span class="g" aria-hidden="true">${GLYPH[n] || '◆'}</span>`;
+  const chogLine = cx.c && cx.c.nature === 'bad' && next
+    ? `<div class="chognow good">${g('good')}${esc(t('nextShubhAt', { time: fmt(next.start) }))}</div><div class="chogsub">${esc(t('nowChog', { chog: L.chogName(cx.c.key), time: fmt(cx.c.end) }))}</div>`
+    : cx.c ? `<div class="chognow ${cx.c.nature}">${g(cx.c.nature)}${esc(L.chogName(cx.c.key))} · ${esc(until(cx.c.end))}</div>`
+    : `<div class="chognow ${v.parva ? 'good' : v.nature}">${esc(vWord(v))}</div>`;
+  const title = v.parva ? `<h2 class="festhead">${esc(L.festName(v.festival))}</h2><p>${esc(festWindowLine(v) || v.good)}</p>` : `<p>${esc(daySentence(v))}</p>`;
+  const pill = rahuPill(d, cx);
+  return `<section class="sky" data-sky="${cx.sky}"><div class="dateline"><span class="eyebrow">${eyebrow}</span></div>`
+    + `<div class="dialwrap">${dial.svg}<h1 class="tithi dialtitle">${esc(L.tithiName(cx.ti.index))}</h1><button class="dialcore" onclick="show('moon')" aria-label="${esc(t('moonPage'))}">${SomaDial.moon(44, cx.ti.angle)}<span class="tithi" aria-hidden="true">${esc(L.tithiName(cx.ti.index))}</span>${chogLine}</button></div>`
+    + dialLegend() + `<div class="daytitle">${title}${pill ? `<div class="pillrow">${pill}</div>` : ''}</div>${sunStrip(d, cx)}</section>`;
+}
+/* A one-line key for the ring: shape and word, not colour alone. */
+const dialLegend = () => `<div class="legend" aria-hidden="true"><span class="good"><i></i>${esc(t('good'))}</span><span class="neutral"><i></i>${esc(t('neutral'))}</span><span class="bad"><i></i>${esc(t('bad'))}</span><span class="rahu"><i></i>${esc(t('rahu'))}</span></div>`;
 /* Sunrise and sunset as icons with times, daylight between them, a countdown on today.
    After sunset the sunrise slot looks ahead to tomorrow. Labels live in aria-label, not on screen. */
 function sunStrip(d, cx) {
@@ -156,12 +213,11 @@ function sunStrip(d, cx) {
 function groupHead(over, title, action) {
   return `<div class="ghead"><div>${over ? `<div class="over">${esc(over)}</div>` : ''}<h2>${title}</h2></div>${action || ''}</div>`;
 }
-/* What the day is for, in one line: what it is good for, or what to avoid. */
+/* What the day is for, in one line, always led by what it is good for. */
 function daySentence(v) {
-  // The festival has its own card right below the hero, so this line says what the day is good for.
-  const first = s => String(s || '').split(';')[0].trim();
-  const good = v.festival ? String(v.good).split(';').slice(1).join(';') || v.good : v.good;
-  return v.nature === 'bad' ? t('avoid') + ': ' + first(v.avoid) : (v.nature === 'mixed' ? t('mixedDay') + ' · ' : '') + t('goodFor') + ': ' + first(good);
+  const first = x => String(x || '').split(';')[0].trim();
+  if (v.parva) return festWindowLine(v) || v.good;
+  return (v.nature === 'mixed' ? t('mixedDay') + ' · ' : v.nature === 'bad' ? t('careDay') + ' · ' : '') + t('goodFor') + ': ' + first(v.good);
 }
 function horizonSvg(frac) {
   const w = 320, h = 96, b = (x0, c, x1, tt) => (1 - tt) * (1 - tt) * x0 + 2 * (1 - tt) * tt * c + tt * tt * x1, f = Math.min(1, Math.max(0, frac));
@@ -170,37 +226,43 @@ function horizonSvg(frac) {
 }
 function skyHero(d, v, cx, eyebrow) {
   // The horizon follows the civil day's sun, so before dawn the sun waits at the sunrise end.
-  const night = cx.sky === 'night', f = d.frame, tithi = L.tithiName(cx.ti.index);
-  // Live: the running Choghadiya is the headline, with how long it lasts. Another day: the tithi is the headline.
-  const big = cx.c ? L.chogName(cx.c.key) : tithi;
-  const status = cx.c ? `<div class="status"><span class="pill ${cx.c.nature}"><i></i>${esc(L.nature(cx.c.nature))}</span><span>${esc(t('until'))} ${fmt(cx.c.end)}${rel(cx.c, cx.now) ? ' · ' + esc(rel(cx.c, cx.now)) : ''}</span></div>` : `<div class="status"><span class="pill ${v.nature}"><i></i>${esc(verdictWord(v.nature))}</span></div>`;
-  const line = cx.c ? M.CHOG[cx.c.key].good : daySentence(v);
+  const night = cx.sky === 'night', f = d.frame, tithi = L.tithiName(cx.ti.index), next = nextShubh(cx);
+  // Headline answers "what should I do now?": the festival on a festival day, the next shubh time while a bad
+  // Choghadiya runs (the bad one becomes a small second line), else the running Choghadiya. Another day: the tithi.
+  const leadNext = !v.parva && cx.c && cx.c.nature === 'bad' && next;
+  const big = v.parva ? L.festName(v.festival) : leadNext ? L.chogName(next.key) : cx.c ? L.chogName(cx.c.key) : tithi;
+  const pill = (n, word) => `<span class="pill ${n}"><i aria-hidden="true"></i>${esc(word)}</span>`;
+  const status = v.parva ? `<div class="status">${pill('good', t('parva'))}${cx.c ? `<span>${esc(t('nowChog', { chog: L.chogName(cx.c.key), time: fmt(cx.c.end) }))}</span>` : ''}</div>`
+    : leadNext ? `<div class="status">${pill('good', t('nextShubh'))}<span>${esc(t('fromT', { time: fmt(next.start) }))}${rel(next, cx.now) ? ' · ' + esc(rel(next, cx.now)) : ''}</span></div>`
+    : cx.c ? `<div class="status">${pill(cx.c.nature, L.nature(cx.c.nature))}<span>${esc(until(cx.c.end))}${rel(cx.c, cx.now) ? ' · ' + esc(rel(cx.c, cx.now)) : ''}</span></div>`
+    : `<div class="status">${pill(v.nature, vWord(v))}</div>`;
+  const line = v.parva ? (festWindowLine(v) || v.good) : leadNext ? tr(M.CHOG[next.key].good) + ' · ' + t('nowChog', { chog: L.chogName(cx.c.key), time: fmt(cx.c.end) }) : cx.c ? tr(M.CHOG[cx.c.key].good) : daySentence(v);
   const visual = night ? `<div class="skymoon">${SomaDial.moon(88, cx.ti.angle)}</div>` : horizonSvg((cx.at - f.sunrise) / (f.sunset - f.sunrise));
-  const facts = `<div class="facts"><button onclick="show('moon')">${SomaDial.moon(18, cx.ti.angle)}<span>${esc(tithi)}</span></button><span>${esc(L.nakName(d.sunriseLimbs.nakshatra.index))}</span></div>`;
+  const facts = `<div class="facts"><button onclick="show('moon')">${SomaDial.moon(18, cx.ti.angle)}<span>${esc(tithi)}</span></button><span>${esc(L.nakName(d.sunriseLimbs.nakshatra.index))}</span>${rahuPill(d, cx)}</div>`;
   return `<section class="skyhero" data-sky="${cx.sky}">${night ? stars(70, 7) : ''}<div class="eyebrow">${eyebrow}</div>${status}<h1 class="big">${esc(big)}</h1><p class="lineone">${esc(line)}</p>`
-    + `${visual}${sunStrip(d, cx)}${facts}</section>`;
+    + `${visual}<div class="skyfoot">${sunStrip(d, cx)}${facts}</div></section>`;
 }
 function folioHero(d, v, cx, eyebrow, monthName) {
-  const head = v.nature === 'good' ? t('folioGood') : v.nature === 'bad' ? t('folioBad') : t('folioMixed');
-  const lede = v.festival ? L.festName(v.festival) + (v.festival.note ? '. ' + v.festival.note : '') : (v.nature === 'bad' ? t('avoid') + ': ' + v.avoid : t('goodFor') + ': ' + v.good) + '.';
+  const head = v.parva ? '*' + L.festName(v.festival) + '*' : v.nature === 'good' ? t('folioGood') : v.nature === 'bad' ? t('folioBad') : t('folioMixed');
+  const lede = v.parva ? [festNote(v.festival), festWindowLine(v)].filter(Boolean).join(' · ') : t('goodFor') + ': ' + v.good + (v.nature === 'good' ? '' : ' · ' + t('avoid') + ': ' + v.avoid);
   const sun = [{ at: d.frame.sunrise, html: `<span>${icon('sunrise', 'ic')} ${esc(t('sunrise'))}</span><span class="k"></span>` }, { at: d.frame.sunset, html: `<span>${icon('sunset', 'ic')} ${esc(t('sunset'))}</span><span class="k"></span>` }];
-  const items = sun.concat(d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}">${esc(L.nature(c.nature))}</span>` })))
-    .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad">→ ${fmt(d.periods.rahu.end)}</span>` }])
-    .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good">→ ${fmt(d.periods.abhijit.end)}</span>` }])
+  const items = sun.concat(d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}"><span class="g" aria-hidden="true">${GLYPH[c.nature]}</span>${esc(L.nature(c.nature))}</span>` })))
+    .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad"><span class="g" aria-hidden="true">✕</span>→ ${fmt(d.periods.rahu.end)}</span>` }])
+    .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good"><span class="g" aria-hidden="true">✓</span>→ ${fmt(d.periods.abhijit.end)}</span>` }])
     .sort((a, b) => a.at - b.at);
   return `<section class="folio"><div class="row"><span class="eyebrow">${eyebrow}</span></div><div class="rule"></div>`
-    + `<div class="eyebrow" style="color:var(--accent)">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>${sunStrip(d, cx)}`
+    + `<div class="eyebrow accent">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>${sunStrip(d, cx)}`
     + `<div class="hairline"></div><div class="eyebrow">${esc(t('hourByHour'))}</div>${items.map(i => `<div class="tl"><span class="t">${fmt(i.at)}</span>${i.html}</div>`).join('')}</section>`;
 }
 function festivalToday(key) {
   const list = observances(K.addDay(key, -1), 50), todays = list.filter(x => x.day === key), yesterdayEkadashi = list.find(x => x.key === 'ekadashi' && x.parana && x.parana.day === key);
   let html = '';
   for (const f of todays) {
-    html += `<div class="card festival ${f.kind}"><div class="eyebrow">${esc(t('festivalsToday'))}</div><h2>${esc(L.festName(f))}</h2>${L.lang !== 'en' ? `<p>${esc(f.en)}</p>` : ''}${f.note ? `<p>${esc(f.note)}</p>` : ''}`
+    html += `<div class="card festival ${f.kind}"><div class="eyebrow">${esc(t('festivalsToday'))}</div><h2>${esc(L.festName(f))}</h2>${f.note ? `<p>${esc(festNote(f))}</p>` : ''}${f.kind === 'festival' ? `<p>${esc(t('festDayNote'))}</p>` : ''}`
       + (f.key === 'ekadashi' ? `<p>${esc(t('fastBegins'))} · ${fmt(vedicDay(key).frame.sunrise)}</p>${f.parana ? `<p><strong>${esc(t('parana'))}:</strong> ${dayLabel(f.parana.day)} · ${span(f.parana)}</p>` : ''}` : '')
-      + (f.sutak ? `<p>Sutak begins ${full(f.sutak)} · peak ${full(f.at)}</p>` : '') + '</div>';
+      + (f.sutak ? `<p>${esc(t('sutakLine', { a: full(f.sutak), b: full(f.at) }))}</p>` : '') + '</div>';
   }
-  if (yesterdayEkadashi) html += `<div class="card festival vrat"><div class="eyebrow">${esc(t('parana'))}</div><h2>${span(yesterdayEkadashi.parana)}</h2><p>${esc(yesterdayEkadashi.en)} · Dwadashi ends ${fmt(yesterdayEkadashi.parana.dwadashiEnd)}</p></div>`;
+  if (yesterdayEkadashi) html += `<div class="card festival vrat"><div class="eyebrow">${esc(t('parana'))}</div><h2>${span(yesterdayEkadashi.parana)}</h2><p>${esc(L.festName(yesterdayEkadashi))} · ${esc(t('dwadashiEnds', { time: fmt(yesterdayEkadashi.parana.dwadashiEnd) }))}</p></div>`;
   return { html, list };
 }
 let upList = [];
@@ -212,31 +274,31 @@ function comingUp(key, list) {
 function festivalStory(i) {
   const f = upList[i]; if (!f) return;
   const date = K.instant(f.day, '12:00', loc.zone), n = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, day: 'numeric' }).format(date);
-  modal(`<div class="row" style="align-items:flex-end"><div class="number" style="font-size:96px">${esc(n)}</div><div style="text-align:right" class="eyebrow">${esc(new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long', month: 'long' }).format(date))}</div></div>`
-    + `<h2 style="font-size:34px;margin-top:10px">${esc(L.festName(f))}</h2>${L.lang !== 'en' ? `<p>${esc(f.en)}</p>` : ''}${f.note ? `<p style="color:var(--ink)">${esc(f.note)}</p>` : ''}`
+  modal(`<div class="row" style="align-items:flex-end"><div class="number" style="font-size:6rem">${esc(n)}</div><div style="text-align:right" class="eyebrow">${esc(new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long', month: 'long' }).format(date))}</div></div>`
+    + `<h2 id="sheetTitle" style="font-size:2.125rem;margin-top:10px">${esc(L.festName(f))}</h2>${f.note ? `<p style="color:var(--ink)">${esc(festNote(f))}</p>` : ''}`
     + (f.parana ? `<div class="list"><div class="timeline"><i class="dot vrat"></i><div><strong>${esc(t('parana'))}</strong><p>${dayLabel(f.parana.day)}</p></div><div class="right">${span(f.parana)}</div></div></div>` : '')
-    + (f.sutak ? `<p>Sutak begins ${full(f.sutak)} · peak ${full(f.at)}</p>` : '')
+    + (f.sutak ? `<p>${esc(t('sutakLine', { a: full(f.sutak), b: full(f.at) }))}</p>` : '')
     + `<button class="primary" onclick="document.querySelector('dialog').close();setDay('${f.day}')">${esc(t('goToDay'))}</button>`);
 }
 function nowNext(d, cx) {
   // Running Choghadiya and Hora come from the Vedic day in force (yesterday's before sunrise); Rahu Kaal, Abhijit and the rest belong to the selected day.
   const dd = cx.dd, now = cx.now, per = d.periods, rows = [];
-  const row = (name, sub, p, nature) => { const r = rel(p, now); rows.push(`<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${nature}"></i><div class="label"><b>${esc(name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="when">${span(p)}${r ? `<em class="${nature}">${esc(r)}</em>` : ''}</div></div>`); };
+  const row = (name, sub, p, nature) => { const r = rel(p, now); rows.push(`<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${nature}" aria-hidden="true"></i><div class="label"><b>${esc(name)}</b>${sub ? `<small>${esc(sub)}</small>` : ''}</div><div class="when">${span(p)}${r ? `<em class="${nature}">${esc(r)}</em>` : ''}</div></div>`); };
   if (now) {
     const next = P.goodWindows(dd, now)[0] || (dd !== d ? P.goodWindows(d, now)[0] : null), h = P.at(dd.hora, now);
-    if (next) row(t('nextGood'), L.chogName(next.key) + ' · ' + M.CHOG[next.key].good, next, 'good');
-    if (h) row(t('hora') + ' · ' + L.planetName(h.lord), M.PLANET[h.lord].good, h, h.nature);
+    if (next) row(t('nextGood'), L.chogName(next.key) + ' · ' + tr(M.CHOG[next.key].good), next, 'good');
+    if (h) row(t('hora') + ' · ' + L.planetName(h.lord), tr(M.PLANET[h.lord].good), h, h.nature);
   }
   row(t('rahu'), '', per.rahu, 'bad');
   if (!per.abhijit.wednesday) row(t('abhijit'), '', per.abhijit, 'good');
   const more = [['yamaganda', per.yamaganda, 'bad'], ['gulika', per.gulika, 'bad'], ['brahma', per.brahma, 'good']]
-    .map(([k, p, n]) => `<div class="nn"><i class="dot ${n}"></i><div class="label"><b>${esc(t(k))}</b></div><div class="when">${span(p)}</div></div>`).join('');
+    .map(([k, p, n]) => `<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${n}" aria-hidden="true"></i><div class="label"><b>${esc(t(k))}</b></div><div class="when">${span(p)}</div></div>`).join('');
   return `<section class="section">${groupHead(t('ovNow'), esc(t('nowAndNext')))}<div class="list">${rows.join('')}</div><details><summary>${esc(t('moreTimes'))}</summary><div class="list">${more}</div></details></section>`;
 }
 function practiceCard(d) {
   const chips = M.PRACTICES.map(p => `<button class="chip ${practice === p.key ? 'on' : ''}" onclick="practice=practice==='${p.key}'?null:'${p.key}';todayView()">${esc(L.practiceName(p))}</button>`).join('');
   const vaar = M.VAAR[d.frame.weekday];
-  let body = `<p><strong>${esc(t('deityOfDay'))}:</strong> ${esc(vaar.deity)}</p><p><strong>${esc(t('mantra'))}:</strong> ${esc(vaar.mantra)}</p>`;
+  let body = `<p><strong>${esc(t('deityOfDay'))}:</strong> ${esc(tr(vaar.deity))}</p><p><strong>${esc(t('mantra'))}:</strong> ${esc(vaar.mantra)}</p>`;
   if (practice) {
     const p = M.PRACTICES.find(x => x.key === practice);
     if (p.vrat) {
@@ -257,18 +319,18 @@ function personalLine(d) {
   const bm = birthMoon();
   if (bm == null) return `<button class="lesson" onclick="editProfile()"><div class="eyebrow">${esc(t('forYou'))}</div><h3>${esc(t('addBirth'))} <span>›</span></h3><span>${esc(t('chandrabalam'))} · ${esc(t('tarabalam'))}</span></button>`;
   const p = P.personal(bm, isToday() ? now() : d.frame.sunrise);
-  return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2><p>${esc(t('chandrabalam'))}: Moon ${p.chandraCount}${['th', 'st', 'nd', 'rd'][p.chandraCount % 10 > 3 || [11, 12, 13].indexOf(p.chandraCount) >= 0 ? 0 : p.chandraCount % 10]} from your ${esc(L.rashiName(p.janmaRashi))} · ${p.chandraGood ? esc(t('good')) : esc(t('bad'))}</p><p>${esc(t('tarabalam'))}: ${esc(M.TARA[p.tara.key])}</p></div>`;
+  return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${esc(t('chandraLine', { n: L.lang === 'en' ? p.chandraCount + ['th', 'st', 'nd', 'rd'][p.chandraCount % 10 > 3 || [11, 12, 13].indexOf(p.chandraCount) >= 0 ? 0 : p.chandraCount % 10] : num(p.chandraCount), rashi: L.rashiName(p.janmaRashi) }))} · ${esc(t(p.chandraGood ? 'strong' : 'weak'))}</p><p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[p.tara.key]))}</p></div>`;
 }
 function limbsCard(d, v) {
   const l = d.sunriseLimbs, ti = M.tithi(l.tithi.index), na = M.nakshatra(l.nakshatra.index), yo = M.YOGA[l.yoga.index], ka = M.KARANA[l.karana.index], va = M.VAAR[d.frame.weekday];
-  const row = (label, name, end, note, nature) => `<div class="timeline"><i class="dot ${nature || ''}"></i><div><div class="eyebrow">${esc(label)}</div><strong>${esc(name)}</strong><p>${esc(note)}</p></div><div class="right">${nature ? badge(nature) : ''}${end ? '<br>' + esc(t('until')) + ' ' + full(end) : ''}</div></div>`;
+  const row = (label, name, end, note, nature) => `<div class="timeline"><i class="dot ${nature || ''}" aria-hidden="true"></i><div><div class="eyebrow">${esc(label)}</div><strong>${esc(name)}</strong><p>${esc(note)}</p></div><div class="right">${nature ? badge(nature) : ''}${end ? '<br>' + esc(t('untilT', { time: full(end) })) : ''}</div></div>`;
   return `<section class="section">${groupHead(t('ovPanchang'), esc(t('todayTitle')))}`
-    + `<div class="card verdict"><div class="row"><span class="eyebrow">${esc(t('details'))}</span>${badge(v.nature)}</div><p><strong>${esc(t('goodFor'))}:</strong> ${esc(v.good)}.</p><p><strong>${esc(t('avoid'))}:</strong> ${esc(v.avoid)}.</p></div><div class="list">`
-    + row(t('tithi'), L.tithiName(l.tithi.index), l.tithi.end, ti.deity + ' · ' + ti.group + '. ' + ti.note, ti.nature)
-    + row(t('nakshatra'), L.nakName(l.nakshatra.index) + ' ' + l.nakshatra.pada, l.nakshatra.end, na.deity + ' · ' + na.group + '. Good for ' + na.good + '.', na.nature)
-    + row(t('yoga'), L.yogaName(l.yoga.index), l.yoga.end, yo.nature === 'bad' ? 'Avoid starting important work while it lasts.' : 'Supports good work.', yo.nature)
-    + row(t('karana'), L.karanaName(l.karana.index), l.karana.end, l.karana.index === 6 ? 'Bhadra: avoid auspicious beginnings.' : 'Half-tithi.', ka.nature)
-    + row(t('vaar'), L.vaarName(d.frame.weekday), null, va.deity + '. Good for ' + va.good + '. Avoid ' + va.avoid + '.', null)
+    + `<div class="card verdict"><div class="row"><span class="eyebrow">${esc(t('details'))}</span>${badge(v.parva ? 'festival' : v.nature)}</div><p><strong>${esc(t('goodFor'))}:</strong> ${esc(v.good)}.</p><p><strong>${esc(t('avoid'))}:</strong> ${esc(v.avoid)}.</p></div><div class="list">`
+    + row(t('tithi'), L.tithiName(l.tithi.index), l.tithi.end, tr(ti.deity) + ' · ' + tr(ti.group) + '. ' + tr(ti.note), ti.nature)
+    + row(t('nakshatra'), L.nakName(l.nakshatra.index) + ' ' + num(l.nakshatra.pada), l.nakshatra.end, tr(na.deity) + ' · ' + tr(na.group) + '. ' + t('goodForX', { x: tr(na.good) }), na.nature)
+    + row(t('yoga'), L.yogaName(l.yoga.index), l.yoga.end, yo.nature === 'bad' ? t('yogaBad') : t('yogaGood'), yo.nature)
+    + row(t('karana'), L.karanaName(l.karana.index), l.karana.end, l.karana.index === 6 ? t('bhadraNote') : t('halfTithi'), ka.nature)
+    + row(t('vaar'), L.vaarName(d.frame.weekday), null, t('vaarLine', { deity: tr(va.deity), good: tr(va.good), avoid: tr(va.avoid) }), null)
     + `</div><div style="margin-top:10px">${methodChip()}</div></section>`
     + `<section class="section">${groupHead(t('ovSky'), esc(t('moon')), `<button class="quiet" onclick="show('moon')">${esc(t('moon'))} ›</button>`)}<div class="grid2">`
     + [['moonrise', d.frame.data.moonrise], ['moonset', d.frame.data.moonset]].map(([k, v2]) => `<div class="card"><div class="caption">${esc(t(k))}</div><div class="value">${fmt(v2)}</div></div>`).join('') + '</div></section>';
@@ -303,20 +365,20 @@ function calendarView() {
     const key = monthView + '-' + String(n).padStart(2, '0'), data = K.dayData(key, loc), ti = data.atSunrise || K.tithi(K.instant(key, '12:00', loc.zone));
     const f = fest.filter(x => x.day === key), top = f.find(x => x.kind !== 'vrat') || f[0];
     const pd = bm != null && data.sunrise ? P.personal(bm, data.sunrise).verdict : null;
-    cells += `<button onclick="setDay('${key}')" class="${key === day ? 'selected ' : ''}${key === todayKey() ? 'today ' : ''}${top ? 'holy ' + top.kind : ''}${pd === 'good' ? ' mine' : ''}" aria-label="${dayLabel(key)} ${esc(L.tithiName(ti.index))}${top ? ' · ' + esc(L.festName(top)) : ''}">${SomaDial.moon(22, ti.angle)}${n}<small>${esc(top ? L.festName(top) : shortTithi(ti.index))}</small>${top ? `<em>${esc(L.festName(top))}</em>` : ''}</button>`;
+    cells += `<button onclick="setDay('${key}')" class="${key === day ? 'selected ' : ''}${key === todayKey() ? 'today ' : ''}${top ? 'holy ' + top.kind : ''}${pd === 'good' ? ' mine' : ''}" aria-label="${dayLabel(key)} ${esc(L.tithiName(ti.index))}${top ? ' · ' + esc(L.festName(top)) : ''}">${SomaDial.moon(22, ti.angle)}${n}<small>${esc(top ? L.festName(top) : shortTithi(ti.index))}</small>${top ? '<em aria-hidden="true"></em>' : ''}</button>`;
   }
   const sel = fest.filter(x => x.day === day), d = vedicDay(day), mine = events.filter(e => e.day === day);
   const weekNames = [0, 1, 2, 3, 4, 5, 6].map(i => new Intl.DateTimeFormat(locale(), { weekday: 'narrow', timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + i))));
   const lead = `<div class="eyebrow">${esc(P.monthName(K.instant(first, '12:00', loc.zone), prefs.month, L.monthNames))} – ${esc(P.monthName(K.instant(monthView + '-' + count, '12:00', loc.zone), prefs.month, L.monthNames))}</div><h1>${esc(t('calendar'))}</h1>${setChips()}`
-    + `<div class="monthhead"><h2>${new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' })}</h2><div class="arrows"><button onclick="changeMonth(-1)" aria-label="Previous month">‹</button><button onclick="changeMonth(1)" aria-label="Next month">›</button></div></div>`
+    + `<div class="monthhead"><h2>${new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' })}</h2><div class="arrows"><button onclick="changeMonth(-1)" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="changeMonth(1)" aria-label="${esc(t('nextMonth'))}">›</button></div></div>`
     + `<div class="week">${weekNames.map(w => `<span>${esc(w)}</span>`).join('')}</div><div class="calendar">${cells}</div>`
     + (bm != null ? `<p class="caption" style="margin-top:8px">● ${esc(t('personalDays'))}</p>` : '');
   const rest = `<section class="section">${groupHead(t('ovDay'), titleDay(day))}<div class="list"><div class="timeline"><i class="dot"></i><div><strong>${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</strong><p>${esc(L.nakName(d.sunriseLimbs.nakshatra.index))}</p></div><div class="right">${esc(t('rahu'))}<br>${span(d.periods.rahu)}</div></div>`
-    + sel.map(f => `<div class="timeline"><i class="dot ${f.kind}"></i><div><strong>${esc(L.festName(f))}</strong>${f.parana ? `<p>${esc(t('parana'))}: ${dayLabel(f.parana.day)} ${span(f.parana)}</p>` : ''}${f.note ? `<p>${esc(f.note)}</p>` : ''}</div></div>`).join('')
+    + sel.map(f => `<div class="timeline"><i class="dot ${f.kind}"></i><div><strong>${esc(L.festName(f))}</strong>${f.parana ? `<p>${esc(t('parana'))}: ${dayLabel(f.parana.day)} ${span(f.parana)}</p>` : ''}${f.note ? `<p>${esc(festNote(f))}</p>` : ''}</div></div>`).join('')
     + mine.map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.time)} · ${esc(e.muhurat)}</p></div></div>`).join('')
     + `</div><div class="grid2" style="margin-top:10px"><button class="chip" style="min-height:46px" onclick="show('today')">${esc(t('details'))}</button><button class="chip on" style="min-height:46px" onclick="plan()">＋ ${esc(t('addEvent'))}</button></div></section>`
-    + `<section class="section">${groupHead(t('ovFest'), esc(t('comingUp')))}<div class="list">${fest.filter(x => x.day >= first).map(f => `<div class="timeline" onclick="setDay('${f.day}')"><i class="dot ${f.kind}"></i><div><strong>${esc(L.festName(f))}</strong><p>${dayLabel(f.day)}${f.parana ? ' · ' + esc(t('parana')) + ' ' + span(f.parana) : ''}</p></div></div>`).join('') || `<p style="padding:14px 0">${esc(t('none'))}</p>`}</div></section>`
-    + `<section class="section">${groupHead(t('ovPlans'), esc(t('myPlans')) + ` <span class="caption">${events.length}</span>`)}${events.length ? `<div class="list">${events.slice().sort((a, b) => a.start.localeCompare(b.start)).map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.day)} · ${esc(e.time)} · ${esc(e.place)}</p><p>${esc(e.tithi)}${e.muhurat ? ' · ' + esc(e.muhurat) : ''}</p><button class="quiet" onclick="exportEvent('${e.id}')">Add to phone calendar</button></div><div class="right"><button class="quiet" aria-label="Delete event" onclick="deleteEvent('${e.id}')">×</button></div></div>`).join('')}</div>` : '<div class="card"><h3>Plan your next good day.</h3><p>Soma checks the Choghadiya, Hora and Rahu Kaal for the time you pick.</p></div>'}</section>`;
+    + `<section class="section">${groupHead(t('ovFest'), esc(t('comingUp')))}<div class="list">${fest.filter(x => x.day >= first).map(f => `<button type="button" class="timeline rowbtn" onclick="setDay('${f.day}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(f.day), what: L.festName(f) }))}"><i class="dot ${f.kind}" aria-hidden="true"></i><div><strong>${esc(L.festName(f))}</strong><p>${dayLabel(f.day)}${f.parana ? ' · ' + esc(t('parana')) + ' ' + span(f.parana) : ''}</p></div><span class="chev" aria-hidden="true">›</span></button>`).join('') || `<p style="padding:14px 0">${esc(t('none'))}</p>`}</div></section>`
+    + `<section class="section">${groupHead(t('ovPlans'), esc(t('myPlans')) + ` <span class="caption">${events.length}</span>`)}${events.length ? `<div class="list">${events.slice().sort((a, b) => a.start.localeCompare(b.start)).map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.day)} · ${esc(e.time)} · ${esc(e.place)}</p><p>${esc(e.tithi)}${e.muhurat ? ' · ' + esc(e.muhurat) : ''}</p><button class="quiet" onclick="exportEvent('${e.id}')">${esc(t('addToCal'))}</button></div><div class="right"><button class="quiet" aria-label="${esc(t('deleteEvent'))}: ${esc(e.title)}" onclick="deleteEvent('${e.id}')">×</button></div></div>`).join('')}</div>` : `<div class="card"><h3>${esc(t('emptyPlansTitle'))}</h3><p>${esc(t('emptyPlansBody'))}</p></div>`}</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
 
@@ -336,24 +398,27 @@ function muhuratDays(evKey, from, days) {
     // On today only windows still ahead count; a morning that has passed is no muhurat.
     const start = key === todayKey() ? new Date(Math.max(+d.frame.sunrise, +now())) : d.frame.sunrise;
     const win = P.goodWindows(d, start, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0];
-    if (win) out.push({ key, d, win, why: `${L.tithiName(l.tithi.index)} (${ti.group}) · ${L.nakName(l.nakshatra.index)} (${na.group}) · ${L.vaarName(d.frame.weekday)}` });
+    if (win) out.push({ key, d, win, why: `${tr(na.group)} ${t('nakshatra')} (${L.nakName(l.nakshatra.index)}) · ${tr(ti.group)} ${t('tithi')} · ${L.vaarName(d.frame.weekday)}` });
   }
   return out;
 }
 function muhuratView() {
   const d = vedicDay(day), at = now(), live = isToday();
-  const list = (items, nameOf, tipOf) => items.map(p => `<div class="timeline ${live && p.start <= at && at < p.end ? 'current' : live && p.end <= at ? 'past' : ''}"><i class="dot ${p.nature}"></i><div><strong>${esc(nameOf(p))}</strong><p>${esc(tipOf(p))}</p></div><div class="right">${span(p)}<br>${badge(p.nature)}</div></div>`).join('');
+  const list = (items, nameOf, tipOf) => items.map(p => `<div class="timeline ${live && p.start <= at && at < p.end ? 'current' : live && p.end <= at ? 'past' : ''}"><i class="dot ${p.nature}" aria-hidden="true"></i><div><strong>${esc(nameOf(p))}</strong><p>${esc(tipOf(p))}</p></div><div class="right">${span(p)}<br>${badge(p.nature)}</div></div>`).join('');
   const ev = muhuratDays(muhuratEvent, day, 60);
   const lead = `<div class="eyebrow">${esc(L.vaarName(d.frame.weekday))} · ${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</div><h1>${esc(t('muhurat'))}</h1>${datebar()}`
-    + `<section class="section">${groupHead(t('ovPlan'), esc(t('findMuhurat')))}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(e.en)}</option>`).join('')}</select></label>`
-    + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('goodDays'))}</div></div></div>${ev.length ? ev.map(x => `<div class="timeline" onclick="setDay('${x.key}')"><i class="dot good"></i><div><strong>${dayLabel(x.key)}</strong><p>${esc(x.why)}</p></div><div class="right">${span(x.win)}<br>${esc(L.chogName(x.win.key))}</div></div>`).join('') : `<p style="padding:14px 0">${esc(t('noGoodDays'))}</p>`}</div>`
-    + `<p class="caption" style="margin-top:10px">For vivah (wedding) muhurat, match the couple’s charts with your family priest.</p></section>`;
-  const rest = `<section class="section">${groupHead(t('ovDay'), esc(t('bestTimes')))}<div class="list">`
-    + [['abhijit', d.periods.abhijit, 'good'], ['brahma', d.periods.brahma, 'good'], ['rahu', d.periods.rahu, 'bad'], ['yamaganda', d.periods.yamaganda, 'bad'], ['gulika', d.periods.gulika, 'bad']]
-      .map(([k, p, n]) => `<div class="timeline"><i class="dot ${n}"></i><div><strong>${esc(t(k))}</strong>${k === 'abhijit' && p.wednesday ? '<p>Not used on Wednesdays</p>' : ''}</div><div class="right">${span(p)}</div></div>`).join('') + '</div></section>'
-    + `<section class="section">${groupHead(t('choghadiya'), esc(t('day')))}<div class="list chog">${list(d.choghadiya.filter(c => !c.night), c => L.chogName(c.key), c => M.CHOG[c.key].good)}</div></section>`
-    + `<section class="section">${groupHead(t('choghadiya'), esc(t('night')))}<div class="list chog">${list(d.choghadiya.filter(c => c.night), c => L.chogName(c.key), c => M.CHOG[c.key].good)}</div></section>`
-    + `<section class="section"><details><summary>${esc(t('hora'))} (24)</summary><div class="list">${list(d.hora, h => L.planetName(h.lord), h => M.PLANET[h.lord].good)}</div></details></section>`;
+    + `<section class="section">${groupHead(t('ovPlan'), esc(t('findMuhurat')))}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(tr(e.en))}</option>`).join('')}</select></label>`
+    + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('goodDays'))}</div></div></div>${ev.length ? ev.map(x => `<button type="button" class="timeline rowbtn" onclick="setDay('${x.key}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(x.key), what: L.chogName(x.win.key) + ' ' + span(x.win) }))}"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)} · ${span(x.win)} · ${esc(L.chogName(x.win.key))}</strong><p>${esc(t('why'))}: ${esc(x.why)}</p></div><span class="chev" aria-hidden="true">›</span></button>`).join('') : `<p style="padding:14px 0">${esc(t('noGoodDays'))}</p>`}</div>`
+    + `<p class="caption" style="margin-top:10px">${esc(t('vivahNote'))}</p></section>`;
+  // Shubh and avoid times are two separate groups, so nobody skimming a "best times" list lands in Rahu Kaal.
+  const periodRow = ([k, p, n]) => `<div class="timeline"><i class="dot ${n}" aria-hidden="true"></i><div><strong>${esc(t(k))}</strong>${k === 'abhijit' && p.wednesday ? `<p>${esc(t('notWednesday'))}</p>` : ''}</div><div class="right">${span(p)}<br>${badge(n)}</div></div>`;
+  const rest = `<section class="section">${groupHead(t('ovDay'), esc(t('shubhToday')))}<div class="list">`
+    + [['abhijit', d.periods.abhijit, 'good'], ['brahma', d.periods.brahma, 'good']].map(periodRow).join('') + '</div></section>'
+    + `<section class="section">${groupHead(t('ovDay'), esc(t('avoidToday')))}<div class="list">`
+    + [['rahu', d.periods.rahu, 'bad'], ['yamaganda', d.periods.yamaganda, 'bad'], ['gulika', d.periods.gulika, 'bad']].map(periodRow).join('') + '</div></section>'
+    + `<section class="section">${groupHead(t('choghadiya'), esc(t('day')))}<div class="list chog">${list(d.choghadiya.filter(c => !c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></section>`
+    + `<section class="section">${groupHead(t('choghadiya'), esc(t('night')))}<div class="list chog">${list(d.choghadiya.filter(c => c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></section>`
+    + `<section class="section"><details><summary>${esc(t('hora'))} (24)</summary><div class="list">${list(d.hora, h => L.planetName(h.lord), h => tr(M.PLANET[h.lord].good))}</div></details></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
 
@@ -383,9 +448,9 @@ function moonView() {
   const d = live ? now() : K.instant(day, String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0'), loc.zone), ti = K.tithi(d), data = K.dayData(day, loc), illum = A.Illumination('Moon', d);
   const nk = P.nakshatra(d), rashi = Math.floor(P.moonSid(d) / 30);
   const next = [0, 90, 180, 270].map((a, i) => ({ name: L.tithiName([29, 7, 14, 22][i]), d: A.SearchMoonPhase(a, d, 32).date })).sort((a, b) => a.d - b.d);
-  const lead = `<div class="eyebrow">${esc(t('moonTitle'))}</div><h1>${esc(L.tithiName(ti.index))}</h1><p>${titleDay(day)}</p><div class="moonbox"><canvas width="420" height="420" id="largeMoon" aria-label="Moon illumination"></canvas></div>`
-    + `<div style="text-align:center"><h2>${Math.round(illum.phase_fraction * 100)}%</h2><p>${esc(L.nakName(nk.index))} ${nk.pada} · ${esc(L.rashiName(rashi))}</p></div>`
-    + `<label>${live ? esc(t('now')) + ' · ' : ''}<span id="scrubTime">${fmt(d)}</span><input aria-label="Time of day" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="$('scrubTime').textContent=String(Math.floor(this.value)).padStart(2,'0')+':'+String(Math.round(this.value%1*60)).padStart(2,'0')" onchange="hour=+this.value;moonView()"></label>${datebar()}`;
+  const lead = `<div class="eyebrow">${esc(t('moonTitle'))}</div><h1>${esc(L.tithiName(ti.index))}</h1><p>${titleDay(day)}</p><div class="moonbox"><canvas width="420" height="420" id="largeMoon" role="img" aria-label="${esc(t('moonIllum'))} ${Math.round(illum.phase_fraction * 100)}%"></canvas></div>`
+    + `<div style="text-align:center"><h2>${num(Math.round(illum.phase_fraction * 100))}%</h2><p>${esc(L.nakName(nk.index))} ${num(nk.pada)} · ${esc(L.rashiName(rashi))}</p></div>`
+    + `<label>${live ? esc(t('now')) + ' · ' : ''}<span id="scrubTime">${fmt(d)}</span><input aria-label="${esc(t('timeOfDay'))}" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="$('scrubTime').textContent=String(Math.floor(this.value)).padStart(2,'0')+':'+String(Math.round(this.value%1*60)).padStart(2,'0')" onchange="hour=+this.value;moonView()"></label>${datebar()}`;
   const rest = `<div class="grid2"><div class="card"><div class="caption">${esc(t('moonrise'))}</div><div class="value">${fmt(data.moonrise)}</div></div><div class="card"><div class="caption">${esc(t('moonset'))}</div><div class="value">${fmt(data.moonset)}</div></div></div>`
     + `<section class="section"><h2>${esc(t('comingUp'))}</h2><div class="list">${next.map(e => `<div class="timeline"><i class="dot"></i><div><strong>${esc(e.name)}</strong></div><div class="right">${full(e.d)}</div></div>`).join('')}</div></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
@@ -393,24 +458,25 @@ function moonView() {
 }
 
 // ---- Learn (Gyan) -----------------------------------------------------------------------------
+/* Gyan: short lessons, written in each language (not machine-glued), so a Gujarati reader never meets an English page. */
 const lessons = [
-  ['તિથિ · Tithi, the lunar day', 'PANCHANG', 'A tithi is the time the Moon takes to move 12° ahead of the Sun. There are 30 in a lunar month: 15 in Shukla paksha (સુદ) as the Moon grows and 15 in Krishna paksha (વદ) as it wanes. The tithi at sunrise, the udaya tithi, governs the day.', 'Tithis fall in five families that repeat: Nanda (joy), Bhadra (steady), Jaya (victory), Rikta (empty) and Purna (complete). Rikta tithis, Chaturthi, Navami and Chaturdashi, are kept for clearing obstacles rather than new beginnings.', 'https://packolkata.imd.gov.in/panchang/en/preface'],
-  ['નક્ષત્ર · The 27 nakshatras', 'PANCHANG', 'The Moon passes through 27 nakshatras, each ruled by a deity. The nakshatra of the day shapes what work it suits: fixed (Dhruva) stars for foundations and griha pravesh, movable (Chara) stars for travel and vehicles, swift (Kshipra) stars for trade and medicine, gentle (Mridu) stars for arts and relationships.', 'Fierce (Ugra) and sharp (Tikshna) nakshatras are avoided for ceremonies. Your janma nakshatra, the Moon’s nakshatra at birth, is the basis of Tarabalam.', ''],
-  ['ચોઘડિયું · Choghadiya and Hora', 'MUHURAT', 'The day from sunrise to sunset and the night from sunset to the next sunrise are each split into eight Choghadiyas. Amrit, Shubh and Labh are auspicious, Char is good for travel, and Udveg, Kaal and Rog are avoided for new work.', 'Hora divides the day and night into twelve parts each, ruled in turn by the seven grahas starting with the lord of the weekday. Choose a Jupiter, Venus, Mercury or Moon hora for good work. Rahu Kaal, Yamaganda and Gulika are eighths of the daytime set aside each weekday. On the Today dial the coloured ring is the Choghadiya, the dotted inner band is Rahu Kaal and the hand is now.', ''],
-  ['અગિયારસ · Ekadashi and parana', 'VRAT', 'Ekadashi, the eleventh tithi of each paksha, is kept as a fast for Vishnu. Soma follows the sunrise rule: the fast is kept on the day Ekadashi prevails at sunrise.', 'The fast is broken (parana) on Dwadashi after sunrise, after Hari Vasara (the first quarter of Dwadashi) has passed, ideally in the morning and always before Dwadashi ends. Soma shows this window for your city.', ''],
-  ['સુદ, વદ અને માસ · Amanta and Purnimanta', 'CALENDAR', 'In Gujarat, Maharashtra and the South a lunar month ends at Amavasya (amanta). In North India it ends at Purnima (purnimanta), so the Krishna paksha carries the next month’s name. The festival falls on the same day either way; only the month name differs.', 'Every few years an adhik (extra) month keeps the lunar year in step with the seasons. Festivals are not celebrated in an adhik month. Choose your month system in Settings.', ''],
-  ['ગ્રહણ · Grahan and sutak', 'VRAT', 'Soma lists lunar and solar eclipses that are visible from your city. Sutak traditionally begins nine hours before a lunar eclipse and twelve hours before a solar eclipse; food is not cooked and temples close until the eclipse ends.', 'After the eclipse, bathe, offer charity and resume puja.', ''],
-  ['નક્ષત્ર અને રાશિ · Your birth sky', 'JYOTISH', 'Your janma rashi and nakshatra come from the Moon’s sidereal position at your birth. Each day Soma compares today’s Moon with them: Chandrabalam is strong when the Moon is 1st, 3rd, 6th, 7th, 10th or 11th from your rashi, and Tarabalam counts the nakshatras from yours in groups of nine.', 'Sampat, Kshema, Sadhana, Mitra and Param Mitra taras are supportive; Vipat, Pratyari and Naidhana call for care.', 'https://github.com/svarbhanu/grahan'],
-  ['અંકશાસ્ત્ર · Mulank and Bhagyank', 'ANKSHASTRA', 'Mulank is the sum of the digits of your birth day reduced to one digit. Bhagyank is the sum of all digits of your full birth date, reduced the same way.', 'Soma uses single-digit reduction without master numbers.', ''],
-  ['અમારી ગણતરી · How Soma calculates', 'METHOD', 'Soma is a Drik (computed) panchang. Astronomy Engine 2.1.19 finds the Sun and Moon offline; sidereal positions use the Lahiri ayanamsa (linear approximation). Sunrise uses the standard refracted horizon at sea level for the city you choose, so times can differ by a minute or two from a printed panchang made for another town.', 'Festival dates follow the common rules for each observance (udaya tithi, pradosh, nishita, madhyahna, aparahna, moonrise) for your own place and time zone; families and sampradayas sometimes follow a different rule, so a date can differ by a day from your local almanac. The muhurat finder checks nakshatra, tithi, weekday, yoga and Bhadra, and skips Kharmas (and Chaturmas for griha pravesh and mundan); it does not yet check Guru or Shukra asta. City search uses an offline list of places from GeoNames. Plans, birth details and settings stay on this phone; there is no account, advertising or tracking.', 'https://github.com/cosinekitty/astronomy']
+  { tag: "tagPanchang", src: "https://packolkata.imd.gov.in/panchang/en/preface", title: {"en": "Tithi, the lunar day", "gu": "તિથિ: ચંદ્રનો દિવસ", "hi": "तिथि: चंद्र दिवस"}, body: { en: ["A tithi is the time the Moon takes to move 12° ahead of the Sun. There are 30 in a lunar month: 15 in Shukla paksha as the Moon grows and 15 in Krishna paksha as it wanes. The tithi at sunrise, the udaya tithi, governs the day.", "Tithis fall in five families that repeat: Nanda (joy), Bhadra (steady), Jaya (victory), Rikta (empty) and Purna (complete). Rikta tithis, Chaturthi, Navami and Chaturdashi, are kept for clearing obstacles rather than new beginnings."], gu: ["તિથિ એટલે ચંદ્રને સૂર્યથી 12° આગળ જતાં લાગતો સમય. ચાંદ્ર માસમાં 30 તિથિ હોય છે: ચંદ્ર વધે ત્યારે સુદ પક્ષની 15 અને ઘટે ત્યારે વદ પક્ષની 15. સૂર્યોદય સમયે ચાલતી તિથિ, એટલે ઉદય તિથિ, આખા દિવસની તિથિ ગણાય છે.", "તિથિઓ પાંચ કુળમાં વારાફરતી આવે છે: નંદા (આનંદ), ભદ્રા (સ્થિરતા), જયા (વિજય), રિક્તા (ખાલી) અને પૂર્ણા (પૂર્ણતા). રિક્તા તિથિઓ, એટલે ચોથ, નોમ અને ચૌદશ, નવી શરૂઆત માટે નહીં પણ વિઘ્ન દૂર કરવા માટે રાખવામાં આવે છે."], hi: ["तिथि वह समय है जिसमें चंद्रमा सूर्य से 12° आगे बढ़ता है। चांद्र मास में 30 तिथियाँ होती हैं: चंद्रमा के बढ़ते समय शुक्ल पक्ष की 15 और घटते समय कृष्ण पक्ष की 15। सूर्योदय के समय चल रही तिथि, यानी उदया तिथि, पूरे दिन की तिथि मानी जाती है।", "तिथियाँ पाँच वर्गों में बार-बार आती हैं: नंदा (आनंद), भद्रा (स्थिरता), जया (विजय), रिक्ता (रिक्त) और पूर्णा (पूर्णता)। रिक्ता तिथियाँ, यानी चतुर्थी, नवमी और चतुर्दशी, नई शुरुआत के लिए नहीं बल्कि बाधाएँ दूर करने के लिए रखी जाती हैं।"] } },
+  { tag: "tagPanchang", src: "", title: {"en": "The 27 nakshatras", "gu": "સત્તાવીસ નક્ષત્ર", "hi": "27 नक्षत्र"}, body: { en: ["The Moon passes through 27 nakshatras, each ruled by a deity. The nakshatra of the day shapes what work it suits: fixed (Dhruva) stars for foundations and griha pravesh, movable (Chara) stars for travel and vehicles, swift (Kshipra) stars for trade and medicine, gentle (Mridu) stars for arts and relationships.", "Fierce (Ugra) and sharp (Tikshna) nakshatras are avoided for ceremonies. Your janma nakshatra, the Moon’s nakshatra at birth, is the basis of Tarabalam."], gu: ["ચંદ્ર 27 નક્ષત્રોમાંથી પસાર થાય છે, અને દરેક નક્ષત્રના એક દેવતા છે. દિવસનું નક્ષત્ર નક્કી કરે છે કે કયું કામ શુભ છે: ધ્રુવ (સ્થિર) નક્ષત્ર પાયો અને ગૃહપ્રવેશ માટે, ચર નક્ષત્ર પ્રવાસ અને વાહન માટે, ક્ષિપ્ર નક્ષત્ર વેપાર અને ઔષધ માટે, મૃદુ નક્ષત્ર કલા અને સંબંધો માટે.", "ઉગ્ર અને તીક્ષ્ણ નક્ષત્રમાં શુભ પ્રસંગ ટાળવામાં આવે છે. તમારું જન્મ નક્ષત્ર, એટલે જન્મ સમયે ચંદ્રનું નક્ષત્ર, તારાબળનો આધાર છે."], hi: ["चंद्रमा 27 नक्षत्रों से होकर गुज़रता है, और हर नक्षत्र के एक देवता हैं। दिन का नक्षत्र बताता है कि कौन-सा काम शुभ है: ध्रुव (स्थिर) नक्षत्र नींव और गृह प्रवेश के लिए, चर नक्षत्र यात्रा और वाहन के लिए, क्षिप्र नक्षत्र व्यापार और औषधि के लिए, मृदु नक्षत्र कला और संबंधों के लिए।", "उग्र और तीक्ष्ण नक्षत्रों में संस्कार टाले जाते हैं। आपका जन्म नक्षत्र, यानी जन्म के समय चंद्रमा का नक्षत्र, ताराबल का आधार है।"] } },
+  { tag: "tagMuhurat", src: "", title: {"en": "Choghadiya and Hora", "gu": "ચોઘડિયું અને હોરા", "hi": "चौघड़िया और होरा"}, body: { en: ["The day from sunrise to sunset and the night from sunset to the next sunrise are each split into eight Choghadiyas. Amrit, Shubh and Labh are auspicious, Char is good for travel, and Udveg, Kaal and Rog are avoided for new work.", "Hora divides the day and night into twelve parts each, ruled in turn by the seven grahas starting with the lord of the weekday. Choose a Jupiter, Venus, Mercury or Moon hora for good work. Rahu Kaal, Yamaganda and Gulika are eighths of the daytime set aside each weekday. On the Today dial the coloured ring is the Choghadiya (a full band is shubh, a thin band is avoid), the dotted inner band is Rahu Kaal and the hand is now."], gu: ["સૂર્યોદયથી સૂર્યાસ્ત સુધીનો દિવસ અને સૂર્યાસ્તથી બીજા સૂર્યોદય સુધીની રાત, બંનેનાં આઠ આઠ ચોઘડિયાં થાય છે. અમૃત, શુભ અને લાભ શુભ ગણાય છે, ચલ પ્રવાસ માટે સારું છે, અને ઉદ્વેગ, કાળ અને રોગમાં નવું કામ ટાળવામાં આવે છે.", "હોરા દિવસ અને રાતને બાર બાર ભાગમાં વહેંચે છે, અને વારના સ્વામીથી શરૂ કરીને સાત ગ્રહો વારાફરતી તેના સ્વામી બને છે. સારા કામ માટે ગુરુ, શુક્ર, બુધ કે ચંદ્રની હોરા પસંદ કરો. રાહુ કાળ, યમઘંટ અને ગુલિક દરેક વારે દિવસના આઠમા ભાગ જેટલા સમય માટે ટાળવામાં આવે છે. આજના ચક્રમાં રંગીન વર્તુળ ચોઘડિયું છે (પહોળી પટ્ટી શુભ, પાતળી પટ્ટી ટાળવા જેવું), અંદરની ટપકાંવાળી પટ્ટી રાહુ કાળ છે અને કાંટો અત્યારનો સમય બતાવે છે."], hi: ["सूर्योदय से सूर्यास्त तक का दिन और सूर्यास्त से अगले सूर्योदय तक की रात, दोनों आठ-आठ चौघड़ियों में बँटते हैं। अमृत, शुभ और लाभ शुभ माने जाते हैं, चर यात्रा के लिए अच्छा है, और उद्वेग, काल और रोग में नया काम टाला जाता है।", "होरा दिन और रात को बारह-बारह भागों में बाँटता है, और वार के स्वामी से शुरू होकर सात ग्रह बारी-बारी से इसके स्वामी होते हैं। शुभ काम के लिए गुरु, शुक्र, बुध या चंद्र की होरा चुनें। राहु काल, यमगण्ड और गुलिक हर वार दिन के आठवें भाग के बराबर समय के लिए टाले जाते हैं। आज के चक्र में रंगीन वृत्त चौघड़िया है (चौड़ी पट्टी शुभ, पतली पट्टी टालने योग्य), भीतर की बिंदीदार पट्टी राहु काल है और सुई अभी का समय दिखाती है।"] } },
+  { tag: "tagVrat", src: "", title: {"en": "Ekadashi and parana", "gu": "અગિયારસ અને પારણાં", "hi": "एकादशी और पारण"}, body: { en: ["Ekadashi, the eleventh tithi of each paksha, is kept as a fast for Vishnu. Soma follows the sunrise rule: the fast is kept on the day Ekadashi prevails at sunrise.", "The fast is broken (parana) on Dwadashi after sunrise, after Hari Vasara (the first quarter of Dwadashi) has passed, ideally in the morning and always before Dwadashi ends. Soma shows this window for your city."], gu: ["અગિયારસ, દરેક પક્ષની અગિયારમી તિથિ, વિષ્ણુ માટે ઉપવાસનો દિવસ છે. સોમ ઉદય તિથિનો નિયમ અનુસરે છે: જે દિવસે સૂર્યોદયે અગિયારસ હોય તે દિવસે ઉપવાસ થાય છે.", "ઉપવાસ બારસે સૂર્યોદય પછી છોડાય છે (પારણાં), હરિ વાસર (બારસનો પહેલો ચોથો ભાગ) પૂરો થયા પછી, શક્ય હોય તો સવારે અને હંમેશાં બારસ પૂરી થાય તે પહેલાં. સોમ તમારા શહેર માટે આ સમય બતાવે છે."], hi: ["एकादशी, हर पक्ष की ग्यारहवीं तिथि, विष्णु के लिए व्रत का दिन है। सोम उदया तिथि का नियम मानता है: जिस दिन सूर्योदय पर एकादशी हो, उस दिन व्रत रखा जाता है।", "व्रत द्वादशी को सूर्योदय के बाद खोला जाता है (पारण), हरि वासर (द्वादशी का पहला चौथाई भाग) बीतने के बाद, हो सके तो सुबह और हमेशा द्वादशी समाप्त होने से पहले। सोम आपके शहर के लिए यह समय दिखाता है।"] } },
+  { tag: "tagCalendar", src: "", title: {"en": "Amanta and Purnimanta", "gu": "અમાંત અને પૂર્ણિમાંત", "hi": "अमांत और पूर्णिमांत"}, body: { en: ["In Gujarat, Maharashtra and the South a lunar month ends at Amavasya (amanta). In North India it ends at Purnima (purnimanta), so the Krishna paksha carries the next month’s name. The festival falls on the same day either way; only the month name differs.", "Every few years an adhik (extra) month keeps the lunar year in step with the seasons. Festivals are not celebrated in an adhik month. Choose your month system in Settings."], gu: ["ગુજરાત, મહારાષ્ટ્ર અને દક્ષિણ ભારતમાં ચાંદ્ર માસ અમાસે પૂરો થાય છે (અમાંત). ઉત્તર ભારતમાં તે પૂનમે પૂરો થાય છે (પૂર્ણિમાંત), એટલે વદ પક્ષને આવતા મહિનાનું નામ મળે છે. તહેવાર બંને રીતે એક જ દિવસે આવે છે; ફક્ત મહિનાનું નામ બદલાય છે.", "થોડાં વર્ષે એક અધિક માસ આવે છે, જે ચાંદ્ર વર્ષને ઋતુઓ સાથે મેળમાં રાખે છે. અધિક માસમાં તહેવાર ઉજવાતા નથી. તમારી માસ પદ્ધતિ સેટિંગ્સમાં પસંદ કરો."], hi: ["गुजरात, महाराष्ट्र और दक्षिण भारत में चांद्र मास अमावस्या पर समाप्त होता है (अमांत)। उत्तर भारत में यह पूर्णिमा पर समाप्त होता है (पूर्णिमांत), इसलिए कृष्ण पक्ष को अगले महीने का नाम मिलता है। पर्व दोनों पद्धतियों में एक ही दिन पड़ता है; केवल महीने का नाम बदलता है।", "कुछ वर्षों में एक अधिक मास आता है, जो चांद्र वर्ष को ऋतुओं के साथ बनाए रखता है। अधिक मास में पर्व नहीं मनाए जाते। अपनी मास पद्धति सेटिंग्स में चुनें।"] } },
+  { tag: "tagVrat", src: "", title: {"en": "Grahan and sutak", "gu": "ગ્રહણ અને સૂતક", "hi": "ग्रहण और सूतक"}, body: { en: ["Soma lists lunar and solar eclipses that are visible from your city. Sutak traditionally begins nine hours before a lunar eclipse and twelve hours before a solar eclipse; food is not cooked and temples close until the eclipse ends.", "After the eclipse, bathe, offer charity and resume puja."], gu: ["સોમ તમારા શહેરથી દેખાતાં ચંદ્ર અને સૂર્ય ગ્રહણ બતાવે છે. પરંપરા મુજબ સૂતક ચંદ્ર ગ્રહણના નવ કલાક પહેલાં અને સૂર્ય ગ્રહણના બાર કલાક પહેલાં શરૂ થાય છે; ગ્રહણ પૂરું થાય ત્યાં સુધી રસોઈ થતી નથી અને મંદિર બંધ રહે છે.", "ગ્રહણ પછી સ્નાન કરો, દાન આપો અને પૂજા ફરી શરૂ કરો."], hi: ["सोम आपके शहर से दिखने वाले चंद्र और सूर्य ग्रहण दिखाता है। परंपरा के अनुसार सूतक चंद्र ग्रहण से नौ घंटे पहले और सूर्य ग्रहण से बारह घंटे पहले शुरू होता है; ग्रहण समाप्त होने तक भोजन नहीं पकाया जाता और मंदिर बंद रहते हैं।", "ग्रहण के बाद स्नान करें, दान दें और पूजा फिर से शुरू करें।"] } },
+  { tag: "tagJyotish", src: "https://github.com/svarbhanu/grahan", title: {"en": "Your birth sky", "gu": "તમારું જન્મ આકાશ", "hi": "आपका जन्म आकाश"}, body: { en: ["Your janma rashi and nakshatra come from the Moon’s sidereal position at your birth. Each day Soma compares today’s Moon with them: Chandrabalam is strong when the Moon is 1st, 3rd, 6th, 7th, 10th or 11th from your rashi, and Tarabalam counts the nakshatras from yours in groups of nine.", "Sampat, Kshema, Sadhana, Mitra and Param Mitra taras are supportive; Vipat, Pratyari and Naidhana call for care."], gu: ["તમારી જન્મ રાશિ અને જન્મ નક્ષત્ર જન્મ સમયે ચંદ્રની નિરયન સ્થિતિ પરથી નક્કી થાય છે. સોમ દરરોજ આજના ચંદ્રને તેની સાથે સરખાવે છે: ચંદ્ર તમારી રાશિથી 1, 3, 6, 7, 10 કે 11મા સ્થાને હોય ત્યારે ચંદ્રબળ બળવાન હોય છે, અને તારાબળ તમારા નક્ષત્રથી નવ નવના સમૂહમાં ગણાય છે.", "સંપત, ક્ષેમ, સાધના, મિત્ર અને પરમ મિત્ર તારા સાથ આપે છે; વિપત, પ્રત્યરિ અને નૈધન તારામાં સાવધાની રાખવી."], hi: ["आपकी जन्म राशि और जन्म नक्षत्र जन्म के समय चंद्रमा की निरयन स्थिति से तय होते हैं। सोम हर दिन आज के चंद्रमा की उनसे तुलना करता है: चंद्रमा आपकी राशि से 1, 3, 6, 7, 10 या 11वें स्थान पर हो तो चंद्रबल बलवान होता है, और ताराबल आपके नक्षत्र से नौ-नौ के समूहों में गिना जाता है।", "संपत, क्षेम, साधना, मित्र और परम मित्र तारे सहयोगी हैं; विपत, प्रत्यरि और नैधन तारों में सावधानी रखें।"] } },
+  { tag: "tagAnk", src: "", title: {"en": "Mulank and Bhagyank", "gu": "મૂળાંક અને ભાગ્યાંક", "hi": "मूलांक और भाग्यांक"}, body: { en: ["Mulank is the sum of the digits of your birth day reduced to one digit. Bhagyank is the sum of all digits of your full birth date, reduced the same way.", "Soma uses single-digit reduction without master numbers."], gu: ["મૂળાંક એટલે જન્મ તારીખના અંકોનો સરવાળો, એક અંક સુધી ઘટાડેલો. ભાગ્યાંક એટલે આખી જન્મ તારીખના બધા અંકોનો સરવાળો, એ જ રીતે ઘટાડેલો.", "સોમ માસ્ટર અંક વગર એક અંક સુધી ઘટાડે છે."], hi: ["मूलांक जन्म की तारीख के अंकों का योग है, एक अंक तक घटाया हुआ। भाग्यांक पूरी जन्म तिथि के सभी अंकों का योग है, उसी तरह घटाया हुआ।", "सोम मास्टर अंकों के बिना एक अंक तक घटाता है।"] } },
+  { tag: "tagMethod", src: "https://github.com/cosinekitty/astronomy", title: {"en": "How Soma calculates", "gu": "સોમ કેવી રીતે ગણે છે", "hi": "सोम कैसे गणना करता है"}, body: { en: ["Soma is a Drik (computed) panchang. Astronomy Engine 2.1.19 finds the Sun and Moon offline; sidereal positions use the Lahiri ayanamsa (linear approximation). Sunrise uses the standard refracted horizon at sea level for the city you choose, so times can differ by a minute or two from a printed panchang made for another town.", "Festival dates follow the common rules for each observance (udaya tithi, pradosh, nishita, madhyahna, aparahna, moonrise) for your own place and time zone; families and sampradayas sometimes follow a different rule, so a date can differ by a day from your local almanac. The muhurat finder checks nakshatra, tithi, weekday, yoga and Bhadra, and skips Kharmas (and Chaturmas for griha pravesh and mundan); it does not yet check Guru or Shukra asta. City search uses an offline list of places from GeoNames. Plans, birth details and settings stay on this phone; there is no account, advertising or tracking."], gu: ["સોમ દૃક્ (ગણિત આધારિત) પંચાંગ છે. Astronomy Engine 2.1.19 ઑફલાઇન સૂર્ય અને ચંદ્રની સ્થિતિ શોધે છે; નિરયન સ્થિતિ લાહિરી અયનાંશ (રેખીય અંદાજ) પ્રમાણે છે. સૂર્યોદય તમે પસંદ કરેલા શહેર માટે, સમુદ્ર સપાટીએ પ્રમાણભૂત વક્રીભવન સાથે ગણાય છે, એટલે બીજા ગામ માટે છપાયેલા પંચાંગથી સમય એક બે મિનિટ જુદો પડી શકે.", "તહેવારની તારીખ દરેક ઉત્સવના સામાન્ય નિયમ (ઉદય તિથિ, પ્રદોષ, નિશીથ, મધ્યાહ્ન, અપરાહ્ન, ચંદ્રોદય) મુજબ તમારા સ્થળ અને સમય વિસ્તાર માટે ગણાય છે; કેટલાંક કુટુંબ અને સંપ્રદાય જુદો નિયમ પાળે છે, એટલે તારીખ તમારા સ્થાનિક પંચાંગથી એક દિવસ જુદી પડી શકે. મુહૂર્ત શોધક નક્ષત્ર, તિથિ, વાર, યોગ અને ભદ્રા તપાસે છે, અને કમૂરતાં (અને ગૃહપ્રવેશ તથા મુંડન માટે ચાતુર્માસ) છોડી દે છે; ગુરુ કે શુક્રનો અસ્ત હજી તપાસતો નથી. શહેર શોધ GeoNames ની ઑફલાઇન યાદી વાપરે છે. કાર્યક્રમ, જન્મ વિગત અને સેટિંગ્સ આ ફોનમાં જ રહે છે; કોઈ ખાતું, જાહેરાત કે ટ્રેકિંગ નથી."], hi: ["सोम दृक् (गणना आधारित) पंचांग है। Astronomy Engine 2.1.19 ऑफ़लाइन सूर्य और चंद्रमा की स्थिति निकालता है; निरयन स्थिति लाहिरी अयनांश (रेखीय अनुमान) से है। सूर्योदय आपके चुने शहर के लिए, समुद्र तल पर मानक अपवर्तन के साथ गिना जाता है, इसलिए किसी दूसरे नगर के छपे पंचांग से समय एक-दो मिनट अलग हो सकता है।", "पर्व की तिथि हर उत्सव के सामान्य नियम (उदया तिथि, प्रदोष, निशीथ, मध्याह्न, अपराह्न, चंद्रोदय) के अनुसार आपके स्थान और समय क्षेत्र के लिए निकाली जाती है; कुछ परिवार और संप्रदाय अलग नियम मानते हैं, इसलिए तिथि आपके स्थानीय पंचांग से एक दिन अलग हो सकती है। मुहूर्त खोज नक्षत्र, तिथि, वार, योग और भद्रा देखती है, और खरमास (तथा गृह प्रवेश और मुंडन के लिए चातुर्मास) छोड़ देती है; गुरु या शुक्र अस्त अभी नहीं देखती। शहर खोज GeoNames की ऑफ़लाइन सूची से होती है। योजनाएँ, जन्म विवरण और सेटिंग्स इसी फ़ोन में रहते हैं; कोई खाता, विज्ञापन या ट्रैकिंग नहीं है।"] } }
 ];
-/* Lesson titles carry the Gujarati word first; English readers see only the English half. */
-const lessonTitle = l => L.lang === 'gu' ? l[0] : l[0].split(' · ').slice(1).join(' · ') || l[0];
+const lessonTitle = l => l.title[L.lang] || l.title.en;
+const lessonBody = l => l.body[L.lang] || l.body.en;
 function learnView() {
-  $('app').innerHTML = `<div class="eyebrow">${esc(t('learnTitle'))}</div><h1>${esc(t('learnMore'))}</h1><p style="margin-top:6px">${esc(t('learnSub'))}</p><div class="section">${lessons.map((l, i) => `<button class="lesson" onclick="lesson(${i})"><div class="eyebrow">${l[1]}</div><h3>${esc(lessonTitle(l))} <span>›</span></h3><span>${l[2].slice(0, 96)}…</span></button>`).join('')}</div>`;
+  $('app').innerHTML = `<div class="eyebrow">${esc(t('learnTitle'))}</div><h1>${esc(t('learnMore'))}</h1><p style="margin-top:6px">${esc(t('learnSub'))}</p><div class="section">${lessons.map((l, i) => `<button class="lesson" onclick="lesson(${i})"><div class="eyebrow">${esc(t(l.tag))}</div><h3>${esc(lessonTitle(l))} <span aria-hidden="true">›</span></h3><span>${esc(lessonBody(l)[0].slice(0, 96))}…</span></button>`).join('')}</div>`;
 }
 function modal(html) { $('dialogBody').innerHTML = html; if (!$('modal').open) $('modal').showModal(); $('modal').scrollTop = 0; }
-function lesson(i) { const l = lessons[i]; modal(`<div class="eyebrow">${l[1]}</div><h2>${esc(lessonTitle(l))}</h2><p style="color:var(--ink)">${l[2]}</p><p>${l[3]}</p>${l[4] ? `<a href="${l[4]}">Read the source</a>` : ''}`); }
+function lesson(i) { const l = lessons[i], b = lessonBody(l); modal(`<div class="eyebrow">${esc(t(l.tag))}</div><h2 id="sheetTitle">${esc(lessonTitle(l))}</h2><p style="color:var(--ink)">${esc(b[0])}</p><p>${esc(b[1])}</p>${l.src ? `<a href="${l.src}">${esc(t('readSource'))}</a>` : ''}`); }
 
 // ---- Places: search instead of coordinates -----------------------------------------------------
 const placeHits = { loc: [], birth: [] };
@@ -430,6 +496,7 @@ function pickPlace(i, kind) {
   const set = (id, v) => { if ($(id)) $(id).value = v; };
   if (kind === 'loc') { set('place', h.name); set('lat', h.lat); set('lon', h.lon); set('zone', h.zone); }
   else { set('birthPlace', h.label); set('birthLat', h.lat); set('birthLon', h.lon); set('birthZone', h.zone); }
+  if (kind === 'birth') setTimeout(birthPreview, 0);
   $(kind + 'Results').innerHTML = ''; $(kind + 'Query').value = '';
   $(kind + 'Picked').innerHTML = pickedHtml(h.name, [h.state, h.country].filter(Boolean).join(', '));
   if (kind === 'loc') saveLocation();
@@ -438,7 +505,7 @@ function locationFields() {
   return `<button class="primary gold" type="button" onclick="gps()">${icon('pin')} ${esc(t('useMyLocation'))}</button><div class="or">${esc(t('orSearch'))}</div>${placeField('loc', loc.name)}`
     + `<details><summary>${esc(t('advanced'))}</summary><label>${esc(t('placeName'))}<input id="place" value="${esc(loc.name)}" maxlength="70"></label><div class="grid2"><label>${esc(t('latitude'))}<input id="lat" type="number" step="any" value="${loc.lat}"></label><label>${esc(t('longitude'))}<input id="lon" type="number" step="any" value="${loc.lon}"></label></div><label>${esc(t('timeZone'))}<input id="zone" value="${esc(loc.zone)}" placeholder="Asia/Kolkata"></label><button class="primary" type="button" onclick="saveLocation()">${esc(t('useThis'))}</button></details>`;
 }
-function locationSheet() { modal(`<div class="eyebrow">${esc(t('location'))}</div><h2>${esc(t('whereAreYou'))}</h2><p>${esc(t('whereWhy'))}</p>${locationFields()}`); }
+function locationSheet() { modal(`<div class="eyebrow">${esc(t('location'))}</div><h2 id="sheetTitle">${esc(t('whereAreYou'))}</h2><p>${esc(t('whereWhy'))}</p>${locationFields()}`); }
 /* Switch place. If the screen was on today, stay on today in the new place's time zone. */
 function setLoc(next) {
   const wasToday = isToday();
@@ -452,12 +519,12 @@ function saveLocation() {
     const lat = Number($('lat').value), lon = Number($('lon').value), zone = $('zone').value.trim();
     if (!$('lat').value || !$('lon').value || !Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) || Math.abs(lon) > 180) throw Error();
     new Intl.DateTimeFormat('en', { timeZone: zone });
-    setLoc({ name: $('place').value.trim() || 'Custom location', lat, lon, zone });
+    setLoc({ name: $('place').value.trim() || t('customLoc'), lat, lon, zone });
     applyLocationDefaults(); persist(); haptic('success');
     if ($('modal').open) $('modal').close();
     scheduleNative(true);
     if (onboardStep) onboard(3); else render();
-  } catch (e) { toast('Enter valid coordinates and an IANA time zone.'); }
+  } catch (e) { toast(t('errCoords')); }
 }
 function gps() {
   toast(t('locating'));
@@ -469,7 +536,7 @@ function gps() {
 function receiveGPS(p) {
   if (p.error) { toast(t('locFailed')); return; }
   const near = Places.nearest(p.lat, p.lon);
-  const name = near ? (near.km > 15 ? t('nearPlace', { p: near.name }) : near.name) : 'Current location';
+  const name = near ? (near.km > 15 ? t('nearPlace', { p: near.name }) : near.name) : t('currentLoc');
   setLoc({ name, lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), zone: p.zone || (near && near.zone) || 'Asia/Kolkata' });
   applyLocationDefaults(); persist(); haptic('success');
   if ($('modal').open) $('modal').close();
@@ -484,12 +551,13 @@ function setPref(key, v) { prefs[key] = v; if (key === 'lang') L = I18n.make(v);
 function setLang(v) { setPref('lang', v); }
 function setTheme(v) { setPref('theme', v); }
 function setLayout(v) { setPref('layout', v); }
+function setDigits(v) { fmtCache.clear(); setPref('digits', v); }
 const LANGS = [['en', 'English'], ['gu', 'ગુજરાતી'], ['hi', 'हिन्दी']];
 function settings() {
   const r = prefs.reminders, check = (k, label) => `<label class="check"><input type="checkbox" id="rem_${k}" ${r[k] ? 'checked' : ''}> ${esc(label)}</label>`;
-  modal(`<div class="eyebrow">${esc(t('settings'))}</div><h2>${esc(t('location'))}</h2>${locationFields()}`
-    + `<h2 class="section">${esc(t('language'))}</h2><select id="langPick">${LANGS.map(([k, n]) => `<option value="${k}" ${prefs.lang === k ? 'selected' : ''}>${n}</option>`).join('')}</select>`
-    + `<h2 class="section">${esc(t('monthSystem'))}</h2><select id="monthPick"><option value="amanta" ${prefs.month === 'amanta' ? 'selected' : ''}>${esc(t('amanta'))}</option><option value="purnimanta" ${prefs.month === 'purnimanta' ? 'selected' : ''}>${esc(t('purnimanta'))}</option></select>`
+  modal(`<div class="eyebrow">${esc(t('settings'))}</div><h2 id="sheetTitle">${esc(t('location'))}</h2>${locationFields()}`
+    + `<h2 class="section">${esc(t('language'))}</h2><select id="langPick" aria-label="${esc(t('language'))}">${LANGS.map(([k, n]) => `<option value="${k}" ${prefs.lang === k ? 'selected' : ''}>${n}</option>`).join('')}</select>`
+    + `<h2 class="section">${esc(t('monthSystem'))}</h2><select id="monthPick" aria-label="${esc(t('monthSystem'))}"><option value="amanta" ${prefs.month === 'amanta' ? 'selected' : ''}>${esc(t('amanta'))}</option><option value="purnimanta" ${prefs.month === 'purnimanta' ? 'selected' : ''}>${esc(t('purnimanta'))}</option></select>`
     + `<h2 class="section">${esc(t('festivalSets'))}</h2><div class="card">${Fe.SETS.map(s => `<label class="check"><input type="checkbox" id="set_${s}" ${prefs.sets.indexOf(s) >= 0 ? 'checked' : ''}> ${esc(t('sets')[s])}</label>`).join('')}</div>`
     + `<h2 class="section">${esc(t('reminders'))}</h2><div class="card">${check('vrat', t('remVrat'))}${check('parana', t('remParana'))}${check('daily', t('remDaily'))}${check('rahu', t('remRahu'))}</div>`
     + `<button class="primary" onclick="savePrefs()">${esc(t('save'))}</button><button class="lesson" onclick="lesson(8)"><h3>${esc(t('method'))} <span>›</span></h3></button>`);
@@ -518,19 +586,19 @@ function timingCheck() {
     + (better ? `<p>${esc(t('nextGood'))}: ${span(better)} ${esc(L.chogName(better.key))}</p><button type="button" class="quiet" onclick="document.getElementById('eventTime').value='${K.parts(better.start, loc.zone).hour}:${K.parts(better.start, loc.zone).minute}';timingCheck()">${esc(t('useTime'))}</button>` : '');
 }
 function plan() {
-  modal(`<div class="eyebrow">${esc(t('muhurat'))}</div><h2>${esc(t('planEvent'))}</h2><p>${titleDay(day)}</p><form onsubmit="saveEvent(event)"><label>Event title<input id="eventTitle" required maxlength="100" placeholder="Griha pravesh"></label><label>Local start time<input type="time" id="eventTime" value="10:00" required oninput="timingCheck()"></label><div class="card" id="timingCheck"></div><label>Duration<select id="duration"><option value="60">1 hour</option><option value="30">30 minutes</option><option value="120">2 hours</option></select></label><p class="caption">${esc(loc.name)} · ${esc(loc.zone)}</p><button class="primary">Save plan</button></form>`);
+  modal(`<div class="eyebrow">${esc(t('muhurat'))}</div><h2 id="sheetTitle">${esc(t('planEvent'))}</h2><p>${titleDay(day)}</p><form onsubmit="saveEvent(event)"><label>${esc(t('evTitle'))}<input id="eventTitle" required maxlength="100" placeholder="${esc(t('evPlaceholder'))}"></label><label>${esc(t('evTime'))}<input type="time" id="eventTime" value="10:00" required oninput="timingCheck()"></label><div class="card" id="timingCheck" aria-live="polite"></div><label>${esc(t('evDuration'))}<select id="duration"><option value="60">${esc(t('dur60'))}</option><option value="30">${esc(t('dur30'))}</option><option value="120">${esc(t('dur120'))}</option></select></label><p class="caption">${esc(loc.name)} · ${esc(loc.zone)}</p><button class="primary">${esc(t('savePlan'))}</button></form>`);
   timingCheck();
 }
 function saveEvent(e) {
   e.preventDefault();
-  if (!$('eventTitle').value.trim()) { toast('Enter an event title.'); return; }
+  if (!$('eventTitle').value.trim()) { toast(t('errEvTitle')); return; }
   const time = $('eventTime').value, start = K.instant(day, time, loc.zone), rt = K.parts(start, loc.zone);
-  if (rt.hour + ':' + rt.minute !== time) { toast('This clock time does not exist due to a DST change. Choose another.'); return; }
+  if (rt.hour + ':' + rt.minute !== time) { toast(t('errDst')); return; }
   const c = P.at(frameFor(start).choghadiya, start);
-  events.push({ id: Date.now().toString(36), title: $('eventTitle').value.trim(), day, time, start: start.toISOString(), end: new Date(+start + Number($('duration').value) * 60000).toISOString(), zone: loc.zone, place: loc.name, tithi: L.tithiName(K.tithi(start).index), muhurat: c ? M.CHOG[c.key].en + ' choghadiya' : '' });
-  if (persist()) { $('modal').close(); haptic('success'); show('calendar'); toast('Plan saved on this device'); }
+  events.push({ id: Date.now().toString(36), title: $('eventTitle').value.trim(), day, time, start: start.toISOString(), end: new Date(+start + Number($('duration').value) * 60000).toISOString(), zone: loc.zone, place: loc.name, tithi: L.tithiName(K.tithi(start).index), muhurat: c ? L.chogName(c.key) + ' ' + t('choghadiya') : '' });
+  if (persist()) { $('modal').close(); haptic('success'); show('calendar'); toast(t('planSaved')); }
 }
-function deleteEvent(id) { modal(`<h2>Remove this plan?</h2><p>This removes the local copy only.</p><button class="primary" onclick="events=events.filter(e=>e.id!=='${id}');persist();document.querySelector('dialog').close();render()">Remove plan</button>`); }
+function deleteEvent(id) { modal(`<h2 id="sheetTitle">${esc(t('removePlanQ'))}</h2><p>${esc(t('removePlanBody'))}</p><button class="primary danger" onclick="events=events.filter(e=>e.id!=='${id}');persist();document.querySelector('dialog').close();render()">${esc(t('removePlan'))}</button>`); }
 function exportEvent(id) {
   const e = events.find(x => x.id === id);
   if (window.SomaNative && SomaNative.addCalendarEvent) { SomaNative.addCalendarEvent(e.title, e.start, e.end, e.place, e.tithi); return; }
@@ -547,49 +615,71 @@ function personalView() {
     const instant = K.instant(profile.date, profile.time || '12:00', profile.zone || 'Asia/Kolkata'), n = K.sidereal(instant), nak = Math.floor(n / (360 / 27));
     const today = P.personal(n, now()), first = day.slice(0, 7) + '-01', count = new Date(+day.slice(0, 4), +day.slice(5, 7), 0).getDate(), good = [];
     for (let i = 0; i < count; i++) { const key = K.addDay(first, i), r = K.dayData(key, loc).sunrise; if (r && P.personal(n, r).verdict === 'good') good.push(key); }
-    natal = `<div class="grid2 section"><div class="card"><div class="caption">${esc(t('janmaRashi'))}</div><h2>${esc(L.rashiName(Math.floor(n / 30)))}</h2></div><div class="card"><div class="caption">${esc(t('janmaNak'))}</div><h2>${esc(L.nakName(nak))}</h2><p class="caption">Pada ${Math.floor((n % (360 / 27)) / (360 / 108)) + 1} · ${esc(M.nakshatra(nak).deity)}</p></div></div>`
-      + `<div class="card personalDay ${today.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(today.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(today.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${today.chandraCount} · ${today.chandraGood ? esc(t('good')) : esc(t('bad'))}</p><p>${esc(t('tarabalam'))}: ${esc(M.TARA[today.tara.key])}</p></div>`
+    natal = `<div class="grid2 section"><div class="card"><div class="caption">${esc(t('janmaRashi'))}</div><h2>${esc(L.rashiName(Math.floor(n / 30)))}</h2></div><div class="card"><div class="caption">${esc(t('janmaNak'))}</div><h2>${esc(L.nakName(nak))}</h2><p class="caption">${esc(t('pada', { n: num(Math.floor((n % (360 / 27)) / (360 / 108)) + 1) }))} · ${esc(tr(M.nakshatra(nak).deity))}</p></div></div>`
+      + `<div class="card personalDay ${today.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(today.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(today.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${num(today.chandraCount)} · ${esc(t(today.chandraGood ? 'strong' : 'weak'))}</p><p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[today.tara.key]))}</p></div>`
       + `<div class="card"><div class="eyebrow">${esc(t('personalDays'))}</div><div class="chipRow" style="flex-wrap:wrap">${good.length ? good.map(k => `<button class="chip" onclick="setDay('${k}');show('today')">${dayLabel(k, { weekday: undefined })}</button>`).join('') : esc(t('none'))}</div></div>`;
     // The kundali's houses hang on the lagna, which needs the birth time; without it, show only what the Moon gives.
-    if (profile.timeUnknown) natal += `<div class="card"><span class="tag">Janma kundali</span><p class="notice">${esc(t('timeUnknownNote'))}</p></div>`;
+    if (profile.timeUnknown) natal += `<div class="card"><span class="tag">${esc(t('kundali'))}</span><p class="notice">${esc(t('timeUnknownNote'))}</p></div>`;
     else if (window.SomaNatal) {
-      try { natal += `<div class="card"><span class="tag">Janma kundali · North Indian</span><div class="natal">${SomaNatal.chart(instant, profile.lat, profile.lon)}</div><p class="caption">Sidereal (Lahiri) chart for ${esc(profile.date)} ${esc(profile.time)} · ${esc(profile.place || profile.zone)}</p></div>`; }
-      catch (e) { natal += '<p class="notice">Chart unavailable for this input.</p>'; }
+      try { natal += `<div class="card"><span class="tag">${esc(t('kundaliNorth'))}</span><div class="natal">${SomaNatal.chart(instant, profile.lat, profile.lon, L.lang, t('lagnaMark'))}</div><p class="caption">${esc(t('chartFor', { date: dayLabel(profile.date, { weekday: undefined, year: 'numeric' }), time: fmtIn(instant, profile.zone || loc.zone), place: (profile.place || profile.zone).split(',')[0] }))}</p></div>`; }
+      catch (e) { natal += `<p class="notice">${esc(t('chartFail'))}</p>`; }
     }
-    natal += `<section class="section">${groupHead(t('ovNumbers'), esc(t('numerology')))}<div class="grid2"><div class="card"><div class="caption">${esc(t('mulank'))}</div><div class="number">${K.reduce(profile.date.slice(-2))}</div></div><div class="card"><div class="caption">${esc(t('bhagyank'))}</div><div class="number">${K.reduce(profile.date)}</div></div></div><button class="lesson" onclick="lesson(7)"><h3>How these are counted <span>›</span></h3></button></section>`;
+    natal += `<section class="section">${groupHead(t('ovNumbers'), esc(t('numerology')))}<div class="grid2"><div class="card"><div class="caption">${esc(t('mulank'))}</div><div class="number">${num(K.reduce(profile.date.slice(-2)))}</div></div><div class="card"><div class="caption">${esc(t('bhagyank'))}</div><div class="number">${num(K.reduce(profile.date))}</div></div></div><button class="lesson" onclick="lesson(7)"><h3>${esc(t('howCounted'))} <span aria-hidden="true">›</span></h3></button></section>`;
   }
   const head = `<div class="eyebrow">${esc(t('yourSky'))}</div><h1>${esc(t('you'))}</h1>`
     + `<div class="card"><div class="profile"><div class="avatar">${SomaDial.moon(34, birthMoon() != null ? 120 : 60)}</div><div style="flex:1;min-width:0"><span class="tag">${esc(t('birthStays'))}</span><h3 style="margin-top:6px">${has ? esc(dayLabel(profile.date, { year: 'numeric' }).replace(/,? \d{1,2}:.*/, '')) + (profile.place ? ' · ' + esc(profile.place.split(',')[0]) : '') : esc(t('addBirth'))}</h3></div></div><button class="primary" onclick="editProfile()">${has ? esc(t('editBirth')) : esc(t('addBirth'))}</button></div>`;
   const options = `<section class="section">${groupHead(t('ovStyle'), esc(t('appearance')))}<div class="card"><label style="margin-top:0">${esc(t('language'))}${seg(t('language'), prefs.lang, LANGS, 'setLang')}</label>`
     + `<label>${esc(t('theme'))}${seg(t('theme'), prefs.theme, [['auto', t('themeAuto')], ['light', t('themeLight')], ['dark', t('themeDark')]], 'setTheme')}</label>`
-    + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label></div></section>`
+    + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label>`
+    + (L.lang !== 'en' ? `<label>${esc(t('digits'))}${seg(t('digits'), prefs.digits === 'native' ? 'native' : 'latin', [['latin', t('digitsLatin')], ['native', L.lang === 'gu' ? '૧ ૨ ૩' : '१ २ ३']], 'setDigits')}</label>` : '')
+    + `<p class="caption" style="margin-top:12px">${esc(t('textSize'))}</p></div></section>`
     + `<section class="section">${groupHead(t('ovApp'), esc(t('settings')))}<div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button>${updatesOn() ? `<button onclick="updateSheet()">${esc(t('updTitle'))}<span>${esc((updateInfo() || {}).versionName || '')} ›</span></button>` : ''}</div>`
     + (has ? `<button class="quiet section" onclick="eraseProfile()">${esc(t('deleteBirth'))}</button>` : '') + `</section>`;
-  $('app').innerHTML = `<div class="split"><div class="lead">${head}${options}</div><div class="rest">${natal || `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>Janma rashi, nakshatra, Chandrabalam and Tarabalam.</span></button>`}</div></div>`;
+  $('app').innerHTML = `<div class="split"><div class="lead">${head}${options}</div><div class="rest">${natal || `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>${esc(t('birthLessonSub'))}</span></button>`}</div></div>`;
 }
+/* Birth details. The birthplace must be picked (or typed under Advanced): it is never borrowed from where the phone is now,
+   and the time starts empty so a guess never looks like an answer. A line under the form reads the details back before saving. */
 function birthForm() {
-  const unknown = !!profile.timeUnknown;
-  return `<form onsubmit="saveProfile(event)"><label>${esc(t('dateOfBirth'))}<input id="birthDate" type="date" required min="1900-01-01" max="2100-12-31" value="${esc(profile.date || '')}"></label>`
-    + `<label>${esc(t('timeOfBirth'))}<input id="birthTime" type="time" value="${esc(profile.time || '12:00')}" ${unknown ? 'disabled' : ''}></label><label class="check" style="border:0"><input type="checkbox" id="birthUnknown" ${unknown ? 'checked' : ''} onchange="document.getElementById('birthTime').disabled=this.checked"> ${esc(t('dontKnowTime'))}</label>`
+  const unknown = !!profile.timeUnknown, has = v => v != null && v !== '';
+  return `<form onsubmit="saveProfile(event)" novalidate oninput="birthPreview()"><label>${esc(t('dateOfBirth'))}<input id="birthDate" type="date" required min="1900-01-01" max="2100-12-31" value="${esc(profile.date || '')}"></label>`
+    + `<label>${esc(t('timeOfBirth'))}<input id="birthTime" type="time" value="${esc(!unknown && profile.time ? profile.time : '')}" ${unknown ? 'disabled' : ''}></label><label class="check" style="border:0"><input type="checkbox" id="birthUnknown" ${unknown ? 'checked' : ''} onchange="document.getElementById('birthTime').disabled=this.checked;birthPreview()"> ${esc(t('dontKnowTime'))}</label>`
     + `<label for="birthQuery">${esc(t('placeOfBirth'))}</label>${placeField('birth', profile.place || '')}`
-    + `<details><summary>${esc(t('advanced'))}</summary><input id="birthPlace" type="hidden" value="${esc(profile.place || '')}"><div class="grid2"><label>${esc(t('latitude'))}<input id="birthLat" type="number" required step="any" min="-90" max="90" value="${profile.lat ?? loc.lat}"></label><label>${esc(t('longitude'))}<input id="birthLon" type="number" required step="any" min="-180" max="180" value="${profile.lon ?? loc.lon}"></label></div><label>${esc(t('timeZone'))}<input id="birthZone" required value="${esc(profile.zone || loc.zone)}"></label></details>`
-    + `<p class="caption" style="margin-top:12px">${esc(t('birthWhy'))}</p><button class="primary">${esc(t('seeMySky'))}</button></form>`;
+    + `<details><summary>${esc(t('advanced'))}</summary><input id="birthPlace" type="hidden" value="${esc(profile.place || '')}"><div class="grid2"><label>${esc(t('latitude'))}<input id="birthLat" type="number" step="any" min="-90" max="90" value="${has(profile.lat) ? profile.lat : ''}"></label><label>${esc(t('longitude'))}<input id="birthLon" type="number" step="any" min="-180" max="180" value="${has(profile.lon) ? profile.lon : ''}"></label></div><label>${esc(t('timeZone'))}<input id="birthZone" value="${esc(profile.zone || '')}" placeholder="Asia/Kolkata"></label></details>`
+    + `<p class="caption" style="margin-top:12px">${esc(t('birthWhy'))}</p><p id="birthConfirm" class="confirm" aria-live="polite"></p><p id="birthErr" class="err" role="alert"></p><button class="primary">${esc(t('seeMySky'))}</button></form>`;
 }
-function editProfile() { modal(`<div class="eyebrow">${esc(t('yourSky'))}</div><h2>${esc(t('birthTitle'))}</h2>${birthForm()}`); }
+/* Reads the form; returns {p} when complete or {err} naming the first thing still missing. */
+function readBirth() {
+  const val = id => ($(id) && $(id).value.trim()) || '', unknown = !!($('birthUnknown') && $('birthUnknown').checked);
+  const p = { date: val('birthDate'), time: unknown ? '12:00' : val('birthTime'), timeUnknown: unknown, zone: val('birthZone'), lat: val('birthLat'), lon: val('birthLon'), place: val('birthPlace') };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date)) return { err: t('errBirthDate') };
+  if (!unknown && !/^\d{2}:\d{2}$/.test(p.time)) return { err: t('errBirthTime') };
+  const lat = Number(p.lat), lon = Number(p.lon);
+  if (p.lat === '' || p.lon === '' || !p.zone || !Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) || Math.abs(lon) > 180) return { err: t('errBirthPlace') };
+  try { new Intl.DateTimeFormat('en', { timeZone: p.zone }); } catch (e) { return { err: t('errBirthPlace') }; }
+  const d = K.instant(p.date, p.time, p.zone), r = K.parts(d, p.zone);
+  if (r.hour + ':' + r.minute !== p.time) return { err: t('errBirthDst') };
+  p.lat = lat; p.lon = lon;
+  if (!p.place) p.place = lat.toFixed(2) + ', ' + lon.toFixed(2);
+  return { p, at: d };
+}
+function birthPreview() {
+  const out = $('birthConfirm'); if (!out) return;
+  const r = readBirth();
+  if (r.err) { out.textContent = ''; return; }
+  const p = r.p, zoneName = (new Intl.DateTimeFormat('en-IN', { timeZone: p.zone, timeZoneName: 'short' }).formatToParts(r.at).find(x => x.type === 'timeZoneName') || {}).value || p.zone;
+  const date = new Intl.DateTimeFormat(locale(), { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(p.date + 'T12:00Z'));
+  out.textContent = t('bornLine', { date, time: p.timeUnknown ? t('timeNotKnown') : fmtIn(r.at, p.zone), place: p.place.split(',')[0] + ' (' + zoneName + ')' });
+  if ($('birthErr')) $('birthErr').textContent = '';
+}
+function editProfile() { modal(`<div class="eyebrow">${esc(t('yourSky'))}</div><h2 id="sheetTitle">${esc(t('birthTitle'))}</h2>${birthForm()}`); birthPreview(); }
 function saveProfile(e) {
   e.preventDefault();
-  try {
-    const unknown = $('birthUnknown') && $('birthUnknown').checked;
-    const p = { date: $('birthDate').value, time: unknown ? '12:00' : $('birthTime').value, timeUnknown: unknown, zone: $('birthZone').value.trim(), lat: +$('birthLat').value, lon: +$('birthLon').value, place: ($('birthPlace') && $('birthPlace').value) || '' };
-    if (!p.date) throw Error();
-    new Intl.DateTimeFormat('en', { timeZone: p.zone });
-    const d = K.instant(p.date, p.time, p.zone), r = K.parts(d, p.zone);
-    if (r.hour + ':' + r.minute !== p.time) throw Error();
-    profile = p;
-    if (persist()) { haptic('success'); if ($('modal').open) $('modal').close(); if (onboardStep) finishOnboard('personal'); else personalView(); }
-  } catch (e) { toast('Check the birth date, time and place.'); }
+  const r = readBirth();
+  if (r.err) { if ($('birthErr')) $('birthErr').textContent = r.err; toast(r.err); return; }
+  profile = r.p;
+  if (persist()) { haptic('success'); if ($('modal').open) $('modal').close(); if (onboardStep) finishOnboard('personal'); else personalView(); }
 }
-function eraseProfile() { modal(`<h2>${esc(t('deleteBirth'))}?</h2><p>This clears the profile and its calculated chart.</p><button class="primary" onclick="profile={};persist();document.querySelector('dialog').close();personalView()">${esc(t('deleteBirth'))}</button>`); }
+function eraseProfile() { modal(`<h2 id="sheetTitle">${esc(t('deleteBirth'))}?</h2><p>${esc(t('eraseBody'))}</p><button class="primary danger" onclick="profile={};persist();document.querySelector('dialog').close();personalView()">${esc(t('deleteBirth'))}</button>`); }
 
 // ---- First launch: language, place, birth sky ------------------------------------------------
 let onboardStep = 0;
@@ -617,8 +707,8 @@ function reminderPlan() {
   const from = todayKey(), list = observances(from, 31), r = prefs.reminders, out = [], nowMs = Clock.ms();
   const add = (at, title, body, id) => { if (+at > nowMs) out.push({ id, at: +at, title, body }); };
   for (const f of list) {
-    if (r.vrat && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), 'Tomorrow: ' + L.festName(f), f.key === 'ekadashi' ? 'The fast begins at sunrise.' + (f.parana ? ' Parana ' + dayLabel(f.parana.day) + ' ' + span(f.parana) + '.' : '') : (f.note || L.festName(f) + ' at ' + loc.name), 'eve-' + f.key + '-' + f.day);
-    if (r.parana && f.parana) add(f.parana.start, t('parana') + ': ' + f.en, 'Break the fast before ' + fmt(f.parana.end) + '.', 'parana-' + f.day);
+    if (r.vrat && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), t('remTomorrow', { f: L.festName(f) }), f.key === 'ekadashi' ? t('remFast') + (f.parana ? t('remParanaAt', { d: dayLabel(f.parana.day), span: span(f.parana) }) : '') : (festNote(f) || t('remAt', { f: L.festName(f), p: loc.name })), 'eve-' + f.key + '-' + f.day);
+    if (r.parana && f.parana) add(f.parana.start, t('parana') + ': ' + L.festName(f), t('remBreak', { time: fmt(f.parana.end) }), 'parana-' + f.day);
   }
   if (r.daily || r.rahu) {
     const samp = Fe.samples(from, 14, loc);
@@ -627,7 +717,7 @@ function reminderPlan() {
       const rahu = { start: new Date(+s.sunrise + (s.sunset - s.sunrise) * seg0 / 8), end: new Date(+s.sunrise + (s.sunset - s.sunrise) * (seg0 + 1) / 8) };
       const fest = list.filter(x => x.day === s.day).map(x => L.festName(x)).join(', ');
       if (r.daily) add(s.sunrise, L.vaarName(wd) + ' · ' + L.tithiName(ti), (fest ? fest + '. ' : '') + t('rahu') + ' ' + span(rahu), 'daily-' + s.day);
-      if (r.rahu) add(rahu.start, t('rahu') + ' ' + span(rahu), 'Avoid starting new work until ' + fmt(rahu.end) + '.', 'rahu-' + s.day);
+      if (r.rahu) add(rahu.start, t('rahu') + ' ' + span(rahu), t('remRahuBody', { time: fmt(rahu.end) }), 'rahu-' + s.day);
     }
   }
   return out.slice(0, 120);
@@ -725,6 +815,15 @@ function hideUpdateNote() { const el = $('updateNote'); if (el) el.style.display
 /* A quiet look at most every 12 hours, when the app opens or comes back to the front. */
 function autoCheckUpdate() { if (updatesOn() && Clock.ms() - (prefs.updateChecked || 0) > 432e5) checkUpdate(false); }
 
+/* Text size follows the phone. Android hands over its font scale; iOS WebKit already sized the root from Dynamic Type.
+   Either way html.bigtext switches tight rows (sun strip, calendar cells, dial core) to wrapping layouts. */
+function applyTextScale() {
+  const root = document.documentElement;
+  try { const f = window.SomaNative && SomaNative.fontScale ? +SomaNative.fontScale() : 0; if (f > 0) root.style.fontSize = Math.round(Math.min(f, 2.2) * 100) + '%'; } catch (e) {}
+  const px = parseFloat(getComputedStyle(root).fontSize) || 16;
+  root.classList.toggle('bigtext', px >= 20);
+}
+applyTextScale();
 window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: K.tithi(now()).label, location: loc.name, festivals: observances(todayKey(), 30).length }) };
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
@@ -752,6 +851,6 @@ function tick(at, reason) {
 }
 Clock.onTick(tick);
 $('modal').addEventListener('close', () => tick(now(), 'manual'));
-document.addEventListener('visibilitychange', () => { if (!document.hidden) autoCheckUpdate(); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { applyTextScale(); autoCheckUpdate(); } });
 setTimeout(autoCheckUpdate, 3000);
 if (window.matchMedia) { const mq = window.matchMedia('(prefers-color-scheme: dark)'); if (mq.addEventListener) mq.addEventListener('change', () => { if (prefs.theme === 'auto') render(); }); }
