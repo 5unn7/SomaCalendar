@@ -284,7 +284,8 @@ function savePrefs() {
   for (const k of ['vrat', 'parana', 'daily', 'rahu']) prefs.reminders[k] = $('rem_' + k).checked;
   L = I18n.make(prefs.lang);
   if (persist()) {
-    if (JSON.stringify(prefs.reminders) !== before && Object.values(prefs.reminders).some(Boolean) && window.SomaNative && SomaNative.requestNotifications) SomaNative.requestNotifications();
+    void before;
+    if (Object.values(prefs.reminders).some(Boolean)) askNotifications(true);
     $('modal').close(); scheduleNative(true); render();
   }
 }
@@ -313,13 +314,15 @@ function receiveGPS(p) {
 window.somaReceiveLocation = s => receiveGPS(JSON.parse(s));
 
 // ---- Plans with a muhurat check ---------------------------------------------------------------
+/* The Vedic day runs sunrise to sunrise, so a time before today's sunrise belongs to yesterday's Choghadiya and Hora. */
+function frameFor(at) { const d = vedicDay(day); return at < d.frame.sunrise ? vedicDay(K.addDay(day, -1)) : d; }
 function timingCheck() {
   const time = $('eventTime') && $('eventTime').value, out = $('timingCheck');
   if (!time || !out) return;
-  const d = vedicDay(day), at = K.instant(day, time, loc.zone), c = P.at(d.choghadiya, at), h = P.at(d.hora, at);
+  const at = K.instant(day, time, loc.zone), d = frameFor(at), c = P.at(d.choghadiya, at), h = P.at(d.hora, at);
   const inBad = ['rahu', 'yamaganda', 'gulika'].filter(k => d.periods[k].start <= at && at < d.periods[k].end);
   const ok = c && c.nature !== 'bad' && !inBad.length;
-  const better = !ok ? P.goodWindows(d, d.frame.sunrise).find(w => !w.night && w.end > at) || P.goodWindows(d, d.frame.sunrise)[0] : null;
+  const better = !ok ? P.goodWindows(d, at).find(w => K.dateKey(w.start, loc.zone) === day) || null : null;
   out.innerHTML = `<div class="eyebrow">${esc(t('checkTime'))}</div>${badge(ok ? 'good' : 'bad')}<p>${esc(t('choghadiya'))}: ${c ? esc(L.chogName(c.key)) : '—'} · ${esc(t('hora'))}: ${h ? esc(L.planetName(h.lord)) : '—'}${inBad.length ? ' · ' + inBad.map(k => esc(t(k))).join(', ') : ''}</p>`
     + (better ? `<p>${esc(t('nextGood'))}: ${span(better)} ${esc(L.chogName(better.key))}</p><button type="button" class="quiet" onclick="document.getElementById('eventTime').value='${K.parts(better.start, loc.zone).hour}:${K.parts(better.start, loc.zone).minute}';timingCheck()">${esc(t('useTime'))}</button>` : '');
 }
@@ -332,7 +335,7 @@ function saveEvent(e) {
   if (!$('eventTitle').value.trim()) { toast('Enter an event title.'); return; }
   const time = $('eventTime').value, start = K.instant(day, time, loc.zone), rt = K.parts(start, loc.zone);
   if (rt.hour + ':' + rt.minute !== time) { toast('This clock time does not exist due to a DST change. Choose another.'); return; }
-  const d = vedicDay(day), c = P.at(d.choghadiya, start);
+  const c = P.at(frameFor(start).choghadiya, start);
   events.push({ id: Date.now().toString(36), title: $('eventTitle').value.trim(), day, time, start: start.toISOString(), end: new Date(+start + Number($('duration').value) * 60000).toISOString(), zone: loc.zone, place: loc.name, tithi: L.tithiName(K.tithi(start).index), muhurat: c ? M.CHOG[c.key].en + ' choghadiya' : '' });
   if (persist()) { $('modal').close(); show('calendar'); toast('Plan saved on this device'); }
 }
@@ -402,6 +405,11 @@ function reminderPlan() {
   }
   return out.slice(0, 120);
 }
+/* Reminders are on by default, so ask for notification permission once on first launch, and again whenever reminders are saved on. */
+function askNotifications(force) {
+  if (!window.SomaNative || !SomaNative.requestNotifications || (!force && prefs.askedNotify)) return;
+  prefs.askedNotify = true; persist(); SomaNative.requestNotifications();
+}
 let nativeTimer = null, nativeDay = null;
 function scheduleNative(force) {
   if (!window.SomaNative) return;
@@ -414,6 +422,7 @@ function scheduleNative(force) {
       const d = vedicDay(todayKey()), l = d.sunriseLimbs, f = observances(todayKey(), 40).find(x => x.day >= todayKey() && x.kind !== 'observance');
       if (SomaNative.updateWidget) SomaNative.updateWidget(L.vaarName(d.frame.weekday) + ' · ' + dayLabel(todayKey(), { weekday: undefined }), f ? L.festName(f) + ' · ' + dayLabel(f.day) : t('rahu') + ' ' + span(d.periods.rahu), L.tithiName(l.tithi.index) + ' · ' + L.nakName(l.nakshatra.index), loc.name);
       if (SomaNative.scheduleReminders) SomaNative.scheduleReminders(JSON.stringify(reminderPlan()));
+      if (Object.values(prefs.reminders).some(Boolean)) askNotifications(false);
     } catch (e) { if (SomaNative.appFailure) SomaNative.appFailure('reminders: ' + e.message); }
   }, 400);
 }

@@ -31,6 +31,8 @@ for(const [k,v] of Object.entries(expect))assert.deepEqual(on(k),[v],k+' '+on(k)
 const ek=list.filter(x=>x.key==='ekadashi');assert.ok(ek.length>=24&&ek.length<=26,ek.length);
 for(const e of ek){assert.equal(e.parana.day,K.addDay(e.day,1));assert.ok(e.parana.start<e.parana.end);if(e.parana.dwadashiEnd>e.parana.start)assert.ok(e.parana.end<=e.parana.dwadashiEnd);/* When Dwadashi ends before sunrise, parana is simply after sunrise. */}
 assert.ok(ek.some(e=>e.en==='Prabodhini (Dev Uthi) Ekadashi'&&e.day==='2026-11-20'));
+// Kshaya Ekadashi (20 Nov 2026 begins after sunrise): parana waits for the real Hari Vasara, which ends about 12:09 on 21 Nov.
+{const e=ek.find(x=>x.day==='2026-11-20');assert.ok(hm(e.parana.start)>='12:00',hm(e.parana.start));}
 // Sets and location defaults.
 assert.deepEqual(Fe.defaultSets(amd),['gujarati','india','vrat']);assert.deepEqual(Fe.defaultSets({lat:43.65,lon:-79.38,zone:'America/Toronto'}),['india','international','vrat']);
 assert.equal(Fe.defaultMonthSystem(amd),'amanta');assert.equal(Fe.defaultMonthSystem({lat:28.61,lon:77.2,zone:'Asia/Kolkata'}),'purnimanta');

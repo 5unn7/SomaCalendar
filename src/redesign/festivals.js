@@ -154,11 +154,12 @@
 
   /* Parana (fast-breaking) window after an Ekadashi observed on samp[i]: after sunrise and after Hari Vasara
    * (the first quarter of Dwadashi), preferably in the morning (first fifth of daytime), always before Dwadashi ends. */
-  function parana(samp, i) {
+  function parana(samp, i, tithi) {
     const next = samp[i + 1];
     if (!next) return null;
-    const ekadashiEnd = A.SearchMoonPhase((tithiAt(samp[i].sunrise) + 1) * 12 % 360, samp[i].sunrise, 2).date;
-    const dwadashiEnd = A.SearchMoonPhase((tithiAt(samp[i].sunrise) + 2) * 12 % 360, ekadashiEnd, 2).date;
+    // Boundaries come from the observed Ekadashi tithi itself, which may begin after this day's sunrise (kshaya).
+    const ekadashiEnd = A.SearchMoonPhase(((tithi + 1) * 12) % 360, new Date(+samp[i].sunrise - 6 * 36e5), 3).date;
+    const dwadashiEnd = A.SearchMoonPhase(((tithi + 2) * 12) % 360, ekadashiEnd, 2).date;
     const hariVasaraEnd = new Date(+ekadashiEnd + (dwadashiEnd - ekadashiEnd) / 4);
     const daytime = next.sunset - next.sunrise, pratahEnd = new Date(+next.sunrise + daytime / 5);
     const start = new Date(Math.max(+next.sunrise, +hariVasaraEnd));
@@ -231,7 +232,7 @@
         const krishna = tithi >= 15, pm = krishna ? (h.lunation.index + 1) % 12 : h.lunation.index;
         // Adhik months: Padmini (Shukla) and Parama (Krishna) Ekadashi.
         item.en = (h.lunation.adhik ? (krishna ? 'Parama' : 'Padmini') : EKADASHI[pm][krishna ? 0 : 1]) + ' Ekadashi';
-        item.parana = parana(samp, h.i);
+        item.parana = parana(samp, h.i, tithi);
       }
       out.push(item);
     }

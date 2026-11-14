@@ -25,5 +25,7 @@ w.settings();w.document.querySelector('#langPick').value='gu';w.document.querySe
 // Reminders: the plan handed to Android is a list of future alarms with titles.
 {const plan=w.reminderPlan();assert.ok(plan.length>0);assert.ok(plan.every(r=>r.at>Date.now()&&r.title&&r.id));}
 // Planning an event shows a muhurat check for the chosen time.
-w.show('today');w.plan();assert.ok(w.document.querySelector('#timingCheck').textContent.length>10);w.document.querySelector('#modal').close();
+w.show('today');w.plan();assert.ok(w.document.querySelector('#timingCheck').textContent.length>10);
+// A time before sunrise is checked against the previous Vedic day, so it gets a real Choghadiya.
+w.document.querySelector('#eventTime').value='03:00';w.timingCheck();assert.ok(!/Choghadiya: —|ચોઘડિયું: —/.test(w.document.querySelector('#timingCheck').textContent));w.document.querySelector('#modal').close();
 assert.deepEqual(errors,[]);dom.window.close();console.log('PASS: six screens, verdict and festivals without disclaimers, choghadiya, filters, language, reminders, muhurat check, escaped event creation/persistence, natal rendering, location independence and validation, midnight rollover');
