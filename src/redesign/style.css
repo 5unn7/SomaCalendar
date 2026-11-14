@@ -20,6 +20,7 @@
   --good:#2a6e4a;--bad:#d9603f;--neutral:#b8963f;--good-text:#2a6e4a;--bad-text:#a63a22;--neutral-text:#76591a;--good-soft:rgba(42,110,74,.12);--bad-soft:rgba(217,96,63,.12);--neutral-soft:rgba(184,150,63,.14);
   --ring:#e4ddcf;--nav:rgba(255,253,248,.82);--shadow:0 10px 30px -14px rgba(40,30,10,.28);
   --sky-dawn:#f6d6c3;--sky-day:#d9e7f3;--sky-dusk:#f1cbc4;--sky-night:#d8d7ec;
+  --sky-rain:#cbd4de;--sky-cloud:#dcdfe3;--sky-storm:#c4c5d8;--sky-snow:#e1e7ee;--sky-nightcloud:#d2d4db;--wxfx:62,80,108;
   --radius:22px;--gutter:20px;--moon-dark:#3b352c;--moon-lit:#fbf4e4;
   color-scheme:light;
 }
@@ -28,13 +29,13 @@
   --accent:#e8b964;--accent-text:#e8b964;--accent-ink:#1a1206;--accent-soft:rgba(232,185,100,.14);
   --good:#7cc39a;--bad:#e2725b;--neutral:#c9b37c;--good-text:#7cc39a;--bad-text:#f08a74;--neutral-text:#d6c290;--good-soft:rgba(124,195,154,.13);--bad-soft:rgba(226,114,91,.13);--neutral-soft:rgba(201,179,124,.13);
   --ring:#1d1c1a;--nav:rgba(22,21,20,.82);--shadow:0 10px 30px -14px rgba(0,0,0,.8);
-  --sky-dawn:#3b2131;--sky-day:#0f2238;--sky-dusk:#3a1d22;--sky-night:#0d1030;--moon-dark:#22201d;--moon-lit:#f4ead6;color-scheme:dark}}
+  --sky-dawn:#3b2131;--sky-day:#0f2238;--sky-dusk:#3a1d22;--sky-night:#0d1030;--sky-rain:#18202c;--sky-cloud:#1b1e23;--sky-storm:#141628;--sky-snow:#1c2633;--sky-nightcloud:#111419;--wxfx:255,255,255;--moon-dark:#22201d;--moon-lit:#f4ead6;color-scheme:dark}}
 :root[data-theme=dark]{
   --bg:#050505;--surface:#111110;--surface2:#1b1a18;--ink:#f2ede3;--muted:#9a948a;--faint:#6b665e;--line:rgba(255,255,255,.08);
   --accent:#e8b964;--accent-text:#e8b964;--accent-ink:#1a1206;--accent-soft:rgba(232,185,100,.14);
   --good:#7cc39a;--bad:#e2725b;--neutral:#c9b37c;--good-text:#7cc39a;--bad-text:#f08a74;--neutral-text:#d6c290;--good-soft:rgba(124,195,154,.13);--bad-soft:rgba(226,114,91,.13);--neutral-soft:rgba(201,179,124,.13);
   --ring:#1d1c1a;--nav:rgba(22,21,20,.82);--shadow:0 10px 30px -14px rgba(0,0,0,.8);
-  --sky-dawn:#3b2131;--sky-day:#0f2238;--sky-dusk:#3a1d22;--sky-night:#0d1030;--moon-dark:#22201d;--moon-lit:#f4ead6;color-scheme:dark}
+  --sky-dawn:#3b2131;--sky-day:#0f2238;--sky-dusk:#3a1d22;--sky-night:#0d1030;--sky-rain:#18202c;--sky-cloud:#1b1e23;--sky-storm:#141628;--sky-snow:#1c2633;--sky-nightcloud:#111419;--wxfx:255,255,255;--moon-dark:#22201d;--moon-lit:#f4ead6;color-scheme:dark}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 /* Type scales with the phone's text size. All type is in rem; Android passes its font scale in (html font-size),
@@ -581,3 +582,71 @@ html.bigtext .ctiles{grid-template-columns:repeat(2,minmax(0,1fr))}
 .rowbtn.gone strong{color:var(--muted);font-weight:600}
 html.bigtext .grid3{grid-template-columns:1fr}
 html.bigtext .pgrid{grid-template-columns:1fr}
+
+/* ---- Live weather (weather.js): a chip on every Today layout, and a moving sky behind the Dial and Sky heroes.
+   Particles are masks filled with --wxfx, so they read on the bone day theme as well as on the dark sky card.
+   Every loop moves by exactly one tile, so it never shows a seam. Reduced motion holds everything still. */
+.sky[data-sky][data-tint=rain]{background:radial-gradient(120% 90% at 50% 0,var(--sky-rain),transparent 72%)}
+.sky[data-sky][data-tint=cloud]{background:radial-gradient(120% 90% at 50% 0,var(--sky-cloud),transparent 72%)}
+.sky[data-sky][data-tint=storm]{background:radial-gradient(120% 90% at 50% 0,var(--sky-storm),transparent 72%)}
+.sky[data-sky][data-tint=snow]{background:radial-gradient(120% 90% at 50% 0,var(--sky-snow),transparent 72%)}
+.sky[data-sky][data-tint=nightcloud]{background:radial-gradient(120% 90% at 50% 0,var(--sky-nightcloud),transparent 72%)}
+.skyhero[data-tint=rain]{--s1:#2e3c50;--s2:#4b5b70}.skyhero[data-tint=cloud]{--s1:#46576b;--s2:#66778a}.skyhero[data-tint=storm]{--s1:#171b2e;--s2:#363b57}
+.skyhero[data-tint=snow]{--s1:#4a607a;--s2:#6e849d}.skyhero[data-tint=nightcloud]{--s1:#12161f;--s2:#2a303d}
+.sky>:not(.wxfx){position:relative}
+.wxfx,.skyhero>.wxfx{position:absolute;inset:0;overflow:hidden;pointer-events:none;border-radius:inherit;--fx:var(--wxfx)}
+.skyhero>.wxfx{--fx:255,255,255}
+.wxfx i{position:absolute;display:block}
+.wxfx .rain{left:0;right:0;top:-96px;bottom:0;background:rgba(var(--fx),calc(.6 * var(--a)));-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2796%27 height=%2796%27 stroke=%27black%27 stroke-width=%271.2%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M24.2 10.5l-1.6 8.6%27/%3E%3Cpath d=%27M16.9 7.5l-1.6 8.6%27/%3E%3Cpath d=%27M85.6 67.6l-1.6 10.1%27/%3E%3Cpath d=%27M23.0 46.0l-1.6 8.1%27/%3E%3Cpath d=%27M18.5 10.7l-1.6 7.9%27/%3E%3Cpath d=%27M86.5 70.0l-1.6 10.2%27/%3E%3Cpath d=%27M75.0 17.9l-1.6 8.2%27/%3E%3Cpath d=%27M59.4 62.0l-1.6 10.4%27/%3E%3Cpath d=%27M82.2 9.1l-1.6 9.4%27/%3E%3Cpath d=%27M63.5 43.5l-1.6 7.7%27/%3E%3Cpath d=%27M45.6 9.3l-1.6 10.7%27/%3E%3Cpath d=%27M80.9 46.9l-1.6 8.2%27/%3E%3Cpath d=%27M84.8 48.9l-1.6 10.5%27/%3E%3Cpath d=%27M79.3 43.7l-1.6 8.7%27/%3E%3Cpath d=%27M56.9 37.3l-1.6 7.6%27/%3E%3Cpath d=%27M30.5 68.6l-1.6 7.2%27/%3E%3C/svg%3E") 0 0/96px 96px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2796%27 height=%2796%27 stroke=%27black%27 stroke-width=%271.2%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M24.2 10.5l-1.6 8.6%27/%3E%3Cpath d=%27M16.9 7.5l-1.6 8.6%27/%3E%3Cpath d=%27M85.6 67.6l-1.6 10.1%27/%3E%3Cpath d=%27M23.0 46.0l-1.6 8.1%27/%3E%3Cpath d=%27M18.5 10.7l-1.6 7.9%27/%3E%3Cpath d=%27M86.5 70.0l-1.6 10.2%27/%3E%3Cpath d=%27M75.0 17.9l-1.6 8.2%27/%3E%3Cpath d=%27M59.4 62.0l-1.6 10.4%27/%3E%3Cpath d=%27M82.2 9.1l-1.6 9.4%27/%3E%3Cpath d=%27M63.5 43.5l-1.6 7.7%27/%3E%3Cpath d=%27M45.6 9.3l-1.6 10.7%27/%3E%3Cpath d=%27M80.9 46.9l-1.6 8.2%27/%3E%3Cpath d=%27M84.8 48.9l-1.6 10.5%27/%3E%3Cpath d=%27M79.3 43.7l-1.6 8.7%27/%3E%3Cpath d=%27M56.9 37.3l-1.6 7.6%27/%3E%3Cpath d=%27M30.5 68.6l-1.6 7.2%27/%3E%3C/svg%3E") 0 0/96px 96px repeat;animation:wxFall .55s linear infinite}
+@keyframes wxFall{to{transform:translateY(96px)}}
+.wxfx .snow{left:0;right:0;top:-120px;bottom:0;background:rgba(var(--fx),calc(.85 * var(--a)));-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Ccircle cx=%279.2%27 cy=%2774.2%27 r=%271.4%27/%3E%3Ccircle cx=%2763.9%27 cy=%2756.8%27 r=%271.5%27/%3E%3Ccircle cx=%27115.7%27 cy=%2725.9%27 r=%271.6%27/%3E%3Ccircle cx=%2726.7%27 cy=%2774.9%27 r=%271.4%27/%3E%3Ccircle cx=%2743.9%27 cy=%2787.7%27 r=%271.4%27/%3E%3Ccircle cx=%2766.6%27 cy=%27105.3%27 r=%271.1%27/%3E%3Ccircle cx=%2710.9%27 cy=%2729.6%27 r=%272.1%27/%3E%3Ccircle cx=%2772.9%27 cy=%2730.6%27 r=%271.5%27/%3E%3Ccircle cx=%2723.9%27 cy=%2755.4%27 r=%271.1%27/%3E%3Ccircle cx=%2782.1%27 cy=%27104.3%27 r=%272.3%27/%3E%3Ccircle cx=%2786.3%27 cy=%27111.5%27 r=%271.0%27/%3E%3Ccircle cx=%2736.4%27 cy=%27112.2%27 r=%272.1%27/%3E%3Ccircle cx=%2750.0%27 cy=%27109.7%27 r=%271.9%27/%3E%3Ccircle cx=%2795.6%27 cy=%2736.9%27 r=%271.3%27/%3E%3C/svg%3E") 0 0/120px 120px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27120%27 height=%27120%27%3E%3Ccircle cx=%279.2%27 cy=%2774.2%27 r=%271.4%27/%3E%3Ccircle cx=%2763.9%27 cy=%2756.8%27 r=%271.5%27/%3E%3Ccircle cx=%27115.7%27 cy=%2725.9%27 r=%271.6%27/%3E%3Ccircle cx=%2726.7%27 cy=%2774.9%27 r=%271.4%27/%3E%3Ccircle cx=%2743.9%27 cy=%2787.7%27 r=%271.4%27/%3E%3Ccircle cx=%2766.6%27 cy=%27105.3%27 r=%271.1%27/%3E%3Ccircle cx=%2710.9%27 cy=%2729.6%27 r=%272.1%27/%3E%3Ccircle cx=%2772.9%27 cy=%2730.6%27 r=%271.5%27/%3E%3Ccircle cx=%2723.9%27 cy=%2755.4%27 r=%271.1%27/%3E%3Ccircle cx=%2782.1%27 cy=%27104.3%27 r=%272.3%27/%3E%3Ccircle cx=%2786.3%27 cy=%27111.5%27 r=%271.0%27/%3E%3Ccircle cx=%2736.4%27 cy=%27112.2%27 r=%272.1%27/%3E%3Ccircle cx=%2750.0%27 cy=%27109.7%27 r=%271.9%27/%3E%3Ccircle cx=%2795.6%27 cy=%2736.9%27 r=%271.3%27/%3E%3C/svg%3E") 0 0/120px 120px repeat;animation:wxSnow 8s linear infinite}
+.wxfx .snow.b{top:-180px;background:rgba(var(--fx),calc(.55 * var(--a)));-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27180%27 height=%27180%27%3E%3Ccircle cx=%2780.4%27 cy=%2727.5%27 r=%271.1%27/%3E%3Ccircle cx=%27169.4%27 cy=%2761.0%27 r=%270.8%27/%3E%3Ccircle cx=%2711.7%27 cy=%2733.2%27 r=%271.4%27/%3E%3Ccircle cx=%2766.4%27 cy=%2753.9%27 r=%270.9%27/%3E%3Ccircle cx=%27172.9%27 cy=%2776.9%27 r=%271.0%27/%3E%3Ccircle cx=%2714.2%27 cy=%2713.5%27 r=%270.9%27/%3E%3Ccircle cx=%27120.4%27 cy=%2729.7%27 r=%270.8%27/%3E%3Ccircle cx=%2788.4%27 cy=%2746.8%27 r=%271.6%27/%3E%3Ccircle cx=%2725.0%27 cy=%2795.0%27 r=%271.4%27/%3E%3Ccircle cx=%2774.4%27 cy=%27173.9%27 r=%271.2%27/%3E%3Ccircle cx=%2745.6%27 cy=%2774.6%27 r=%270.8%27/%3E%3Ccircle cx=%2776.5%27 cy=%2746.8%27 r=%271.5%27/%3E%3Ccircle cx=%27146.9%27 cy=%2789.8%27 r=%270.8%27/%3E%3Ccircle cx=%2747.8%27 cy=%2745.7%27 r=%271.0%27/%3E%3Ccircle cx=%2743.8%27 cy=%27153.6%27 r=%270.9%27/%3E%3Ccircle cx=%2712.8%27 cy=%27163.6%27 r=%271.3%27/%3E%3C/svg%3E") 0 0/180px 180px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27180%27 height=%27180%27%3E%3Ccircle cx=%2780.4%27 cy=%2727.5%27 r=%271.1%27/%3E%3Ccircle cx=%27169.4%27 cy=%2761.0%27 r=%270.8%27/%3E%3Ccircle cx=%2711.7%27 cy=%2733.2%27 r=%271.4%27/%3E%3Ccircle cx=%2766.4%27 cy=%2753.9%27 r=%270.9%27/%3E%3Ccircle cx=%27172.9%27 cy=%2776.9%27 r=%271.0%27/%3E%3Ccircle cx=%2714.2%27 cy=%2713.5%27 r=%270.9%27/%3E%3Ccircle cx=%27120.4%27 cy=%2729.7%27 r=%270.8%27/%3E%3Ccircle cx=%2788.4%27 cy=%2746.8%27 r=%271.6%27/%3E%3Ccircle cx=%2725.0%27 cy=%2795.0%27 r=%271.4%27/%3E%3Ccircle cx=%2774.4%27 cy=%27173.9%27 r=%271.2%27/%3E%3Ccircle cx=%2745.6%27 cy=%2774.6%27 r=%270.8%27/%3E%3Ccircle cx=%2776.5%27 cy=%2746.8%27 r=%271.5%27/%3E%3Ccircle cx=%27146.9%27 cy=%2789.8%27 r=%270.8%27/%3E%3Ccircle cx=%2747.8%27 cy=%2745.7%27 r=%271.0%27/%3E%3Ccircle cx=%2743.8%27 cy=%27153.6%27 r=%270.9%27/%3E%3Ccircle cx=%2712.8%27 cy=%27163.6%27 r=%271.3%27/%3E%3C/svg%3E") 0 0/180px 180px repeat;animation:wxSnowB 13s linear infinite}
+@keyframes wxSnow{to{transform:translateY(120px)}}@keyframes wxSnowB{to{transform:translateY(180px)}}
+.wxfx .wind{left:-220px;right:0;top:8%;height:90px;background:rgba(var(--fx),.42);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27220%27 height=%2790%27 fill=%27none%27 stroke=%27black%27 stroke-width=%271.3%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M89 14c20 -3 40 3 86 0%27/%3E%3Cpath d=%27M61 28c20 -3 40 3 80 0%27/%3E%3Cpath d=%27M47 38c20 -3 40 3 58 0%27/%3E%3Cpath d=%27M79 55c20 -3 40 3 87 0%27/%3E%3Cpath d=%27M34 67c20 -3 40 3 82 0%27/%3E%3Cpath d=%27M60 80c20 -3 40 3 71 0%27/%3E%3C/svg%3E") 0 0/220px 90px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27220%27 height=%2790%27 fill=%27none%27 stroke=%27black%27 stroke-width=%271.3%27 stroke-linecap=%27round%27%3E%3Cpath d=%27M89 14c20 -3 40 3 86 0%27/%3E%3Cpath d=%27M61 28c20 -3 40 3 80 0%27/%3E%3Cpath d=%27M47 38c20 -3 40 3 58 0%27/%3E%3Cpath d=%27M79 55c20 -3 40 3 87 0%27/%3E%3Cpath d=%27M34 67c20 -3 40 3 82 0%27/%3E%3Cpath d=%27M60 80c20 -3 40 3 71 0%27/%3E%3C/svg%3E") 0 0/220px 90px repeat;animation:wxWind 1.7s linear infinite}
+@keyframes wxWind{to{transform:translateX(220px)}}
+.wxfx .cloud{top:2%;left:0;width:62%;height:42%;border-radius:50%;background:radial-gradient(closest-side,rgba(var(--fx),calc(.34 * var(--a))),rgba(var(--fx),0));animation:wxDrift 48s linear infinite;transform:translateX(-80%)}
+.wxfx .cloud.c2{top:16%;width:48%;height:34%;animation-duration:60s;animation-delay:-26s}
+.wxfx .cloud.c3{top:-6%;width:70%;height:40%;animation-duration:72s;animation-delay:-50s}
+@keyframes wxDrift{from{transform:translateX(-80%)}to{transform:translateX(230%)}}
+.wxfx .fog{left:-30%;width:160%;bottom:14%;height:22%;border-radius:50%;background:radial-gradient(closest-side,rgba(var(--fx),.28),rgba(var(--fx),0));animation:wxFog 20s ease-in-out infinite alternate}
+.wxfx .fog.b{bottom:36%;height:18%;animation-duration:26s;animation-direction:alternate-reverse}
+@keyframes wxFog{from{transform:translateX(-12%)}to{transform:translateX(12%)}}
+.wxfx .flash{inset:0;background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.08));opacity:0;animation:wxFlash 6.5s linear infinite}
+@keyframes wxFlash{0%,88%,100%{opacity:0}89%{opacity:.85}90.5%{opacity:.1}92%{opacity:.6}95%{opacity:0}}
+.wxfx .glow{top:-34%;right:-18%;width:min(70%,300px);aspect-ratio:1;border-radius:50%;background:radial-gradient(closest-side,rgba(255,212,120,.55),rgba(255,212,120,0));animation:wxGlow 6s ease-in-out infinite alternate}
+@keyframes wxGlow{from{transform:scale(.92);opacity:.75}to{transform:scale(1.06);opacity:1}}
+.wxfx .stars{left:0;right:0;top:0;height:60%;background:rgba(var(--fx),.9);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27140%27 height=%27140%27%3E%3Ccircle cx=%2790.7%27 cy=%2794.9%27 r=%270.7%27/%3E%3Ccircle cx=%27126.7%27 cy=%27131.1%27 r=%270.6%27/%3E%3Ccircle cx=%27133.1%27 cy=%27131.9%27 r=%271.0%27/%3E%3Ccircle cx=%279.0%27 cy=%27123.5%27 r=%270.6%27/%3E%3Ccircle cx=%27132.8%27 cy=%2792.4%27 r=%270.5%27/%3E%3Ccircle cx=%2725.4%27 cy=%2788.1%27 r=%270.9%27/%3E%3Ccircle cx=%27103.0%27 cy=%27127.3%27 r=%270.7%27/%3E%3Ccircle cx=%273.4%27 cy=%27126.6%27 r=%270.5%27/%3E%3Ccircle cx=%27120.4%27 cy=%2718.5%27 r=%271.1%27/%3E%3C/svg%3E") 0 0/140px 140px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27140%27 height=%27140%27%3E%3Ccircle cx=%2790.7%27 cy=%2794.9%27 r=%270.7%27/%3E%3Ccircle cx=%27126.7%27 cy=%27131.1%27 r=%270.6%27/%3E%3Ccircle cx=%27133.1%27 cy=%27131.9%27 r=%271.0%27/%3E%3Ccircle cx=%279.0%27 cy=%27123.5%27 r=%270.6%27/%3E%3Ccircle cx=%27132.8%27 cy=%2792.4%27 r=%270.5%27/%3E%3Ccircle cx=%2725.4%27 cy=%2788.1%27 r=%270.9%27/%3E%3Ccircle cx=%27103.0%27 cy=%27127.3%27 r=%270.7%27/%3E%3Ccircle cx=%273.4%27 cy=%27126.6%27 r=%270.5%27/%3E%3Ccircle cx=%27120.4%27 cy=%2718.5%27 r=%271.1%27/%3E%3C/svg%3E") 0 0/140px 140px repeat;animation:wxTwinkle 3.6s ease-in-out infinite alternate}
+.wxfx .stars.b{-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27100%27 height=%27100%27%3E%3Ccircle cx=%2776.6%27 cy=%2785.5%27 r=%270.7%27/%3E%3Ccircle cx=%2785.6%27 cy=%2722.0%27 r=%270.7%27/%3E%3Ccircle cx=%2734.1%27 cy=%2786.8%27 r=%270.8%27/%3E%3Ccircle cx=%2747.3%27 cy=%2752.5%27 r=%270.4%27/%3E%3Ccircle cx=%276.2%27 cy=%2758.9%27 r=%270.6%27/%3E%3Ccircle cx=%2784.3%27 cy=%2760.2%27 r=%270.5%27/%3E%3C/svg%3E") 0 0/100px 100px repeat;mask:url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27100%27 height=%27100%27%3E%3Ccircle cx=%2776.6%27 cy=%2785.5%27 r=%270.7%27/%3E%3Ccircle cx=%2785.6%27 cy=%2722.0%27 r=%270.7%27/%3E%3Ccircle cx=%2734.1%27 cy=%2786.8%27 r=%270.8%27/%3E%3Ccircle cx=%2747.3%27 cy=%2752.5%27 r=%270.4%27/%3E%3Ccircle cx=%276.2%27 cy=%2758.9%27 r=%270.6%27/%3E%3Ccircle cx=%2784.3%27 cy=%2760.2%27 r=%270.5%27/%3E%3C/svg%3E") 0 0/100px 100px repeat;animation-delay:-1.8s}
+@keyframes wxTwinkle{from{opacity:.35}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.wxfx i{animation:none!important}.wxfx .cloud{transform:translateX(40%)}.wxfx .flash{opacity:0}}
+/* The chip: a small window onto the sky, the same gradients as the home-screen widget. 44px tall hit area. */
+.wxchip{display:inline-flex;align-items:center;min-height:44px;padding:0;border:0;background:none;font:600 0.8125rem/1.2 var(--body);color:#fff;cursor:pointer;text-align:left}
+.wxchip>span{display:inline-flex;align-items:center;gap:7px;padding:5px 12px 5px 7px;min-height:34px;border-radius:17px;background:linear-gradient(135deg,var(--c1,#1f5fa8),var(--c2,#3f82c6));box-shadow:0 4px 14px -8px rgba(10,20,40,.6)}
+.wxchip b{font:500 1.0625rem/1 var(--body);letter-spacing:-.01em}.wxchip small{font-weight:500;opacity:.85;font-size:0.75rem}
+.wxchip[data-tint=rain]{--c1:#2e3c50;--c2:#4b5b70}.wxchip[data-tint=cloud]{--c1:#46576b;--c2:#66778a}.wxchip[data-tint=storm]{--c1:#171b2e;--c2:#363b57}
+.wxchip[data-tint=snow]{--c1:#4a607a;--c2:#6e849d}.wxchip[data-tint=nightcloud]{--c1:#12161f;--c2:#2a303d}.wxchip[data-tint=night]{--c1:#060a1c;--c2:#1a2448}
+.wxchip.invite>span{background:var(--accent-soft);color:var(--accent-text);box-shadow:none}
+.skyhero .wxchip>span{background:rgba(255,255,255,.16);box-shadow:none}
+.skyhero .wxrow,.folio .wxrow{margin-top:6px}
+.dateline .wxchip{margin:-6px 0}
+.wxsheet .wxnow{display:flex;align-items:center;gap:14px;padding:18px;border-radius:24px;color:#fff;background:linear-gradient(160deg,var(--c1,#1f5fa8),var(--c2,#3f82c6));position:relative;overflow:hidden}
+.wxsheet .wxnow>:not(.wxfx){position:relative}.wxsheet .wxnow .wxfx{--fx:255,255,255}
+.wxsheet .wxnow[data-tint=rain]{--c1:#2e3c50;--c2:#4b5b70}.wxsheet .wxnow[data-tint=cloud]{--c1:#46576b;--c2:#66778a}.wxsheet .wxnow[data-tint=storm]{--c1:#171b2e;--c2:#363b57}
+.wxsheet .wxnow[data-tint=snow]{--c1:#4a607a;--c2:#6e849d}.wxsheet .wxnow[data-tint=nightcloud]{--c1:#12161f;--c2:#2a303d}.wxsheet .wxnow[data-tint=night]{--c1:#060a1c;--c2:#1a2448}
+.wxsheet .wxnow .t{font:300 3.5rem/1 var(--body);letter-spacing:-.03em}.wxsheet .wxnow p{color:#fff;margin:2px 0 0}
+.wxsheet .hours{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(52px,1fr);gap:4px;overflow-x:auto;padding:12px 0 4px;margin-top:10px}
+.wxsheet .hours>div{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 2px;border-radius:14px;background:var(--surface2);font:500 0.75rem var(--body);color:var(--muted)}
+.wxsheet .hours b{color:var(--ink);font-size:0.875rem}
+.wxsheet .hours .wxicon path[fill="#FFFFFF"]{fill:var(--ink);fill-opacity:.7}
+.wxsheet .credit{font-size:0.75rem;color:var(--muted);margin-top:12px}
+/* Keep the words readable: the weather is strongest at the top of the card and fades out behind the dial and text. */
+.sky>.wxfx{-webkit-mask-image:linear-gradient(#000,#000 22%,rgba(0,0,0,.35) 50%,transparent 78%);mask-image:linear-gradient(#000,#000 22%,rgba(0,0,0,.35) 50%,transparent 78%)}
+.skyhero>.wxfx{-webkit-mask-image:linear-gradient(#000,#000 30%,rgba(0,0,0,.5) 70%,rgba(0,0,0,.3));mask-image:linear-gradient(#000,#000 30%,rgba(0,0,0,.5) 70%,rgba(0,0,0,.3))}
+.wxchip,.wxchip span,.wxchip small{white-space:nowrap}
+.wxsheet .hours>div span{white-space:nowrap}
+.wxsheet .hours .wxicon path[stroke="#CFE6FF"]{stroke:#5b86b8}.wxsheet .hours .wxicon path[fill="#CFE6FF"]{fill:#5b86b8}
+/* Folio's hour-by-hour sunrise and sunset glyphs had no size and filled the column. */
+.folio .tl svg.ic{width:16px;height:16px;vertical-align:-3px}
+/* The running Choghadiya row sits on the accent tint, which took "Shubh" green to 4.41:1; a touch deeper clears AA in light. */
+:root:not([data-theme=dark]) .timeline.current .nature.good{color:#235f3f}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .timeline.current .nature.good{color:var(--good-text)}}

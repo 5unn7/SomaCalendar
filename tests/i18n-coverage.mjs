@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
    and fail on any run of 3+ Latin letters that is not a name on the allow-list (brand, sources, city names). */
 const require=createRequire(import.meta.url),M=require('../src/redesign/meanings.js');
 const base='android/app/src/main/assets/';
-const ALLOW=new Set(['Soma','Preview','Drik','Lahiri','Astronomy','Engine','GeoNames','Asia','Kolkata','Jamnagar','Rajkot','Gujarat','India','IST','Install','unknown','apps','Update','Android','GitHub','English']);
+const ALLOW=new Set(['Soma','Preview','Drik','Lahiri','Astronomy','Engine','GeoNames','Asia','Kolkata','Jamnagar','Rajkot','Gujarat','India','IST','Install','unknown','apps','Update','Android','GitHub','English','MET','Norway']);
 function boot(lang){
   const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
   const store={loc:{name:'Jamnagar',lat:22.4707,lon:70.0577,zone:'Asia/Kolkata'},profile:{date:'1990-05-15',time:'08:30',timeUnknown:false,zone:'Asia/Kolkata',lat:22.3039,lon:70.8022,place:'Rajkot, Gujarat, India'},events:[{id:'x',title:'ગૃહપ્રવેશ',day:'2026-11-20',time:'10:00',start:'2026-11-20T04:30:00.000Z',end:'2026-11-20T05:30:00.000Z',zone:'Asia/Kolkata',place:'Jamnagar',tithi:'—',muhurat:''}],prefs:{lang,onboarded:true}};
@@ -14,7 +14,7 @@ function boot(lang){
   const w=dom.window;w.localStorage.setItem('soma-redesign-v1',JSON.stringify(store));
   w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)}),putImageData(){}});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.scrollTo=()=>{};
-  for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js']){const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);}
+  for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','weather.js','app.js']){const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);}
   return {w,errors,dom};
 }
 const visible=el=>{const tw=el.ownerDocument.createTreeWalker(el,4),parts=[];while(tw.nextNode())parts.push(tw.currentNode.nodeValue);for(const n of el.querySelectorAll('[aria-label],[placeholder],[title]'))parts.push(n.getAttribute('aria-label')||'',n.getAttribute('placeholder')||'',n.getAttribute('title')||'');for(const o of el.querySelectorAll('option'))parts.push(o.textContent);return parts.join(' \n ');};

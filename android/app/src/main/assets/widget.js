@@ -140,7 +140,7 @@
   function build(loc, now, festivals) {
     now = now || /* @__PURE__ */ new Date();
     var obs = new A.Observer(loc.lat, loc.lon, 0), today = K.dateKey(now, loc.zone);
-    var out = { v: 1, city: loc.name || "", zone: loc.zone, gen: +now, days: [], chog: [], tithi: [], nak: [], vrat: [] };
+    var out = { v: 1, city: loc.name || "", zone: loc.zone, lat: Math.round(loc.lat * 100) / 100, lon: Math.round(loc.lon * 100) / 100, gen: +now, days: [], chog: [], tithi: [], nak: [], vrat: [] };
     var first = K.addDay(today, -1);
     for (var n = 0; n <= WIDGET_DAYS; n++) dayWindows(K.addDay(first, n), loc, obs, out);
     var from = K.instant(first, "00:00", loc.zone), until = +K.instant(K.addDay(today, WIDGET_DAYS + 1), "00:00", loc.zone);

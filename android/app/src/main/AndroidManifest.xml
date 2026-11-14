@@ -47,6 +47,10 @@
       <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/panchang_day_info"/>
     </receiver>
+    <receiver android:name="com.soma.calendar.PanchangWidgets$Sky" android:exported="true" android:label="@string/widget_label_sky">
+      <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/panchang_sky_info"/>
+    </receiver>
     <receiver android:name="com.soma.calendar.PanchangWidgets$Tick" android:exported="false">
       <intent-filter>
         <action android:name="com.soma.calendar.PANCHANG_WIDGET_TICK"/>

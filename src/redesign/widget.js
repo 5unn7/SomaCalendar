@@ -121,7 +121,8 @@ function merge(list,extra,fromDay,limit){
 function build(loc,now,festivals){
   now=now||new Date();
   var obs=new A.Observer(loc.lat,loc.lon,0),today=K.dateKey(now,loc.zone);
-  var out={v:1,city:loc.name||'',zone:loc.zone,gen:+now,days:[],chog:[],tithi:[],nak:[],vrat:[]};
+  /* lat/lon (rounded to ~1 km) let the Sky widget ask MET Norway for weather when live weather is on. */
+  var out={v:1,city:loc.name||'',zone:loc.zone,lat:Math.round(loc.lat*100)/100,lon:Math.round(loc.lon*100)/100,gen:+now,days:[],chog:[],tithi:[],nak:[],vrat:[]};
   /* Start a day early so the hours before today's sunrise are covered by yesterday's night. */
   var first=K.addDay(today,-1);
   for(var n=0;n<=WIDGET_DAYS;n++)dayWindows(K.addDay(first,n),loc,obs,out);

@@ -60,6 +60,25 @@
       janmaRashi: 'जन्म राशि', janmaNak: 'जन्म नक्षत्र', none: 'कुछ विशेष नहीं', learnMore: 'पंचांग समझें', method: 'सोम कैसे गणना करता है'
     }
   };
+  /* Live weather (weather.js). Condition names follow MET Norway's symbols, grouped the way the widget draws them. */
+  Object.assign(STR.en, { wx: { clear: 'Clear', fair: 'Mostly clear', partly: 'Partly cloudy', cloudy: 'Cloudy', fog: 'Fog', drizzle: 'Light rain', rain: 'Rain', heavyrain: 'Heavy rain', showers: 'Showers', sleet: 'Sleet', lightsnow: 'Light snow', snow: 'Snow', heavysnow: 'Heavy snow', thunder: 'Thunderstorm' },
+    wxTitle: 'Weather', wxLive: 'Live weather', wxAdd: 'Add live weather', wxOn: 'Turn on', wxOff: 'Turn off live weather', wxNotNow: 'Not now', wxLoading: 'Getting the weather…', wxWindy: 'Windy',
+    wxWhy: 'To get the forecast, Soma sends only your city’s approximate position (about 1 km) to MET Norway, the Norwegian weather service. Nothing else leaves your phone, and you can turn it off at any time.',
+    wxHiLo: 'H {hi} · L {lo}', wxWind: 'Wind {v}', wxHum: 'Humidity {v}%', wxRain: '{v} mm this hour', wxNext: 'Next hours', wxUpdated: 'Updated {t}',
+    wxCredit: 'Weather data: MET Norway (CC BY 4.0)', wxStale: 'No fresh forecast yet. Soma will try again when you are online.', kmh: 'km/h', mph: 'mph', wxUnits: 'Units',
+    wxSummary: '{temp}, {cond}. High {hi}, low {lo}.', wxWidget: 'Add the Soma · Sky and weather widget to your home screen to see it there too.' });
+  Object.assign(STR.gu, { wx: { clear: 'સ્વચ્છ આકાશ', fair: 'મોટે ભાગે સ્વચ્છ', partly: 'આંશિક વાદળછાયું', cloudy: 'વાદળછાયું', fog: 'ધુમ્મસ', drizzle: 'ઝરમર વરસાદ', rain: 'વરસાદ', heavyrain: 'ભારે વરસાદ', showers: 'ઝાપટાં', sleet: 'બરફ સાથે વરસાદ', lightsnow: 'હળવી હિમવર્ષા', snow: 'હિમવર્ષા', heavysnow: 'ભારે હિમવર્ષા', thunder: 'ગાજવીજ સાથે વરસાદ' },
+    wxTitle: 'હવામાન', wxLive: 'જીવંત હવામાન', wxAdd: 'હવામાન ઉમેરો', wxOn: 'ચાલુ કરો', wxOff: 'હવામાન બંધ કરો', wxNotNow: 'હમણાં નહીં', wxLoading: 'હવામાન આવી રહ્યું છે…', wxWindy: 'તેજ પવન',
+    wxWhy: 'આગાહી માટે Soma ફક્ત તમારા શહેરનું અંદાજિત સ્થાન (આશરે 1 કિમી) નોર્વેની હવામાન સેવા MET Norwayને મોકલે છે. બીજું કંઈ ફોનની બહાર જતું નથી, અને ગમે ત્યારે બંધ કરી શકો છો.',
+    wxHiLo: 'મહત્તમ {hi} · લઘુત્તમ {lo}', wxWind: 'પવન {v}', wxHum: 'ભેજ {v}%', wxRain: 'આ કલાકે {v} મિમી', wxNext: 'આવતા કલાકો', wxUpdated: '{t} વાગ્યે અપડેટ',
+    wxCredit: 'હવામાન માહિતી: MET Norway (CC BY 4.0)', wxStale: 'હજુ નવી આગાહી નથી. ઓનલાઇન થશો ત્યારે Soma ફરી પ્રયત્ન કરશે.', kmh: 'કિમી/કલાક', mph: 'માઇલ/કલાક', wxUnits: 'એકમ',
+    wxSummary: '{temp}, {cond}. મહત્તમ {hi}, લઘુત્તમ {lo}.', wxWidget: 'હોમ સ્ક્રીન પર પણ જોવા માટે Soma આકાશ અને હવામાન વિજેટ ઉમેરો.' });
+  Object.assign(STR.hi, { wx: { clear: 'साफ़ आसमान', fair: 'ज़्यादातर साफ़', partly: 'आंशिक बादल', cloudy: 'बादल', fog: 'कोहरा', drizzle: 'हल्की बारिश', rain: 'बारिश', heavyrain: 'भारी बारिश', showers: 'बौछारें', sleet: 'बर्फ़ीली बारिश', lightsnow: 'हल्की बर्फ़बारी', snow: 'बर्फ़बारी', heavysnow: 'भारी बर्फ़बारी', thunder: 'गरज के साथ बारिश' },
+    wxTitle: 'मौसम', wxLive: 'लाइव मौसम', wxAdd: 'मौसम जोड़ें', wxOn: 'चालू करें', wxOff: 'मौसम बंद करें', wxNotNow: 'अभी नहीं', wxLoading: 'मौसम आ रहा है…', wxWindy: 'तेज़ हवा',
+    wxWhy: 'पूर्वानुमान के लिए Soma केवल आपके शहर की अनुमानित जगह (लगभग 1 किमी) नॉर्वे की मौसम सेवा MET Norway को भेजता है। और कुछ भी फ़ोन से बाहर नहीं जाता, और आप इसे कभी भी बंद कर सकते हैं।',
+    wxHiLo: 'अधिकतम {hi} · न्यूनतम {lo}', wxWind: 'हवा {v}', wxHum: 'नमी {v}%', wxRain: 'इस घंटे {v} मिमी', wxNext: 'अगले घंटे', wxUpdated: '{t} पर अपडेट',
+    wxCredit: 'मौसम जानकारी: MET Norway (CC BY 4.0)', wxStale: 'अभी नया पूर्वानुमान नहीं है। ऑनलाइन होने पर Soma फिर कोशिश करेगा।', kmh: 'किमी/घंटा', mph: 'मील/घंटा', wxUnits: 'इकाई',
+    wxSummary: '{temp}, {cond}। अधिकतम {hi}, न्यूनतम {lo}।', wxWidget: 'होम स्क्रीन पर भी देखने के लिए Soma आसमान और मौसम विजेट जोड़ें।' });
 
   /* Screen text added with the Kaal Chakra redesign: setup, settings, the dial and the new tabs. */
   Object.assign(STR.en, {
