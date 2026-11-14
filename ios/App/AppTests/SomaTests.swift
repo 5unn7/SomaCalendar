@@ -22,7 +22,8 @@ final class SomaTests: XCTestCase {
   }
 
   private func js(_ source: String) async throws -> Any? {
-    let web = try XCTUnwrap(try await bridgeController().webView)
+    let controller = try await bridgeController()
+    let web = try XCTUnwrap(controller.webView)
     // The completion-handler form copes with null/undefined results; the async overload does not.
     return try await withCheckedThrowingContinuation { done in
       web.evaluateJavaScript(source) { value, error in
@@ -58,7 +59,8 @@ final class SomaTests: XCTestCase {
 
   func testSomaPluginIsRegistered() async throws {
     _ = try await waitForApp()
-    let plugin = try await bridgeController().bridge?.plugin(withName: "Soma")
+    let controller = try await bridgeController()
+    let plugin = controller.bridge?.plugin(withName: "Soma")
     XCTAssertNotNil(plugin, "SomaPlugin not registered with the bridge")
   }
 
