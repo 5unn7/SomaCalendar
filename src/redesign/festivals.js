@@ -67,11 +67,13 @@
   ];
   const SETS = ['gujarati', 'india', 'international', 'vrat'];
 
-  /* Location defaults: Gujarat → Gujarati + pan-Indian; rest of India → pan-Indian; elsewhere → pan-Indian + international. */
+  /* Location defaults: Gujarat → Gujarati + pan-Indian; rest of India → pan-Indian; elsewhere → Gujarati + pan-Indian + international
+     (Soma is Gujarati-first, and abroad most of its readers keep the Gujarati calendar, so Labh Pancham or Bestu Varas
+     must not vanish just because the phone is in Canada). */
   function defaultSets(loc) {
     const inGujarat = loc.lat >= 20 && loc.lat <= 24.8 && loc.lon >= 68 && loc.lon <= 74.6;
     const inIndia = loc.zone === 'Asia/Kolkata';
-    return inGujarat ? ['gujarati', 'india', 'vrat'] : inIndia ? ['india', 'vrat'] : ['india', 'international', 'vrat'];
+    return inGujarat ? ['gujarati', 'india', 'vrat'] : inIndia ? ['india', 'vrat'] : ['gujarati', 'india', 'international', 'vrat'];
   }
   /* North Indian users count months purnimanta; Gujarat, Maharashtra and the South use amanta. */
   function defaultMonthSystem(loc) {
