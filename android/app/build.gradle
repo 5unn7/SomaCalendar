@@ -9,7 +9,20 @@ android {
     versionCode 7
     versionName '0.7.0'
   }
-  buildTypes { release { minifyEnabled false } }
+  // One shared debug key so every CI build installs over the last one and keeps the app's data.
+  // Debug/preview only: never use this key for a Play Store release.
+  signingConfigs {
+    debug {
+      storeFile file('soma-debug.keystore')
+      storePassword 'android'
+      keyAlias 'androiddebugkey'
+      keyPassword 'android'
+    }
+  }
+  buildTypes {
+    debug { signingConfig signingConfigs.debug }
+    release { minifyEnabled false }
+  }
   compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
 // Offline asset origin is served by the platform WebViewClient. No AndroidX dependency.
