@@ -3,6 +3,8 @@
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+  <!-- Lets the widget reschedule its next Choghadiya refresh after a reboot. -->
+  <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <application android:allowBackup="false" android:fullBackupContent="false"
     android:icon="@drawable/soma_icon" android:label="Soma Preview" android:theme="@style/SomaTheme"
     android:usesCleartextTraffic="false" android:supportsRtl="true">
@@ -15,6 +17,10 @@
     <receiver android:name="com.soma.calendar.SomaWidget" android:exported="true">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+        <action android:name="android.intent.action.TIME_SET"/>
+        <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
       </intent-filter>
       <meta-data android:name="android.appwidget.provider"
         android:resource="@xml/soma_widget_info"/>

@@ -172,6 +172,13 @@ public final class MainActivity extends Activity {
         .putString("tithi",safe(tithi)).putString("city",safe(city)).apply();
       runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
     }
+    /** A week of precomputed Panchang intervals for the home-screen widget (built by widget.js). */
+    @JavascriptInterface public void updateWidgetFeed(String json) {
+      if(json==null||json.length()>300000)return;
+      try{new JSONObject(json);}catch(Exception e){Log.w("SomaJS","Rejected widget feed");return;}
+      getSharedPreferences(SomaWidget.PREFS,MODE_PRIVATE).edit().putString(SomaWidget.FEED,json).apply();
+      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
+    }
     @JavascriptInterface public void updateAtmosphere(String temp,String cloud,String status) {
       getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
         .putString("temp",safe(temp)).putString("cloud",safe(cloud))
