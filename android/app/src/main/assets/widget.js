@@ -91,8 +91,8 @@
   }
   function upcomingVrats(loc, obs, fromDay, limit, extra) {
     if (extra && extra.length) return merge([], extra, fromDay, limit);
-    var list = [], prev = {}, seenOn = {}, day = fromDay;
-    for (var n = 0; n < VRAT_SCAN_DAYS && list.length < limit + 4; n++, day = K.addDay(day, 1)) {
+    var list = [], prev = {}, seenOn = {}, day = K.addDay(fromDay, -1);
+    for (var n = 0; n <= VRAT_SCAN_DAYS && list.length < limit + 4; n++, day = K.addDay(day, 1)) {
       var start = K.instant(day, "00:00", loc.zone), noon = K.instant(day, "12:00", loc.zone);
       var rise = sunEvent(obs, 1, start, 1.2) || noon, set = sunEvent(obs, -1, rise, 1.2) || noon;
       var mr = A.SearchRiseSet("Moon", obs, 1, start, 1.2), moon = mr ? mr.date : noon;
@@ -100,9 +100,10 @@
       VRATS.forEach(function(v, k) {
         var date = at[v.at] === v.i ? day : null, before = prev[v.at];
         if (!date && before !== void 0 && (at[v.at] - before + 30) % 30 === 2 && (before + 1) % 30 === v.i) date = K.addDay(day, -1);
-        if (!date || date < fromDay) return;
+        if (!date) return;
         if (seenOn[k] && seenOn[k] >= K.addDay(date, -1)) return;
         seenOn[k] = date;
+        if (date < fromDay) return;
         list.push({ k, date, n: v.gu, en: v.en, d: v.d });
       });
       prev = at;

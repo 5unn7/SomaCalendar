@@ -173,11 +173,12 @@ public final class SomaWidget extends AppWidgetProvider {
       TimeZone tz=TimeZone.getTimeZone(f.optString("zone","Asia/Kolkata"));
       SimpleDateFormat time=fmt("h:mm a",Locale.US,tz),key=fmt("yyyy-MM-dd",Locale.US,tz);
       SimpleDateFormat day=fmt("EEE d MMM",Locale.US,tz),dateGu=fmt("EEEE, d MMMM",new Locale("gu","IN"),tz);
-      String today=key.format(new Date(now)),tomorrow=key.format(new Date(now+86_400_000L));
+      long midnight=startOfNextDay(now,tz);
+      // Calendar days, not 24h: DST days are 23 or 25 hours long.
+      String today=key.format(new Date(now)),tomorrow=key.format(new Date(midnight+60_000L));
       String city=f.optString("city","");
       header=city.isEmpty()?"સોમ · SOMA":"સોમ · "+city.toUpperCase(Locale.ROOT);
       date=dateGu.format(new Date(now));
-      long midnight=startOfNextDay(now,tz);
       long soonest=midnight;
 
       JSONObject t=at(f.optJSONArray("tithi"),now);

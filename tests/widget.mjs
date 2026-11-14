@@ -29,3 +29,6 @@ assert.ok(JSON.stringify(f).length<60000);
 const polar=W.build({name:'Tromsø',lat:69.65,lon:18.96,zone:'Europe/Oslo'},new Date('2026-12-20T12:00Z'));
 assert.equal(polar.chog.length,0);assert.ok(polar.tithi.length>5);
 console.log('PASS: Choghadiya tables, Rahu Kaal, gapless week of intervals, vrat dates incl. kshaya Ekadashi, festival merge, polar night');
+// A vriddhi vrat keeps its first day even when the feed is rebuilt on the second day.
+{const a=W.build(jam,new Date('2027-01-04T03:00Z')).vrat.find(v=>v.en==='Pradosh'),b=W.build(jam,new Date('2027-01-05T03:00Z')).vrat.find(v=>v.en==='Pradosh');
+assert.notEqual(b.date,'2027-01-05');assert.equal(a.date,'2027-01-04');}
