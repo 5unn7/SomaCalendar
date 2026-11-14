@@ -32,3 +32,10 @@ console.log('PASS: Choghadiya tables, Rahu Kaal, gapless week of intervals, vrat
 // A vriddhi vrat keeps its first day even when the feed is rebuilt on the second day.
 {const a=W.build(jam,new Date('2027-01-04T03:00Z')).vrat.find(v=>v.en==='Pradosh'),b=W.build(jam,new Date('2027-01-05T03:00Z')).vrat.find(v=>v.en==='Pradosh');
 assert.notEqual(b.date,'2027-01-05');assert.equal(a.date,'2027-01-04');}
+// Extra fields for the Sun, Moon and Day widgets.
+{const g=W.build(jam,new Date('2026-11-14T03:00Z')),d=g.days.find(x=>x.date==='2026-11-14');
+assert.equal(d.brahma[1]-d.brahma[0],48*6e4);assert.equal(d.rise-d.brahma[1],48*6e4);
+assert.ok(d.noon>d.rise&&d.noon<d.set);assert.ok(d.mrise>0||d.mset>0);
+assert.equal(g.phases.length,8);assert.ok(g.phases.every((p,i)=>i===0||p.t>g.phases[i-1].t));
+const full=g.phases.find(p=>p.k===2);assert.equal(new Date(full.t).toISOString().slice(0,10),'2026-11-24');
+console.log('PASS: Brahma muhurat, solar noon, moonrise, next eight moon phases');}
