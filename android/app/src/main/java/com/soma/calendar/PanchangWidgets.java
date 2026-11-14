@@ -102,26 +102,27 @@ public final class PanchangWidgets {
   private static RemoteViews sun(Context c, Feed f, SomaWidget.Palette p, float w, float h) {
     boolean small = h < 100, large = w >= 300 && h >= 220;
     RemoteViews v = new RemoteViews(c.getPackageName(), small ? R.layout.panchang_sun_small : large ? R.layout.panchang_sun_large : R.layout.panchang_sun);
-    if (!f.ok || f.vedic == null) {
+    // Sun times follow the civil day; the sunrise-to-sunrise Vedic day is only for Choghadiya.
+    JSONObject d = f.today != null ? f.today : f.vedic;
+    if (!f.ok || d == null) {
       if (small) v.setTextViewText(R.id.pHeadline, "Soma");
       v.setTextViewText(R.id.pRise, f.ok ? "No sunrise today" : "Open Soma once");
       v.setTextViewText(R.id.pSet, "");
       if (!small) { v.setTextViewText(R.id.pHeadline, f.ok ? "Polar night or day" : "Set your city in Soma"); v.setImageViewBitmap(R.id.pArt, f.art("sun0", () -> sunArc(null, f, p))); }
       return v;
     }
-    JSONObject d = f.vedic;
     long rise = d.optLong("rise"), set = d.optLong("set"), next = d.optLong("next");
     boolean day = f.now >= rise && f.now < set;
+    long nextRise = f.now < rise ? rise : next;
     v.setTextViewText(R.id.pRise, (small ? "↑ " : "Sunrise ") + f.time(rise));
     v.setTextViewText(R.id.pSet, (small ? "↓ " : "Sunset ") + f.time(set));
     if (small) {
-      v.setTextViewText(R.id.pHeadline, day ? "Sets in " + f.span(set - f.now) : "Rises in " + f.span(next - f.now));
+      v.setTextViewText(R.id.pHeadline, day ? "Sets in " + f.span(set - f.now) : "Rises in " + f.span(nextRise - f.now));
       return v;
     }
     String headline;
     if (day) headline = "Sunset in " + f.span(set - f.now);
-    else if (f.now < rise) headline = "Sunrise in " + f.span(rise - f.now);
-    else headline = "Sunrise in " + f.span(next - f.now);
+    else headline = "Sunrise in " + f.span(nextRise - f.now);
     JSONArray brahma = f.nextBrahma();
     if (brahma != null && f.now >= brahma.optLong(0) && f.now < brahma.optLong(1)) headline = "Brahma muhurat now";
     v.setTextViewText(R.id.pHeadline, headline);
@@ -134,8 +135,7 @@ public final class PanchangWidgets {
       JSONArray ab = d.optJSONArray("abhijit");
       if (ab != null) b.append("   ·   Abhijit  ").append(f.range(ab.optLong(0), ab.optLong(1)));
       b.append('\n');
-      JSONObject civil = f.today != null ? f.today : d;
-      long mr = civil.optLong("mrise"), ms = civil.optLong("mset");
+      long mr = d.optLong("mrise"), ms = d.optLong("mset");
       b.append("Moonrise  ").append(mr > 0 ? f.time(mr) : "—").append("   ·   Moonset  ").append(ms > 0 ? f.time(ms) : "—");
       if (f.tomorrow != null) b.append('\n').append("Tomorrow  ↑ ").append(f.time(f.tomorrow.optLong("rise"))).append("  ↓ ").append(f.time(f.tomorrow.optLong("set")));
       v.setTextViewText(R.id.pDetail, b.toString());
@@ -347,15 +347,17 @@ public final class PanchangWidgets {
     if (!f.ok) return v;
     v.setTextViewText(R.id.pHeadline, SomaWidget.tithiEnglish(f.tithiIndex) + (f.nak == null ? "" : " · " + f.nak.optString("n")));
     v.setImageViewBitmap(R.id.pArt, f.art("moon", () -> SomaWidget.moon(f.tithiIndex, p, 200)));
-    JSONObject d = f.vedic;
-    if (d != null) {
-      v.setTextViewText(R.id.pRise, "Sunrise " + f.time(d.optLong("rise")) + "   ·   Sunset " + f.time(d.optLong("set")));
+    JSONObject civil = f.today != null ? f.today : f.vedic, d = f.vedic;
+    if (civil != null) {
+      v.setTextViewText(R.id.pRise, "Sunrise " + f.time(civil.optLong("rise")) + "   ·   Sunset " + f.time(civil.optLong("set")));
       StringBuilder k = new StringBuilder();
-      appendRange(k, f, "Rahu Kaal", d.optJSONArray("rahu"));
-      appendRange(k, f, "Yamaganda", d.optJSONArray("yama"));
-      appendRange(k, f, "Gulika", d.optJSONArray("gulika"));
-      appendRange(k, f, "Abhijit", d.optJSONArray("abhijit"));
+      appendRange(k, f, "Rahu Kaal", civil.optJSONArray("rahu"));
+      appendRange(k, f, "Yamaganda", civil.optJSONArray("yama"));
+      appendRange(k, f, "Gulika", civil.optJSONArray("gulika"));
+      appendRange(k, f, "Abhijit", civil.optJSONArray("abhijit"));
       v.setTextViewText(R.id.pDetail, k.toString());
+    }
+    if (d != null) {
       int di = 0, ni = 0;
       for (int i = 0; i < f.chogs.length(); i++) {
         JSONObject x = f.chogs.optJSONObject(i);
