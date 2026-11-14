@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Preview (debug) builds only: lets Soma Preview install its own newer builds. Never in store releases. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+  <application>
+    <receiver android:name="com.soma.calendar.UpdateReceiver" android:exported="false"/>
+  </application>
+</manifest>

@@ -287,6 +287,8 @@ dialog h2{margin:4px 0 6px}
 dialog p{margin:8px 0}
 dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
 @keyframes sheet{from{transform:translateY(40px);opacity:0}}
+#updateNote{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));display:none;align-items:center;gap:4px;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:6px 6px 6px 16px;border-radius:18px;z-index:19;width:max-content;max-width:calc(100% - 32px);font-weight:600;font-size:14px;box-shadow:var(--shadow)}
+#updateNote .quiet{min-height:44px;min-width:44px;padding:8px 10px}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom));background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:16px;z-index:20;display:none;width:max-content;max-width:calc(100% - 40px);font-weight:600;font-size:14px;box-shadow:var(--shadow)}
 #onboard{position:fixed;inset:0;z-index:30;background:var(--bg);overflow:auto;padding:calc(env(safe-area-inset-top) + 40px) var(--gutter) calc(30px + env(safe-area-inset-bottom));display:none}
 #onboard.open{display:block;animation:fade .3s}
@@ -323,7 +325,7 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
   .upnext{margin:12px 0 0;padding:0 0 4px}
   dialog{margin:auto;border-radius:28px}
   dialog::before{display:none}
-  #toast{bottom:28px}
+  #toast,#updateNote{bottom:28px}
   .calendar button{min-height:84px}
   .calendar button .moonsvg{width:28px;height:28px}
   .calendar button small{font-size:10.5px}

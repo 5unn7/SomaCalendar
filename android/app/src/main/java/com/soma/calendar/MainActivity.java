@@ -286,6 +286,12 @@ public final class MainActivity extends Activity {
         finally{if(conn!=null)conn.disconnect();}
       }).start();
     }
+    /** Preview builds only: {enabled, versionCode, versionName}. Store builds report enabled:false. */
+    @JavascriptInterface public String updateInfo(){return Updater.info(MainActivity.this);}
+    /** Reads the preview feed; answers through window.somaReceiveUpdate. */
+    @JavascriptInterface public void checkForUpdate(){Updater.check(getApplicationContext(),json->send("somaReceiveUpdate",json));}
+    /** Downloads the newer preview build and opens Android's install prompt. */
+    @JavascriptInterface public void installUpdate(){runOnUiThread(()->Updater.install(MainActivity.this,json->send("somaReceiveUpdate",json)));}
     private String safe(String v){if(v==null)return "";return v.length()>100?v.substring(0,100):v;}
   }
   @Override protected void onDestroy() {
