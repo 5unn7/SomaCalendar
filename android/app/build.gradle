@@ -6,8 +6,8 @@ android {
     applicationId 'com.soma.calendar.preview'
     minSdk 26
     targetSdk 35
-    versionCode 6
-    versionName '0.6.0'
+    versionCode 7
+    versionName '0.7.0'
   }
   // One shared debug key so every CI build installs over the last one and keeps the app's data.
   // Debug/preview only: never use this key for a Play Store release.

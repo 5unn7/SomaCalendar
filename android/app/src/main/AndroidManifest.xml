@@ -3,7 +3,9 @@
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-  <!-- Lets the widget reschedule its next Choghadiya refresh after a reboot. -->
+  <!-- Local vrat, parana and muhurat reminders: notifications, on-time alarms, and re-arming after a reboot. -->
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+  <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <application android:allowBackup="false" android:fullBackupContent="false"
     android:icon="@drawable/soma_icon" android:label="Soma Preview" android:theme="@style/SomaTheme"
@@ -24,6 +26,12 @@
       </intent-filter>
       <meta-data android:name="android.appwidget.provider"
         android:resource="@xml/soma_widget_info"/>
+    </receiver>
+    <receiver android:name="com.soma.calendar.ReminderReceiver" android:exported="false">
+      <intent-filter>
+        <action android:name="android.intent.action.BOOT_COMPLETED"/>
+        <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+      </intent-filter>
     </receiver>
   </application>
 </manifest>
