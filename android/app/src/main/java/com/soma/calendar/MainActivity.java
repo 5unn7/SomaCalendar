@@ -31,6 +31,7 @@ import org.json.JSONObject;
 /** Privacy-first Android shell. Location and weather are explicitly requested by the user. */
 public final class MainActivity extends Activity {
   private static final int LOCATION_PERMISSION_REQUEST = 412;
+  private static final int NOTIFICATION_PERMISSION_REQUEST = 413;
   private WebView web;
   private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
   @Override public void onCreate(Bundle state) {
@@ -225,6 +226,18 @@ public final class MainActivity extends Activity {
     private void placeError(String message){
       try{JSONObject j=new JSONObject();j.put("error",message);send("somaReceiveBirthplaces",j.toString());}
       catch(Exception ignored){send("somaReceiveBirthplaces","{\"error\":\"Place search unavailable\"}");}
+    }
+    /** Reminders computed by the web layer: JSON [{id, at, title, body}]. Scheduled locally with AlarmManager. */
+    @JavascriptInterface public void scheduleReminders(String json){
+      ReminderReceiver.schedule(getApplicationContext(),json);
+    }
+    /** Asks for notification permission (Android 13+) when the person turns a reminder on. */
+    @JavascriptInterface public void requestNotifications(){
+      runOnUiThread(()->{
+        ReminderReceiver.ensureChannel(MainActivity.this);
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
+          requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},NOTIFICATION_PERMISSION_REQUEST);
+      });
     }
     @JavascriptInterface public void requestLocation(){
       runOnUiThread(()->{
