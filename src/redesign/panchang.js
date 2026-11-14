@@ -128,6 +128,33 @@
     return out;
   }
 
+  /* Dur Muhurta: the weekday's inauspicious muhurtas (1-based, of the 15 day muhurtas; 'n' marks a night muhurta counted from sunset). */
+  const DUR = [[14], [9, 12], [4, 'n7'], [8], [6, 12], [4, 9], [1, 2]];
+  function durMuhurta(f) {
+    const out = [];
+    for (const m of DUR[f.weekday]) {
+      const p = typeof m === 'number' ? Object.assign(part(f.sunrise, f.sunset, 15, m - 1), { night: false }) : Object.assign(part(f.sunset, f.nextSunrise, 15, +m.slice(1) - 1), { night: true });
+      // Saturday's two muhurtas touch: one stretch, as almanacs print it.
+      const last = out[out.length - 1];
+      if (last && +last.end === +p.start) last.end = p.end; else out.push(p);
+    }
+    return out;
+  }
+  /* Bhadra: every stretch of Vishti karana (half-tithi slots 8, 15, 22 … 57 cycle position 6) that touches this Vedic day. */
+  function bhadra(f) {
+    const out = [];
+    let t = f.sunrise;
+    for (let guard = 0; guard < 6 && t < f.nextSunrise; guard++) {
+      // Probe a minute in, so a boundary rounded to the minute never reads as the slot just ended.
+      const k = Math.floor(tithiAngle(new Date(+t + MIN)) / 6), end = crossing(tithiAngle, t, ((k + 1) % 60) * 6, 20);
+      if (!end) break;
+      if (end <= t) { t = new Date(+t + MIN); continue; }
+      if (k >= 1 && k <= 56 && (k - 1) % 7 === 6) out.push({ start: t > f.sunrise ? t : crossingBack(tithiAngle, f.sunrise, k * 6, 20) || t, end });
+      t = end;
+    }
+    return out;
+  }
+
   const overlaps = (a, b) => a.start < b.end && b.start < a.end;
   const at = (list, t) => list.find(p => p.start <= t && t < p.end) || null;
 
@@ -136,6 +163,7 @@
     const f = frame(dayKey, loc), per = periods(f), chog = choghadiya(f), hora = horas(f);
     const rise = f.sunrise;
     const t = K.tithi(rise);
+    per.dur = durMuhurta(f); per.bhadra = bhadra(f);
     return { frame: f, periods: per, choghadiya: chog, hora,
       sunriseLimbs: { tithi: t, nakshatra: nakshatra(rise), yoga: yoga(rise), karana: karana(rise), vaar: f.weekday, month: lunarMonth(rise) } };
   }
@@ -143,7 +171,7 @@
   function goodWindows(d, from, opts) {
     opts = opts || {};
     const accept = opts.accept || (c => c.nature === 'good');
-    const avoid = [d.periods.rahu, d.periods.yamaganda].concat(opts.avoidGulika === false ? [] : [d.periods.gulika]);
+    const avoid = [d.periods.rahu, d.periods.yamaganda].concat(opts.avoidGulika === false ? [] : [d.periods.gulika], opts.strict ? (d.periods.dur || []).concat(d.periods.bhadra || []) : []);
     const out = [];
     for (const c of d.choghadiya) {
       if (!accept(c) || c.end <= from) continue;
@@ -172,7 +200,7 @@
     return { janmaRashi, janmaNak, rashiNow, nakNow, chandraCount, chandraGood, tara: Object.assign({ count: taraCount + 1 }, tara), verdict };
   }
 
-  const api = { crossing, nakshatra, yoga, karana, lunarMonth, monthName, samvat, frame, periods, choghadiya, horas, day, goodWindows, personal, at, overlaps,
+  const api = { crossing, nakshatra, yoga, karana, lunarMonth, monthName, samvat, frame, periods, choghadiya, horas, day, goodWindows, personal, at, overlaps, durMuhurta, bhadra, DUR,
     sunSid, moonSid, CHOG, CHOG_NATURE, HORA, HORA_NATURE, WEEKDAY_LORD, RAHU, YAMA, GULIKA };
   if (typeof module !== 'undefined') module.exports = api;
   root.Panchang = api;

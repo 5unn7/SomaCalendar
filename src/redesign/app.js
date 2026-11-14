@@ -231,6 +231,119 @@ function sunStrip(d, cx) {
 function groupHead(over, title, action) {
   return `<div class="ghead"><div>${over ? `<div class="over">${esc(over)}</div>` : ''}<h2>${title}</h2></div>${action || ''}</div>`;
 }
+// ---- Day at a glance --------------------------------------------------------------------------
+/* The whole Vedic day on one map: the 16 Choghadiya, the kaal periods to avoid (Rahu Kaal, Yamaganda, Gulika, Dur Muhurta),
+   the shubh muhurtas (Abhijit, Brahma) and Bhadra, each placed at its real time. The day half runs sunrise to sunset,
+   the night half sunset to the next sunrise (which is where the next morning's Brahma Muhurta sits). */
+const CHOG_LORD = { udveg: 'sun', char: 'venus', labh: 'mercury', amrit: 'moon', kaal: 'saturn', shubh: 'jupiter', rog: 'mars' };
+let mapHalf = null;
+const clip = (p, a, b) => p && p.end > a && p.start < b ? { start: p.start < a ? a : p.start, end: p.end > b ? b : p.end } : null;
+function halfOf(d, half) {
+  const f = d.frame, night = half === 'night', a = night ? f.sunset : f.sunrise, b = night ? f.nextSunrise : f.sunset, per = d.periods;
+  const chog = d.choghadiya.filter(c => c.night === night);
+  const kaal = [];
+  const add = (k, p, nature, extra) => { const c = clip(p, a, b); if (c) kaal.push(Object.assign(c, { k, nature, full: p }, extra || {})); };
+  if (!night) {
+    add('rahu', per.rahu, 'bad'); add('yamaganda', per.yamaganda, 'bad'); add('gulika', per.gulika, 'bad');
+    add('abhijit', per.abhijit, per.abhijit.wednesday ? 'neutral' : 'good');
+  } else add('brahma', vedicDay(K.addDay(d.frame.day, 1)).periods.brahma, 'good');
+  (per.dur || []).forEach(p => add('dur', p, 'bad'));
+  const bhadra = (per.bhadra || []).map(p => { const c = clip(p, a, b); return c && Object.assign(c, { k: 'bhadra', nature: 'bad', full: p }); }).filter(Boolean);
+  // The clean shubh windows: Amrit, Shubh or Labh with every kaal period and Bhadra cut out.
+  const best = P.goodWindows(d, a, { strict: true, accept: c => c.night === night && SHUBH_CHOG(c) }).filter(w => w.start < b);
+  kaal.sort((x, y) => x.start - y.start);
+  return { a, b, night, chog, kaal, bhadra, best };
+}
+const halfNow = d => isToday() && now() >= d.frame.sunset ? 'night' : 'day';
+/* "9:38–11:01 am": a day period both ends share is said once ("9:38–11:01 સવારે", "सुबह 9:38–11:01"). */
+const shortSpan = p => {
+  const a = fmt(p.start), b = fmt(p.end), wa = a.split(' '), wb = b.split(' ');
+  if (wa.length > 1 && wb.length > 1) {
+    if (/\d/.test(wa[0]) && wa[wa.length - 1] === wb[wb.length - 1]) return wa.slice(0, -1).join(' ') + '–' + b;
+    if (!/\d/.test(wa[0]) && wa[0] === wb[0]) return a + '–' + wb.slice(1).join(' ');
+  }
+  return a + '–' + b;
+};
+function periodName(k) { return k === 'dur' ? t('durMuhurta') : k === 'bhadra' ? t('bhadra') : t(k); }
+const mapName = k => k === 'abhijit' ? t('mapAbhijit') : k === 'brahma' ? t('mapBrahma') : periodName(k);
+function dayMap(d) {
+  const half = mapHalf || halfNow(d), h = halfOf(d, half), len = h.b - h.a, live = isToday(), at = now();
+  const pos = p => `top:${((p.start - h.a) / len * 100).toFixed(3)}%;height:${((p.end - p.start) / len * 100).toFixed(3)}%`;
+  const state = p => live && p.end <= at ? ' past' : live && p.start <= at && at < p.end ? ' current' : '';
+  const hours = (len / 36e5);
+  // Hour lines on each whole hour.
+  let ticks = '';
+  const p0 = K.parts(h.a, loc.zone), firstHour = Math.floor((+h.a - (+p0.minute * 60 + +p0.second) * 1000) / 6e4) * 6e4 + 36e5;
+  for (let x = firstHour; x < +h.b; x += 36e5) {
+    const top = ((x - h.a) / len * 100).toFixed(3), hr = K.parts(new Date(x), loc.zone).hour;
+    if (+hr % 2 === 0) ticks += `<span class="tick" style="top:${top}%"><b>${esc(L.lang === 'en' ? fmt(new Date(x), { minute: undefined }) : fmt(new Date(x), { hourCycle: 'h23', dayPeriod: undefined }))}</b></span>`;
+    else ticks += `<span class="tick minor" style="top:${top}%"></span>`;
+  }
+  const best = h.best.map(w => `<i class="bestbar" style="${pos(w)}"></i>`).join('');
+  const chog = h.chog.map((c, i) => `<button type="button" class="blk chog ${c.nature}${state(c)}" style="${pos(c)}" onclick="periodInfo('chog','${half}',${i})" aria-label="${esc(L.chogName(c.key) + ', ' + L.nature(c.nature) + ', ' + span(c))}"><i class="dot ${c.nature}" aria-hidden="true"></i><span><b>${esc(L.chogName(c.key))}</b><small>${esc(shortSpan(c))}</small></span></button>`).join('');
+  // Kaal periods can overlap (Abhijit and Yamaganda on a Sunday): lay them out in as many sub-columns as they need.
+  // Columns are counted per cluster of overlapping periods, so a lone Rahu Kaal keeps the full width.
+  const placed = [];
+  let cluster = [], cols = [], clusterEnd = 0;
+  const flush = () => { cluster.forEach(x => { x.n = cols.length; }); cluster = []; cols = []; };
+  h.kaal.forEach(p => {
+    if (+p.start >= clusterEnd) flush();
+    let c = cols.findIndex(end => end <= +p.start); if (c < 0) { c = cols.length; cols.push(0); } cols[c] = +p.end;
+    const x = { p, c, n: 1 }; cluster.push(x); placed.push(x); clusterEnd = Math.max(clusterEnd, +p.end);
+  });
+  flush();
+  const kaal = placed.map(({ p, c, n }, i) => `<button type="button" class="blk kaal ${p.nature}${state(p)}${p.end - p.start < 40 * 6e4 ? ' thin' : ''}${n > 1 ? ' split' : ''}" style="${pos(p)};left:${(c / n * 100).toFixed(2)}%;width:${(100 / n).toFixed(2)}%" onclick="periodInfo('${p.k}','${half}',${i})" aria-label="${esc(periodName(p.k) + ', ' + span(p.full))}"><i class="dot ${p.nature}" aria-hidden="true"></i><span><b>${esc(mapName(p.k))}</b><small>${esc(shortSpan(p))}</small></span></button>`).join('');
+  const bh = h.bhadra.map((p, i) => `<button type="button" class="blk bhadra${state(p)}" style="${pos(p)}" onclick="periodInfo('bhadra','${half}',${i})" aria-label="${esc(t('bhadra') + ', ' + span(p.full))}"><span>${esc(t('bhadra'))}</span></button>`).join('');
+  const nowLine = live && at >= h.a && at < h.b ? `<div class="nowline" style="top:${((at - h.a) / len * 100).toFixed(3)}%"><span>${esc(fmt(at))}</span></div>` : '';
+  const edge = (k, label, when) => `<div class="mapedge ${k}">${icon(k)}<span>${esc(label)}</span><b>${esc(fmt(when))}</b></div>`;
+  const bestLine = h.best.length ? h.best.slice(0, 4).map(w => `<span class="bestchip"><b>${esc(shortSpan(w))}</b> ${esc(L.chogName(w.key))}</span>`).join('') : `<span class="caption">${esc(t('bestNone'))}</span>`;
+  return `<section class="section daymapsec">${groupHead(t('ovGlance'), esc(t('dayMap')))}`
+    + seg(t('dayMap'), half, [['day', t('day')], ['night', t('night')]], 'setMapHalf')
+    + `<div class="bestrow"><div class="eyebrow">${esc(t('bestTimes'))}</div><div class="chips">${bestLine}</div><p class="caption">${esc(t('bestRule'))}</p></div>`
+    + `<div class="mapcard">${edge(half === 'night' ? 'sunset' : 'sunrise', half === 'night' ? t('sunset') : t('sunrise'), h.a)}`
+    + `<div class="maphead" aria-hidden="true"><span></span><span>${esc(t('choghadiya'))}</span><span>${esc(t('kaalCol'))}</span><span></span></div>`
+    + `<div class="daymap" style="height:calc(${hours.toFixed(3)} * var(--ph))"><div class="ticks" aria-hidden="true">${ticks}</div><div class="lane gut" aria-hidden="true">${best}</div><div class="lane chogs">${chog}</div><div class="lane kaals">${kaal}</div><div class="lane bhadras">${bh}</div>${nowLine}</div>`
+    + `${edge(half === 'night' ? 'sunrise' : 'sunset', half === 'night' ? t('tomorrowRise') : t('sunset'), h.b)}</div>`
+    + `<div class="legend maplegend" aria-hidden="true"><span class="good"><i></i>${esc(t('good'))}</span><span class="neutral"><i></i>${esc(t('neutral'))}</span><span class="bad"><i></i>${esc(t('bad'))}</span><span class="best"><i></i>${esc(t('bestTimes'))}</span><span class="bh"><i></i>${esc(t('bhadra'))}</span></div>`
+    + `<p class="caption" style="margin-top:6px">${esc(t('tapBlock'))}</p></section>`;
+}
+function setMapHalf(v) { mapHalf = v; haptic('select'); render(); }
+/* A sheet for one block on the map: what it is in the tradition and what to do in it. */
+function periodInfo(k, half, i) {
+  const d = vedicDay(day), h = halfOf(d, half);
+  let title, when, what, todo, nature;
+  if (k === 'chog') {
+    const c = h.chog[i], lord = CHOG_LORD[c.key]; if (!c) return;
+    title = L.chogName(c.key) + ' ' + t('choghadiya'); when = span(c); nature = c.nature;
+    what = t('infoChog', { planet: L.planetName(lord) }); todo = t('goodForX', { x: tr(M.CHOG[c.key].good) });
+  } else {
+    const p = k === 'bhadra' ? h.bhadra[i] : h.kaal[i]; if (!p) return; k = p.k;
+    title = periodName(k); when = span(p.full); nature = p.nature;
+    const key = { rahu: 'Rahu', yamaganda: 'Yama', gulika: 'Gulika', dur: 'Dur', bhadra: 'Bhadra', abhijit: 'Abhijit', brahma: 'Brahma' }[k];
+    what = t('info' + key); todo = t('do' + key);
+    if (k === 'abhijit' && d.periods.abhijit.wednesday) todo = t('notWednesday');
+  }
+  modal(`<div class="row"><div class="eyebrow">${esc(dayLabel(day))}</div>${badge(nature)}</div><h2 id="sheetTitle" style="margin-top:6px">${esc(title)}</h2><p class="value" style="margin-top:4px">${esc(when)}</p>`
+    + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('whatItIs'))}</div><p style="color:var(--ink)">${esc(what)}</p></div></div><div class="timeline"><div><div class="eyebrow">${esc(t('whatToDo'))}</div><p style="color:var(--ink)">${esc(todo)}</p></div></div></div>`);
+}
+/* Today's compact strip: the same day as one bar. Choghadiya as coloured segments, kaal periods as marks above,
+   Abhijit as a star, a now marker, sunrise and sunset at the ends. The whole strip opens the Muhurat map. */
+function dayStrip(d, opts) {
+  const half = (opts && opts.half) || halfNow(d), h = halfOf(d, half), len = h.b - h.a, live = isToday(), at = now();
+  const x = p => `left:${((p.start - h.a) / len * 100).toFixed(3)}%;width:${((p.end - p.start) / len * 100).toFixed(3)}%`;
+  const segs = h.chog.map(c => `<i class="s ${c.nature}${live && c.end <= at ? ' past' : ''}" style="${x(c)}"></i>`).join('');
+  const marks = h.kaal.filter(p => p.nature === 'bad').map(p => `<i class="k" style="${x(p)}"></i>`).join('') + h.bhadra.map(p => `<i class="k bh" style="${x(p)}"></i>`).join('');
+  const goods = h.kaal.filter(p => p.nature === 'good').map(p => `<i class="g" style="${x(p)}"></i>`).join('') + h.best.map(p => `<i class="b" style="${x(p)}"></i>`).join('');
+  const nowMark = live && at >= h.a && at < h.b ? `<i class="now" style="left:${((at - h.a) / len * 100).toFixed(3)}%"></i>` : '';
+  const next = live ? h.best.find(w => w.end > at) : h.best[0];
+  const rahu = d.periods.rahu;
+  const said = (next ? t('bestTimes') + ' ' + span(next) + ' ' + L.chogName(next.key) + '. ' : '') + (half === 'day' ? t('rahu') + ' ' + span(rahu) + '.' : '');
+  return `<button type="button" class="daystrip" onclick="show('muhurat')" aria-label="${esc(t('stripLabel', { what: said }))}">`
+    + `<div class="row"><span class="eyebrow">${esc(t('dayMap'))} · ${esc(half === 'night' ? t('night') : t('day'))}</span><span class="chev" aria-hidden="true">›</span></div>`
+    + `<div class="bar" aria-hidden="true"><div class="marks">${marks}${goods}</div><div class="segs">${segs}${nowMark}</div></div>`
+    + `<div class="ends" aria-hidden="true"><span>${esc(fmt(h.a))}</span><span>${esc(fmt(h.b))}</span></div>`
+    + `<div class="stripline" aria-hidden="true">${next ? `<span class="good"><i></i>${esc(next.start <= at && live ? t('now') : t('nextBest'))} <b>${esc(shortSpan(next))}</b> ${esc(L.chogName(next.key))}</span>` : `<span>${esc(h.best.length ? t('bestOver') : t('bestNone'))}</span>`}${half === 'day' ? `<span class="bad"><i></i>${esc(t('rahu'))} <b>${esc(shortSpan(rahu))}</b></span>` : ''}</div></button>`;
+}
 /* What the day is for, in one line, always led by what it is good for. */
 function daySentence(v) {
   const first = x => String(x || '').split(';')[0].trim();
@@ -311,7 +424,7 @@ function nowNext(d, cx) {
   if (!per.abhijit.wednesday) row(t('abhijit'), '', per.abhijit, 'good');
   const more = [['yamaganda', per.yamaganda, 'bad'], ['gulika', per.gulika, 'bad'], ['brahma', per.brahma, 'good']]
     .map(([k, p, n]) => `<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${n}" aria-hidden="true"></i><div class="label"><b>${esc(t(k))}</b></div><div class="when">${span(p)}</div></div>`).join('');
-  return `<section class="section">${groupHead(t('ovNow'), esc(t('nowAndNext')))}<div class="list">${rows.join('')}</div><details><summary>${esc(t('moreTimes'))}</summary><div class="list">${more}</div></details></section>`;
+  return `<section class="section">${groupHead(t('ovNow'), esc(t('nowAndNext')))}${dayStrip(d)}<div class="list">${rows.join('')}</div><details><summary>${esc(t('moreTimes'))}</summary><div class="list">${more}</div></details></section>`;
 }
 function practiceCard(d) {
   const chips = M.PRACTICES.map(p => `<button class="chip ${practice === p.key ? 'on' : ''}" onclick="practice=practice==='${p.key}'?null:'${p.key}';todayView()">${esc(L.practiceName(p))}</button>`).join('');
@@ -375,27 +488,52 @@ function toggleSet(s) {
 function setChips() { return `<div class="chipRow">${Fe.SETS.map(s => `<button class="chip ${prefs.sets.indexOf(s) >= 0 ? 'on' : ''}" onclick="toggleSet('${s}')">${esc(t('sets')[s])}</button>`).join('')}</div>`; }
 const PAKSHA = { en: ['Shukla', 'Krishna'], gu: ['સુદ', 'વદ'], hi: ['शुक्ल', 'कृष्ण'] };
 const shortTithi = i => i === 14 || i === 29 ? L.tithiName(i) : PAKSHA[L.lang][i >= 15 ? 1 : 0] + ' ' + (i % 15 + 1);
+/* Calendar: the month as a panchang. Each day carries its moon, tithi and festival; the chosen day opens as a full
+   panchang card (five limbs with end times, sun and moon, Rahu Kaal and the day strip). Festivals list only what is
+   still ahead, from today; the month's earlier ones fold away. */
 function calendarView() {
   const first = monthView + '-01', start = new Date(first + 'T12:00Z').getUTCDay(), count = new Date(+monthView.slice(0, 4), +monthView.slice(5), 0).getDate();
-  const fest = observances(first, count + 1), bm = birthMoon();
+  const fest = observances(first, count + 1), bm = birthMoon(), tk = todayKey();
   let cells = '<span></span>'.repeat(start);
   for (let n = 1; n <= count; n++) {
     const key = monthView + '-' + String(n).padStart(2, '0'), data = K.dayData(key, loc), ti = data.atSunrise || K.tithi(K.instant(key, '12:00', loc.zone));
-    const f = fest.filter(x => x.day === key), top = f.find(x => x.kind !== 'vrat') || f[0];
+    const f = fest.filter(x => x.day === key && x.day <= K.addDay(first, count - 1)), top = f.find(x => x.kind !== 'vrat') || f[0];
     const pd = bm != null && data.sunrise ? P.personal(bm, data.sunrise).verdict : null;
-    cells += `<button onclick="setDay('${key}')" class="${key === day ? 'selected ' : ''}${key === todayKey() ? 'today ' : ''}${top ? 'holy ' + top.kind : ''}${pd === 'good' ? ' mine' : ''}" aria-label="${dayLabel(key)} ${esc(L.tithiName(ti.index))}${top ? ' · ' + esc(L.festName(top)) : ''}">${SomaDial.moon(22, ti.angle)}${n}<small>${esc(top ? L.festName(top) : shortTithi(ti.index))}</small>${top ? '<em aria-hidden="true"></em>' : ''}</button>`;
+    const special = ti.index === 14 ? ' purnima' : ti.index === 29 ? ' amas' : ti.index === 10 || ti.index === 25 ? ' ekadashi' : '';
+    cells += `<button onclick="setDay('${key}')" class="${key === day ? 'selected ' : ''}${key === tk ? 'today ' : ''}${key < tk ? 'gone ' : ''}${top ? 'holy ' + top.kind : ''}${pd === 'good' ? ' mine' : ''}${special}" aria-label="${dayLabel(key)} ${esc(L.tithiName(ti.index))}${top ? ' · ' + esc(L.festName(top)) : ''}"${key === day ? ' aria-current="date"' : ''}><span class="n">${num(n)}</span>${SomaDial.moon(18, ti.angle)}<small>${esc(top ? L.festName(top) : shortTithi(ti.index))}</small>${top ? '<em aria-hidden="true"></em>' : ''}</button>`;
   }
   const sel = fest.filter(x => x.day === day), d = vedicDay(day), mine = events.filter(e => e.day === day);
   const weekNames = [0, 1, 2, 3, 4, 5, 6].map(i => new Intl.DateTimeFormat(locale(), { weekday: 'narrow', timeZone: 'UTC' }).format(new Date(Date.UTC(2023, 0, 1 + i))));
-  const lead = `<div class="eyebrow">${esc(P.monthName(K.instant(first, '12:00', loc.zone), prefs.month, L.monthNames))} – ${esc(P.monthName(K.instant(monthView + '-' + count, '12:00', loc.zone), prefs.month, L.monthNames))}</div><h1>${esc(t('calendar'))}</h1>${setChips()}`
-    + `<div class="monthhead"><h2>${new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' })}</h2><div class="arrows"><button onclick="changeMonth(-1)" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="changeMonth(1)" aria-label="${esc(t('nextMonth'))}">›</button></div></div>`
+  const m1 = P.monthName(K.instant(first, '12:00', loc.zone), prefs.month, L.monthNames), m2 = P.monthName(K.instant(monthView + '-' + count, '12:00', loc.zone), prefs.month, L.monthNames);
+  const samvat = P.samvat(K.instant(first, '12:00', loc.zone), prefs.sets.indexOf('gujarati') >= 0 ? 'gujarati' : 'north');
+  const monthTitle = new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const lead = `<div class="eyebrow">${esc(m1 === m2 ? m1 : m1 + ' – ' + m2)} · ${esc(t('samvat'))} ${num(samvat)}</div>`
+    + `<div class="monthhead"><h1>${esc(monthTitle)}</h1><div class="arrows">${monthView !== tk.slice(0, 7) ? `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>` : ''}<button onclick="changeMonth(-1)" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="changeMonth(1)" aria-label="${esc(t('nextMonth'))}">›</button></div></div>`
     + `<div class="week">${weekNames.map(w => `<span>${esc(w)}</span>`).join('')}</div><div class="calendar">${cells}</div>`
-    + (bm != null ? `<p class="caption" style="margin-top:8px">● ${esc(t('personalDays'))}</p>` : '');
-  const rest = `<section class="section">${groupHead(t('ovDay'), titleDay(day))}<div class="list"><div class="timeline"><i class="dot"></i><div><strong>${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</strong><p>${esc(L.nakName(d.sunriseLimbs.nakshatra.index))}</p></div><div class="right">${esc(t('rahu'))}<br>${span(d.periods.rahu)}</div></div>`
-    + sel.map(f => `<div class="timeline"><i class="dot ${f.kind}"></i><div><strong>${esc(L.festName(f))}</strong>${f.parana ? `<p>${esc(t('parana'))}: ${dayLabel(f.parana.day)} ${span(f.parana)}</p>` : ''}${f.note ? `<p>${esc(festNote(f))}</p>` : ''}</div></div>`).join('')
-    + mine.map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.time)} · ${esc(e.muhurat)}</p></div></div>`).join('')
-    + `</div><div class="grid2" style="margin-top:10px"><button class="chip" style="min-height:46px" onclick="show('today')">${esc(t('details'))}</button><button class="chip on" style="min-height:46px" onclick="plan()">＋ ${esc(t('addEvent'))}</button></div></section>`
-    + `<section class="section">${groupHead(t('ovFest'), esc(t('comingUp')))}<div class="list">${fest.filter(x => x.day >= first).map(f => `<button type="button" class="timeline rowbtn" onclick="setDay('${f.day}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(f.day), what: L.festName(f) }))}"><i class="dot ${f.kind}" aria-hidden="true"></i><div><strong>${esc(L.festName(f))}</strong><p>${dayLabel(f.day)}${f.parana ? ' · ' + esc(t('parana')) + ' ' + span(f.parana) : ''}</p></div><span class="chev" aria-hidden="true">›</span></button>`).join('') || `<p style="padding:14px 0">${esc(t('none'))}</p>`}</div></section>`
+    + `<div class="legend callegend" aria-hidden="true"><span class="fest"><i></i>${esc(t('ovFest'))}</span><span class="vrat"><i></i>${esc(t('vratWord'))}</span>${bm != null ? `<span class="mine"><i></i>${esc(t('personalDays'))}</span>` : ''}</div>`
+    + `<details class="setfilter"><summary>${esc(t('showFestivals'))}</summary>${setChips()}</details>`;
+  const l = d.sunriseLimbs, cell = (label, name, end, nature) => `<div class="pcell"><div class="caption">${esc(label)}</div><b>${esc(name)}</b>${end ? `<small>${esc(until(end))}</small>` : ''}${nature ? `<i class="dot ${nature}" aria-hidden="true"></i>` : ''}</div>`;
+  const panchangCard = `<div class="card pcard">`
+    + `<div class="pgrid">${cell(t('tithi'), L.tithiName(l.tithi.index), l.tithi.end, M.tithi(l.tithi.index).nature)}${cell(t('nakshatra'), L.nakName(l.nakshatra.index), l.nakshatra.end, M.nakshatra(l.nakshatra.index).nature)}`
+    + `${cell(t('yoga'), L.yogaName(l.yoga.index), l.yoga.end, M.YOGA[l.yoga.index].nature)}${cell(t('karana'), L.karanaName(l.karana.index), l.karana.end, M.KARANA[l.karana.index].nature)}`
+    + `${cell(t('vaar'), L.vaarName(d.frame.weekday))}${cell(t('month'), P.monthName(d.frame.sunrise, prefs.month, L.monthNames))}</div>`
+    + `<div class="psun"><span>${icon('sunrise')}<b>${esc(fmt(d.frame.sunrise))}</b></span><span>${icon('sunset')}<b>${esc(fmt(d.frame.sunset))}</b></span><span>${icon('moon')}<b>${esc(fmt(d.frame.data.moonrise))}</b></span></div>`
+    + dayStrip(d, { half: 'day' }) + `</div>`;
+  const dayFest = sel.map(f => `<div class="timeline"><i class="dot ${f.kind}"></i><div><strong>${esc(L.festName(f))}</strong>${f.parana ? `<p>${esc(t('parana'))}: ${dayLabel(f.parana.day)} ${span(f.parana)}</p>` : ''}${f.note ? `<p>${esc(festNote(f))}</p>` : ''}</div></div>`).join('')
+    + mine.map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.time)} · ${esc(e.muhurat)}</p></div></div>`).join('');
+  // Festivals: from today forward when this month holds today (and on past the month's end), else the month's own list.
+  const thisMonth = monthView === tk.slice(0, 7), future = monthView > tk.slice(0, 7);
+  const ahead = thisMonth ? observances(tk, 30) : future ? fest.filter(x => x.day >= first && x.day.slice(0, 7) === monthView) : [];
+  const earlier = thisMonth ? fest.filter(x => x.day >= first && x.day < tk) : !future ? fest.filter(x => x.day >= first && x.day.slice(0, 7) === monthView) : [];
+  const festRow = (f, past) => { const n = daysBetween(tk, f.day); const when = past ? '' : n === 0 ? t('todayWord') : n === 1 ? t('tomorrow') : t('inDays', { n: num(n) });
+    return `<button type="button" class="timeline rowbtn${past ? ' gone' : ''}" onclick="setDay('${f.day}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(f.day), what: L.festName(f) }))}"><i class="dot ${f.kind}" aria-hidden="true"></i><div><strong>${esc(L.festName(f))}</strong><p>${dayLabel(f.day)}${f.parana ? ' · ' + esc(t('parana')) + ' ' + span(f.parana) : ''}</p></div>${when ? `<span class="when">${esc(when)}</span>` : ''}<span class="chev" aria-hidden="true">›</span></button>`; };
+  const festSec = `<section class="section">${groupHead(t('ovFest'), esc(thisMonth ? t('comingUp') : t('festIn', { m: new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' }) })))}`
+    + (ahead.length || !earlier.length ? `<div class="list">${ahead.map(f => festRow(f, false)).join('') || `<p style="padding:14px 0">${esc(t('none'))}</p>`}</div>` : '')
+    + (earlier.length ? (thisMonth ? `<details><summary>${esc(t('earlierMonth'))} (${num(earlier.length)})</summary><div class="list">${earlier.map(f => festRow(f, true)).join('')}</div></details>` : `<div class="list">${earlier.map(f => festRow(f, true)).join('')}</div>`) : '')
+    + `</section>`;
+  const rest = `<section class="section">${groupHead(day === tk ? t('todayWord') : t('ovDay'), titleDay(day))}${panchangCard}${dayFest ? `<div class="list">${dayFest}</div>` : ''}`
+    + `<div class="grid3" style="margin-top:10px"><button class="chip" onclick="show('today')">${esc(t('details'))}</button><button class="chip" onclick="show('muhurat')">${esc(t('muhurat'))}</button><button class="chip on" onclick="plan()">＋ ${esc(t('addEvent'))}</button></div></section>`
+    + festSec
     + `<section class="section">${groupHead(t('ovPlans'), esc(t('myPlans')) + ` <span class="caption">${events.length}</span>`)}${events.length ? `<div class="list">${events.slice().sort((a, b) => a.start.localeCompare(b.start)).map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.day)} · ${esc(e.time)} · ${esc(e.place)}</p><p>${esc(e.tithi)}${e.muhurat ? ' · ' + esc(e.muhurat) : ''}</p><button class="quiet" onclick="exportEvent('${e.id}')">${esc(t('addToCal'))}</button></div><div class="right"><button class="quiet" aria-label="${esc(t('deleteEvent'))}: ${esc(e.title)}" onclick="deleteEvent('${e.id}')">×</button></div></div>`).join('')}</div>` : `<div class="card"><h3>${esc(t('emptyPlansTitle'))}</h3><p>${esc(t('emptyPlansBody'))}</p></div>`}</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
@@ -420,23 +558,35 @@ function muhuratDays(evKey, from, days) {
   }
   return out;
 }
+/* The day's verdict from its panchang (tithi, nakshatra, yoga, karana at sunrise), and what is running now. */
+function muhuratSummary(d) {
+  const v = verdict(d), live = isToday(), dd = live ? frameFor(now()) : d, c = live ? P.at(dd.choghadiya, now()) : null;
+  return `<div class="card verdict msum"><div class="row"><span class="eyebrow">${esc(t('panchangShuddhi'))}</span>${badge(v.parva ? 'festival' : v.nature)}</div>`
+    + `<h2 style="margin:6px 0 4px">${esc(v.parva ? L.festName(v.festival) : vWord(v))}</h2>`
+    + `<p><strong>${esc(t('goodFor'))}:</strong> ${esc(v.good)}.</p><p><strong>${esc(t('avoid'))}:</strong> ${esc(v.avoid)}.</p>`
+    + (c ? `<p class="nowchog"><i class="dot ${c.nature}" aria-hidden="true"></i>${esc(t('nowChog', { chog: L.chogName(c.key), time: fmt(c.end) }))}</p>` : '') + `</div>`;
+}
 function muhuratView() {
   const d = vedicDay(day), at = now(), live = isToday();
   const list = (items, nameOf, tipOf) => items.map(p => `<div class="timeline ${live && p.start <= at && at < p.end ? 'current' : live && p.end <= at ? 'past' : ''}"><i class="dot ${p.nature}" aria-hidden="true"></i><div><strong>${esc(nameOf(p))}</strong><p>${esc(tipOf(p))}</p></div><div class="right">${span(p)}<br>${badge(p.nature)}</div></div>`).join('');
   const ev = muhuratDays(muhuratEvent, day, 60);
   const lead = `<div class="eyebrow">${esc(L.vaarName(d.frame.weekday))} · ${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</div><h1>${esc(t('muhurat'))}</h1>${datebar()}`
-    + `<section class="section">${groupHead(t('ovPlan'), esc(t('findMuhurat')))}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(tr(e.en))}</option>`).join('')}</select></label>`
+    + muhuratSummary(d);
+  const finder = `<section class="section">${groupHead(t('ovPlan'), esc(t('findMuhurat')))}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(tr(e.en))}</option>`).join('')}</select></label>`
     + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('goodDays'))}</div></div></div>${ev.length ? ev.map(x => `<button type="button" class="timeline rowbtn" onclick="setDay('${x.key}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(x.key), what: L.chogName(x.win.key) + ' ' + span(x.win) }))}"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)} · ${span(x.win)} · ${esc(L.chogName(x.win.key))}</strong><p>${esc(t('why'))}: ${esc(x.why)}</p></div><span class="chev" aria-hidden="true">›</span></button>`).join('') : `<p style="padding:14px 0">${esc(t('noGoodDays'))}</p>`}</div>`
     + `<p class="caption" style="margin-top:10px">${esc(t('vivahNote'))}</p></section>`;
   // Shubh and avoid times are two separate groups, so nobody skimming a "best times" list lands in Rahu Kaal.
-  const periodRow = ([k, p, n]) => `<div class="timeline"><i class="dot ${n}" aria-hidden="true"></i><div><strong>${esc(t(k))}</strong>${k === 'abhijit' && p.wednesday ? `<p>${esc(t('notWednesday'))}</p>` : ''}</div><div class="right">${span(p)}<br>${badge(n)}</div></div>`;
-  const rest = `<section class="section">${groupHead(t('ovDay'), esc(t('shubhToday')))}<div class="list">`
-    + [['abhijit', d.periods.abhijit, 'good'], ['brahma', d.periods.brahma, 'good']].map(periodRow).join('') + '</div></section>'
-    + `<section class="section">${groupHead(t('ovDay'), esc(t('avoidToday')))}<div class="list">`
-    + [['rahu', d.periods.rahu, 'bad'], ['yamaganda', d.periods.yamaganda, 'bad'], ['gulika', d.periods.gulika, 'bad']].map(periodRow).join('') + '</div></section>'
-    + `<section class="section">${groupHead(t('choghadiya'), esc(t('day')))}<div class="list chog">${list(d.choghadiya.filter(c => !c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></section>`
-    + `<section class="section">${groupHead(t('choghadiya'), esc(t('night')))}<div class="list chog">${list(d.choghadiya.filter(c => c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></section>`
-    + `<section class="section"><details><summary>${esc(t('hora'))} (24)</summary><div class="list">${list(d.hora, h => L.planetName(h.lord), h => tr(M.PLANET[h.lord].good))}</div></details></section>`;
+  const periodRow = ([k, p, n]) => `<div class="timeline"><i class="dot ${n}" aria-hidden="true"></i><div><strong>${esc(periodName(k))}</strong>${k === 'abhijit' && p.wednesday ? `<p>${esc(t('notWednesday'))}</p>` : ''}</div><div class="right">${span(p)}<br>${badge(n)}</div></div>`;
+  const avoids = [['rahu', d.periods.rahu, 'bad'], ['yamaganda', d.periods.yamaganda, 'bad'], ['gulika', d.periods.gulika, 'bad']]
+    .concat((d.periods.dur || []).map(p => ['dur', p, 'bad']), (d.periods.bhadra || []).map(p => ['bhadra', p, 'bad'])).sort((a, b) => a[1].start - b[1].start);
+  const rest = dayMap(d)
+    + `<section class="section">${groupHead(t('ovDay'), esc(t('shubhToday')))}<div class="list">`
+    + [['brahma', d.periods.brahma, 'good'], ['abhijit', d.periods.abhijit, d.periods.abhijit.wednesday ? 'neutral' : 'good']].map(periodRow).join('') + '</div></section>'
+    + `<section class="section">${groupHead(t('ovDay'), esc(t('avoidToday')))}<div class="list">` + avoids.map(periodRow).join('') + '</div></section>'
+    + `<section class="section"><details><summary>${esc(t('choghadiya'))} · ${esc(t('day'))} (8)</summary><div class="list chog">${list(d.choghadiya.filter(c => !c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></details>`
+    + `<details><summary>${esc(t('choghadiya'))} · ${esc(t('night'))} (8)</summary><div class="list chog">${list(d.choghadiya.filter(c => c.night), c => L.chogName(c.key), c => tr(M.CHOG[c.key].good))}</div></details>`
+    + `<details><summary>${esc(t('hora'))} (24)</summary><div class="list">${list(d.hora, h => L.planetName(h.lord), h => tr(M.PLANET[h.lord].good))}</div></details></section>`
+    + finder;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
 
