@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Small (2x1 to 2x2): tithi now and what this moment is good for. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Small (2x2): the 24-hour Choghadiya ring with now, tithi and the current window drawn into one bitmap. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/widgetRoot" android:layout_width="match_parent" android:layout_height="match_parent"
-  android:orientation="vertical" android:gravity="center_vertical" android:paddingStart="14dp" android:paddingEnd="12dp"
-  android:paddingTop="8dp" android:paddingBottom="8dp" android:background="@drawable/widget_bg">
-  <TextView android:id="@+id/wTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="Soma" android:textColor="@color/widget_ink" android:textSize="17sp" android:maxLines="1" android:ellipsize="end"/>
-  <TextView android:id="@+id/wChog" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:textColor="@color/widget_good" android:textSize="12sp" android:maxLines="1" android:ellipsize="end"/>
-  <TextView android:id="@+id/wVerdict" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="Open Soma once to begin" android:textColor="@color/widget_muted" android:textSize="11sp" android:maxLines="2" android:ellipsize="end"/>
-</LinearLayout>
+  android:padding="10dp" android:background="@drawable/widget_bg">
+  <ImageView android:id="@+id/wRing" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:scaleType="fitCenter" android:contentDescription="@string/widget_description"/>
+</FrameLayout>

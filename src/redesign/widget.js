@@ -40,6 +40,7 @@ var VRATS=[
 ];
 
 function sunEvent(obs,dir,from,limitDays){var r=A.SearchRiseSet('Sun',obs,dir,from,limitDays);return r?r.date:null;}
+function moonEvent(obs,dir,start,end){var r=A.SearchRiseSet('Moon',obs,dir,start,1.2);return r&&r.date<end?round(r.date):0;}
 function weekday(day){return new Date(day+'T12:00:00Z').getUTCDay();}
 function nakIndex(d){return Math.floor(K.sidereal(d)/NAK_SPAN)%27;}
 /* Next nakshatra change after d: step 1h until the index changes, then bisect to ~30s. */
@@ -73,7 +74,11 @@ function dayWindows(day,loc,obs,out){
     date:day,vaar:VAAR[w],rise:round(rise),set:round(set),next:round(next),
     rahu:slot(RAHU[w]),yama:slot(YAMA[w]),gulika:slot(GULIKA[w]),
     /* Abhijit muhurta is traditionally not used on Wednesday. */
-    abhijit:w===3?null:[round(noon-muhurta/2),round(noon+muhurta/2)]
+    abhijit:w===3?null:[round(noon-muhurta/2),round(noon+muhurta/2)],
+    /* Brahma muhurat: the two muhurtas (2 x 48 min) before sunrise, the second of which is the practice window. */
+    brahma:[round(+rise-96*6e4),round(+rise-48*6e4)],
+    noon:round(noon),
+    mrise:moonEvent(obs,1,start,end),mset:moonEvent(obs,-1,start,end)
   });
   return rise;
 }
@@ -133,7 +138,17 @@ function build(loc,now,festivals){
     out.nak.push({s:round(cursor),e:round(e),n:K.nak[i]});
     cursor=new Date(+e+1000);
   }
-  out.vrat=upcomingVrats(loc,obs,today,6,festivals);
+  out.vrat=upcomingVrats(loc,obs,today,8,festivals);
+  /* The next eight principal moon phases (0 new, 1 first quarter, 2 full, 3 last quarter). */
+  out.phases=[];
+  var t0=new Date(+now-36e5);
+  for(var q=0;q<8;q++){
+    var best=null;
+    for(var k=0;k<4;k++){var ph=A.SearchMoonPhase(k*90,t0,40);if(ph&&(!best||ph.date<best.date))best={date:ph.date,k:k};}
+    if(!best)break;
+    out.phases.push({t:round(best.date),k:best.k});
+    t0=new Date(+best.date+6e4);
+  }
   return out;
 }
 

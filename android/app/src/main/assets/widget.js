@@ -33,6 +33,10 @@
     var r = A.SearchRiseSet("Sun", obs, dir, from, limitDays);
     return r ? r.date : null;
   }
+  function moonEvent(obs, dir, start, end) {
+    var r = A.SearchRiseSet("Moon", obs, dir, start, 1.2);
+    return r && r.date < end ? round(r.date) : 0;
+  }
   function weekday(day) {
     return (/* @__PURE__ */ new Date(day + "T12:00:00Z")).getUTCDay();
   }
@@ -85,7 +89,12 @@
       yama: slot(YAMA[w]),
       gulika: slot(GULIKA[w]),
       /* Abhijit muhurta is traditionally not used on Wednesday. */
-      abhijit: w === 3 ? null : [round(noon - muhurta / 2), round(noon + muhurta / 2)]
+      abhijit: w === 3 ? null : [round(noon - muhurta / 2), round(noon + muhurta / 2)],
+      /* Brahma muhurat: the two muhurtas (2 x 48 min) before sunrise, the second of which is the practice window. */
+      brahma: [round(+rise - 96 * 6e4), round(+rise - 48 * 6e4)],
+      noon: round(noon),
+      mrise: moonEvent(obs, 1, start, end),
+      mset: moonEvent(obs, -1, start, end)
     });
     return rise;
   }
@@ -148,7 +157,19 @@
       out.nak.push({ s: round(cursor), e: round(e), n: K.nak[i] });
       cursor = /* @__PURE__ */ new Date(+e + 1e3);
     }
-    out.vrat = upcomingVrats(loc, obs, today, 6, festivals);
+    out.vrat = upcomingVrats(loc, obs, today, 8, festivals);
+    out.phases = [];
+    var t0 = new Date(+now - 36e5);
+    for (var q = 0; q < 8; q++) {
+      var best = null;
+      for (var k = 0; k < 4; k++) {
+        var ph = A.SearchMoonPhase(k * 90, t0, 40);
+        if (ph && (!best || ph.date < best.date)) best = { date: ph.date, k };
+      }
+      if (!best) break;
+      out.phases.push({ t: round(best.date), k: best.k });
+      t0 = /* @__PURE__ */ new Date(+best.date + 6e4);
+    }
     return out;
   }
   var api = { build, CHOG, chogDayIndex, chogNightIndex, RAHU, nakEnd, WIDGET_DAYS };

@@ -183,7 +183,7 @@ public final class MainActivity extends Activity {
       if(json==null||json.length()>300000)return;
       try{new JSONObject(json);}catch(Exception e){Log.w("SomaJS","Rejected widget feed");return;}
       getSharedPreferences(SomaWidget.PREFS,MODE_PRIVATE).edit().putString(SomaWidget.FEED,json).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
+      runOnUiThread(() -> { SomaWidget.refreshAll(MainActivity.this); PanchangWidgets.refreshAll(MainActivity.this); });
     }
     @JavascriptInterface public void updateAtmosphere(String temp,String cloud,String status) {
       getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
