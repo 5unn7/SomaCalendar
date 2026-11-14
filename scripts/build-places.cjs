@@ -1,7 +1,7 @@
 /* Generates src/redesign/places.js. Run: npm i --no-save all-the-cities cities.json geo-tz && node scripts/build-places.cjs src/redesign/places.js */
 const c=require('all-the-cities');const {find}=require('geo-tz');const ADM=Object.fromEntries(require('cities.json/admin1.json').map(a=>[a.code,a.name]));const region=new Intl.DisplayNames(['en'],{type:'region'});
 const dias=new Set(['US','CA','GB','AU','NZ','AE','KE','UG','TZ','SG','MY','FJ','MU','ZA','NL','DE','NP','LK','BD','PK','OM','QA','KW','BH','SA','TT','GY','SR','IE','FR','IT','HK','JP']);
-const pick=x=>x.country==='IN'?x.population>=8000:dias.has(x.country)?x.population>=40000:x.population>=150000;
+const pick=x=>x.population>=(x.country==='IN'||dias.has(x.country)?1000:5000);
 const sel=c.filter(pick).sort((a,b)=>b.population-a.population);
 const stName={};const states=[],stIdx={},tzs=[],tzIdx={};const ctry={};
 const out=[];const ascii=x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -12,12 +12,12 @@ for(const s of sel){const [lon,lat]=s.loc.coordinates;
  const tz=find(lat,lon)[0];if(!(tz in tzIdx)){tzIdx[tz]=tzs.length;tzs.push(tz)}
  if(!ctry[s.country])ctry[s.country]=region.of(s.country)||s.country;
  const nm=ascii(s.name);const alt=ALIAS[nm]||'';
- out.push([nm.replace(/[;|]/g,' '),alt,stIdx[st],s.country,lat.toFixed(3),lon.toFixed(3),tzIdx[tz]].join(';'));
+ out.push([nm.replace(/[;|]/g,' '),alt,stIdx[st],s.country,lat.toFixed(2),lon.toFixed(2),tzIdx[tz]].join(';'));
 }
 // dedupe: same name+state keep first (largest)
 const seen=new Set();const fin=out.filter(l=>{const p=l.split(';');const k=p[0]+'|'+p[2]+'|'+p[3];if(seen.has(k))return false;seen.add(k);return true});
-const body=`/* Offline gazetteer: ${fin.length} places (India >= 8,000 people, diaspora countries >= 40,000, elsewhere >= 150,000).
- * Built by scripts/build-places.mjs from GeoNames (CC BY 4.0, via all-the-cities), state names from GeoNames admin1 (via cities.json), time zones from geo-tz.
+const body=`/* Offline gazetteer: ${fin.length} places (India and diaspora countries >= 1,000 people, elsewhere >= 5,000).
+ * Built by scripts/build-places.cjs from GeoNames (CC BY 4.0, via all-the-cities), state names from GeoNames admin1 (via cities.json), time zones from geo-tz.
  * Row: name;aliases;state;country;lat;lon;zone. Sorted by population, largest first. */
 (function (root) {
   const STATES = ${JSON.stringify(states)};
@@ -38,8 +38,9 @@ const body=`/* Offline gazetteer: ${fin.length} places (India >= 8,000 people, d
     const hits = [];
     for (const r of load()) {
       let s = -1;
-      if (r.key === f) s = 0; else if (r.key.startsWith(f)) s = 1; else if (r.akeys.some(a => a.startsWith(f))) s = 2; else if (r.key.indexOf(' ' + f) >= 0) s = 3;
-      if (s >= 0) hits.push({ r, s: s * 1e5 + r.rank * (r.cc === 'IN' ? 0.5 : 1) });
+      // An exact name only outranks a much bigger place that starts with it, so "vado" still offers Vadodara first.
+      if (r.key.startsWith(f)) s = 1; else if (r.akeys.some(a => a.startsWith(f))) s = 2; else if (r.key.indexOf(' ' + f) >= 0) s = 3;
+      if (s >= 0) hits.push({ r, s: s * 1e6 + r.rank * (r.cc === 'IN' ? 0.5 : 1) * (r.key === f ? 0.05 : 1) });
     }
     return hits.sort((a, b) => a.s - b.s).slice(0, limit || 8).map(h => Object.assign({ label: label(h.r) }, h.r));
   }

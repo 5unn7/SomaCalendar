@@ -124,7 +124,10 @@ summary::after{content:' ›';display:inline-block;transition:transform .2s}
 details[open] summary::after{transform:rotate(90deg)}
 .datebar{display:flex;align-items:center;gap:6px;margin:14px 0 0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:4px}
 .datebar button{background:transparent;min-width:44px;padding:8px;font-size:18px;color:var(--ink)}
-.datebar input{flex:1;min-width:0;margin:0;border:0;background:transparent;text-align:center;font-weight:600;min-height:40px;padding:6px}
+.datepick{position:relative;flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;margin:0;padding:0 4px;color:var(--ink);font:600 15px var(--body);cursor:pointer}
+.datepick svg{width:18px;height:18px;flex:none;color:var(--accent)}
+.datepick span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.datepick input{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;margin:0;padding:0;border:0;cursor:pointer}
 .datebar .now{font:700 12px var(--body);background:var(--accent-soft);color:var(--accent);border-radius:12px;min-height:36px;padding:6px 12px;font-size:12px}
 
 /* ---- Search results (city and birthplace) ---- */
@@ -210,21 +213,50 @@ html[lang=gu] .upnext b,html[lang=hi] .upnext b{font-size:17px;line-height:1.35}
 .personalDay.good{border-color:var(--good)}.personalDay.bad{border-color:var(--bad)}
 
 /* ---- Sky layout ---- */
-.skyhero{position:relative;overflow:hidden;margin:0 calc(-1 * var(--gutter));padding:26px var(--gutter) 28px;color:#fff;border-radius:0 0 34px 34px;min-height:430px;transition:background 1.2s}
-.skyhero[data-sky=dawn]{background:linear-gradient(180deg,#5b6fb5 0%,#c98fb0 45%,#f6b27a 80%,#fde3b6 100%)}
-.skyhero[data-sky=day]{background:linear-gradient(180deg,#2f78cc 0%,#7fb6e8 60%,#d9ecfa 100%)}
-.skyhero[data-sky=dusk]{background:linear-gradient(180deg,#2c2f72 0%,#a65f8a 50%,#f29a63 85%,#f7c48e 100%)}
-.skyhero[data-sky=night]{background:linear-gradient(180deg,#04061a 0%,#121844 60%,#2a2360 100%)}
+.skyhero{--s1:#2a6fc4;--s2:#69a5e2;position:relative;overflow:hidden;margin:0 calc(-1 * var(--gutter));padding:22px var(--gutter) 56px;color:#fff;
+  background:linear-gradient(180deg,var(--s1) 0,var(--s2) calc(100% - 64px),var(--bg) 100%);transition:background 1.2s}
+.skyhero[data-sky=dawn]{--s1:#4f5fa8;--s2:#d08a86}
+.skyhero[data-sky=dusk]{--s1:#2c2f72;--s2:#b0607e}
+.skyhero[data-sky=night]{--s1:#04061a;--s2:#161c4e}
+:root[data-theme=dark] .skyhero[data-sky=day]{--s1:#0f2f5c;--s2:#1f5596}
+:root[data-theme=dark] .skyhero[data-sky=dawn]{--s1:#25254f;--s2:#6e445a}
+:root[data-theme=dark] .skyhero[data-sky=dusk]{--s1:#1a1b46;--s2:#64334c}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]) .skyhero[data-sky=day]{--s1:#0f2f5c;--s2:#1f5596}
+  :root:not([data-theme=light]) .skyhero[data-sky=dawn]{--s1:#25254f;--s2:#6e445a}
+  :root:not([data-theme=light]) .skyhero[data-sky=dusk]{--s1:#1a1b46;--s2:#64334c}}
 .skyhero .stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .skyhero>*{position:relative}
 .skyhero .eyebrow{color:rgba(255,255,255,.85)}
-.skyhero .big{font:300 68px/1.1 var(--body);letter-spacing:-.03em;margin:14px 0 6px}
-html[lang=gu] .skyhero .big,html[lang=hi] .skyhero .big{font-size:52px;line-height:1.25}
-.skyhero p{color:rgba(255,255,255,.92);font-size:16px}
-.skyhero .horizon{display:block;width:100%;height:110px;margin-top:18px}
-.skyhero .horizon path,.skyhero .horizon line{fill:none;stroke:rgba(255,255,255,.55)}
+.skyhero .big{font:300 64px/1.05 var(--body);letter-spacing:-.03em;margin:12px 0 6px;overflow-wrap:anywhere}
+html[lang=gu] .skyhero .big,html[lang=hi] .skyhero .big{font-size:50px;line-height:1.25}
+.skyhero p{color:rgba(255,255,255,.94);font-size:16px}
+.skyhero .tithiline{font-weight:700;margin-top:8px}
+.skyhero .horizon{display:block;width:100%;height:auto;max-height:130px;margin-top:16px;overflow:visible}
+.skyhero .horizon path,.skyhero .horizon line{fill:none;stroke:rgba(255,255,255,.6)}
+.skyhero .horizon .sun{fill:#fff}.skyhero .horizon .halo{fill:#fff;opacity:.25}
+.skyhero .skymoon{display:flex;justify-content:center;margin:16px 0 0}
 .skyhero .moonsvg .dark{fill:rgba(255,255,255,.12)}.skyhero .moonsvg .lit{fill:#fff6e0}.skyhero .moonsvg .glow{fill:#fff;opacity:.15}
-.skyhero .times{display:flex;justify-content:space-between;font-size:12.5px;opacity:.85}
+.skyhero .sunstrip{background:rgba(6,18,42,.22);border-color:rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:#fff}
+.skyhero .sunstrip .lbl,.skyhero .sunstrip .len b{color:rgba(255,255,255,.82)}
+.skyhero .sunstrip .lbl svg,.skyhero .sunstrip small{color:#ffe0a3}
+
+/* ---- Sunrise, daylight, sunset ---- */
+.sunstrip{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:end;margin-top:14px;padding:14px 16px 12px;border-radius:20px;background:var(--surface);border:1px solid var(--line)}
+.sunstrip>div{display:flex;flex-direction:column;gap:3px;min-width:0}
+.sunstrip .sunset{align-items:flex-end;text-align:right}
+.sunstrip .len{align-items:center;text-align:center;align-self:center}
+.sunstrip .lbl{display:flex;align-items:center;gap:6px;font:700 10.5px/1.2 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sunstrip .lbl svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;color:var(--accent)}
+.sunstrip b{font:400 30px/1.1 var(--display);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sunstrip .len b{font:600 13px/1.3 var(--body);color:var(--muted);white-space:normal}
+.sunstrip small{font-size:12px;font-weight:700;color:var(--accent)}
+.sunstrip .past b{opacity:.5}
+@media (max-width:370px){.sunstrip{padding:12px}.sunstrip b{font-size:25px}.sunstrip .lbl{letter-spacing:.04em}}
+.folio .tl .ic{width:15px;height:15px;vertical-align:-2px;color:var(--accent)}
+
+/* Content fades out before it reaches the floating tab bar. */
+body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:calc(104px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--bg) 62%);pointer-events:none;z-index:5}
 
 /* ---- Folio layout ---- */
 .folio{padding-top:6px}
@@ -310,11 +342,21 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 
+/* ---- Open foldables and small tablets: two panes, bottom bar kept ---- */
+@media (min-width:700px) and (max-width:899px){
+  :root{--gutter:24px}
+  header,main{max-width:none}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:28px;align-items:start}
+  .split>.lead{position:sticky;top:70px}
+  .split>.rest>.section:first-child,.split>.rest>.card:first-child,.split>.rest>.list:first-child{margin-top:0}
+  .sky,.skyhero{margin:0;border-radius:30px}
+  .skyhero{padding-bottom:22px;background:linear-gradient(180deg,var(--s1),var(--s2))}
+}
 /* ---- Tablet and landscape: rail navigation and two panes ---- */
 @media (min-width:900px){
   :root{--gutter:32px}
   header{max-width:none;margin-left:104px;padding-left:var(--gutter);padding-right:var(--gutter)}
-  main{max-width:1180px;margin-left:104px;margin-right:auto;padding-left:var(--gutter);padding-right:var(--gutter);padding-bottom:48px}
+  main{max-width:1340px;margin-left:104px;margin-right:auto;padding-left:var(--gutter);padding-right:var(--gutter);padding-bottom:48px}
   nav{left:16px;top:50%;bottom:auto;transform:translateY(-50%);width:76px;flex-direction:column;gap:6px;padding:8px;border-radius:30px}
   nav button{min-height:62px}
   .split{display:grid;grid-template-columns:minmax(360px,5fr) 6fr;gap:40px;align-items:start}
@@ -322,6 +364,8 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
   .split>.lead{position:sticky;top:76px}
   .split>.rest>.section:first-child,.split>.rest>.card:first-child,.split>.rest>.list:first-child{margin-top:0}
   .sky,.skyhero{margin:0;border-radius:34px}
+  .skyhero{padding-bottom:24px;background:linear-gradient(180deg,var(--s1),var(--s2))}
+  body::after{display:none}
   .upnext{margin:12px 0 0;padding:0 0 4px}
   dialog{margin:auto;border-radius:28px}
   dialog::before{display:none}
