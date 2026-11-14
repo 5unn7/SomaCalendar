@@ -52,7 +52,7 @@ go(new Date(+f.sunrise+3*36e5));assert.equal($('.sky').dataset.sky,'day');
  go(new Date(+r.end+6e4));assert.ok(row().classList.contains('past'),'Rahu Kaal marked past after it ends');}
 
 // After sunset the sunrise slot looks ahead to tomorrow's sunrise.
-go(new Date(+f.sunset+30*6e4));assert.match(txt('.sunstrip .sunrise'),/Sunrise tomorrow/);assert.match(txt('.sunstrip .sunrise b'),new RegExp(fmt(fNext.sunrise)));
+go(new Date(+f.sunset+30*6e4));assert.match($('.sunstrip .sunrise').getAttribute('aria-label'),/Sunrise tomorrow/,'after sunset the sunrise slot names tomorrow');assert.match(txt('.sunstrip .sunrise b'),new RegExp(fmt(fNext.sunrise)));
 
 // A "More times" panel the reader opened stays open across the minute tick.
 {const d=$('#app details');d.open=true;step(6e4);assert.ok($('#app details').open,'open details survive a repaint');}
