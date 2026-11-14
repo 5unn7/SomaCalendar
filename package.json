@@ -8,7 +8,7 @@
     "bundle": "node scripts/build-redesign.mjs",
     "test:fixtures": "node tests/grahan-fixtures.mjs",
     "test:dom": "node tests/dom-ids.mjs",
-    "test": "node tests/redesign.mjs && node tests/panchang.mjs && node tests/widget.mjs && npm run bundle && node tests/redesign-ui.mjs && node tests/clock.mjs && node tests/festival-verdict.mjs && node tests/i18n-coverage.mjs && node tests/weather.mjs && node tests/a11y.mjs"
+    "test": "node tests/redesign.mjs && node tests/panchang.mjs && node tests/widget.mjs && npm run bundle && node tests/redesign-ui.mjs && node tests/clock.mjs && node tests/festival-verdict.mjs && node tests/daymap.mjs && node tests/i18n-coverage.mjs && node tests/weather.mjs && node tests/a11y.mjs"
   },
   "dependencies": {
     "@grahan/core": "1.0.1",

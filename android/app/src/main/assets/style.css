@@ -463,6 +463,126 @@ html.bigtext .sunstrip .len{grid-column:1/-1;grid-row:2}
 .skyhero .sunstrip svg,.skyhero .sunstrip small{color:#ffe0a3}
 .skyhero .sunstrip .len,.skyhero .sunstrip .past b{color:#fff}
 
+/* ---- Day at a glance: an information board (Muhurat) and a strip (Today) ---- */
+.board{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-top:12px}
+.ribbon{position:relative;padding-bottom:1.6rem}
+.ribbon .over,.ribbon .under{position:relative;height:6px}
+.ribbon .over{margin-bottom:4px}.ribbon .under{margin-top:3px}
+.ribbon .over i,.ribbon .under i{position:absolute;top:0;height:5px;border-radius:3px}
+.ribbon .m.bad{background:repeating-linear-gradient(135deg,var(--bad) 0 3px,transparent 3px 5px)}
+.ribbon .m.bh{top:auto;bottom:0;height:2px;background:var(--bad);opacity:.55}
+.ribbon .m.good{background:var(--good)}.ribbon .m.neutral{background:var(--neutral)}
+.ribbon .u{background:var(--good);height:3px!important}
+.ribbon .track{position:relative;height:22px;border-radius:11px;overflow:hidden;background:var(--surface2)}
+.ribbon .track .s{position:absolute;top:3px;bottom:3px;border-right:1.5px solid var(--surface)}
+.ribbon .track .s.good{background:var(--good)}
+.ribbon .track .s.neutral{background:var(--neutral-soft);box-shadow:inset 0 0 0 1.5px var(--neutral)}
+.ribbon .track .s.bad{background:repeating-linear-gradient(135deg,var(--bad) 0 3px,var(--bad-soft) 3px 6px)}
+.ribbon .track .s.past{opacity:.3}
+.ribbon .nightband{position:absolute;top:0;bottom:0;right:0;background:var(--sky-night);opacity:.55}
+.ribbon .track .now{position:absolute;top:0;bottom:0;width:3px;margin-left:-1.5px;background:var(--ink);box-shadow:0 0 0 2px var(--surface);z-index:2}
+.rlabels{position:absolute;left:0;right:0;bottom:0;height:1.3rem;font:600 .6875rem var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+.rlabels span{position:absolute;top:0;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.rlabels .mid{transform:translateX(-50%)}
+.rlabels .end{right:0}
+.rlabels svg{width:14px;height:14px;color:var(--accent)}
+.bcols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:6px}
+.bhead{display:flex;align-items:center;gap:6px;font:700 .6875rem var(--body);letter-spacing:.1em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid var(--line)}
+html[lang=gu] .bhead,html[lang=hi] .bhead{letter-spacing:0;font-size:.8125rem}
+.bcol.good .bhead{color:var(--good-text)}.bcol.bad .bhead{color:var(--bad-text)}
+.bhead i{width:8px;height:8px;border-radius:50%;background:var(--good)}
+.bcol.bad .bhead i{background:var(--bad);border-radius:1.5px;transform:rotate(45deg) scale(.9)}
+.brow{position:relative;display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;background:transparent;border-radius:0;min-height:44px;padding:8px 0;border-bottom:1px solid var(--line)}
+.brow:last-child{border-bottom:0}
+.brow:active{transform:none;background:var(--surface2)}
+.brow .nm{display:flex;align-items:center;gap:6px;font:600 .75rem/1.3 var(--body);color:var(--muted)}
+.brow .nm .dot{margin:0;width:6px;height:6px}
+.brow b{font:600 .9375rem/1.3 var(--body);font-variant-numeric:tabular-nums;color:var(--ink);margin-top:1px}
+.brow em{position:absolute;right:0;top:8px;font:700 .625rem var(--body);letter-spacing:.08em;text-transform:uppercase;font-style:normal;color:var(--accent-ink);background:var(--accent-text);border-radius:6px;padding:1px 6px}
+.brow.past b{color:var(--muted);font-weight:500;text-decoration:line-through;text-decoration-color:var(--faint)}
+.brow.past .dot{background:var(--faint);border-color:var(--faint)}
+.chogboard{padding:14px 16px}
+.over2{font:700 .6875rem var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+html[lang=gu] .over2,html[lang=hi] .over2{letter-spacing:0;font-size:.8125rem}
+.cgrid{margin-top:10px}
+.clabel{display:flex;align-items:center;gap:6px;font:600 .75rem var(--body);color:var(--muted);margin-bottom:6px}
+.clabel svg{width:15px;height:15px;color:var(--accent)}
+.ctiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+.ctile{display:flex;flex-direction:column;align-items:flex-start;min-height:48px;padding:7px 8px;border-radius:10px;text-align:left;border:1px solid transparent}
+.ctile:active{transform:none;filter:brightness(.96)}
+.ctile b{font:700 .8125rem/1.2 var(--body);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctile small{font:500 .6875rem/1.3 var(--body);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctile.good{background:var(--good-soft)}.ctile.good b{color:var(--good-text)}
+.ctile.neutral{background:var(--neutral-soft)}.ctile.neutral b{color:var(--neutral-text)}
+.ctile.bad{background:repeating-linear-gradient(135deg,var(--bad-soft) 0 5px,transparent 5px 9px),var(--surface);border-color:var(--bad-soft)}.ctile.bad b{color:var(--bad-text)}
+.ctile.past{background:var(--surface2);border-color:transparent}.ctile.past b{color:var(--muted)}
+.ctile.current{box-shadow:inset 0 0 0 2px var(--accent)}
+html.bigtext .bcols{grid-template-columns:1fr}
+html.bigtext .ctiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+.msum{margin-top:14px}
+.msum .nowchog{display:flex;align-items:flex-start;gap:8px;margin-top:8px;color:var(--ink);font-weight:600}
+.msum .nowchog .dot{margin-top:8px}
+
+.daystrip{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-top:12px}
+.daystrip:active{transform:none;background:var(--surface2)}
+.daystrip .chev{color:var(--muted);font-size:1.25rem}
+.daystrip .bar{position:relative;margin-top:10px}
+.daystrip .marks{position:relative;height:8px;margin-bottom:4px}
+.daystrip .marks i{position:absolute;top:0;height:5px;border-radius:3px}
+.daystrip .marks .k{background:repeating-linear-gradient(135deg,var(--bad) 0 3px,transparent 3px 5px)}
+.daystrip .marks .k.bh{top:auto;bottom:-1px;height:2px;background:var(--bad);opacity:.6}
+.daystrip .marks .g{background:var(--good)}
+.daystrip .marks .b{top:auto;bottom:-1px;height:2px;background:var(--good)}
+.daystrip .segs{position:relative;height:18px;border-radius:9px;overflow:visible;background:var(--surface2)}
+.daystrip .segs .s{position:absolute;top:0;bottom:0;border-right:2px solid var(--surface)}
+.daystrip .segs .s:first-child{border-radius:9px 0 0 9px}
+.daystrip .segs .s:nth-last-child(1),.daystrip .segs .s:nth-last-child(2):has(+.now){border-radius:0 9px 9px 0}
+.daystrip .segs .s.good{background:var(--good)}
+.daystrip .segs .s.neutral{background:var(--neutral-soft);box-shadow:inset 0 0 0 2px var(--neutral)}
+.daystrip .segs .s.bad{background:repeating-linear-gradient(135deg,var(--bad) 0 4px,var(--bad-soft) 4px 7px)}
+.daystrip .segs .s.past{opacity:.35}
+.daystrip .segs .now{position:absolute;top:-5px;bottom:-5px;width:4px;margin-left:-2px;border-radius:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)}
+.daystrip .ends{display:flex;justify-content:space-between;margin-top:6px;font:600 .6875rem var(--body);color:var(--muted);font-variant-numeric:tabular-nums}
+.daystrip .stripline{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:.8125rem;color:var(--muted)}
+.daystrip .stripline span{display:inline-flex;align-items:center;gap:6px}
+.daystrip .stripline b{color:var(--ink);font-variant-numeric:tabular-nums}
+.daystrip .stripline i{width:8px;height:8px;border-radius:50%;background:var(--good);flex:none}
+.daystrip .stripline .bad i{background:var(--bad);border-radius:1.5px;transform:rotate(45deg) scale(.9)}
+
+/* ---- Calendar as a panchang ---- */
+.monthhead h1{font-size:2.25rem}
+.monthhead .arrows .now{width:auto;padding:0 14px;font:700 .75rem var(--body);background:var(--accent-soft);color:var(--accent-text);border:0}
+.calendar button .n{font:700 .9375rem/1.1 var(--body);font-variant-numeric:tabular-nums}
+.calendar button .moonsvg{width:18px;height:18px}
+.calendar button.gone:not(.selected) .n{color:var(--muted);font-weight:600}
+.calendar button.purnima:not(.selected),.calendar button.amas:not(.selected){background:var(--surface)}
+.calendar button.holy:not(.selected) small{color:var(--accent-text);font-weight:700}
+.calendar button.holy.vrat:not(.selected) small{color:var(--good-text)}
+.calendar button.mine:not(.selected)::after{content:'';position:absolute;top:5px;right:6px;width:5px;height:5px;border-radius:50%;background:var(--good)}
+.calendar button.selected small{color:inherit}
+.callegend{justify-content:flex-start;margin-top:10px}
+.callegend .fest i{background:var(--accent)}
+.callegend .vrat i,.callegend .mine i{background:var(--good)}
+.setfilter{margin-top:6px}
+.setfilter .chipRow{margin-top:4px}
+.pcard{padding:6px 16px 14px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;column-gap:16px}
+.pcell{position:relative;padding:12px 16px 12px 0;border-bottom:1px solid var(--line);min-width:0}
+.pcell b{display:block;font:600 .9375rem/1.3 var(--body);margin-top:2px}
+.pcell small{display:block;font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pcell .dot{position:absolute;right:2px;top:16px;margin:0}
+.psun{display:flex;justify-content:space-between;gap:8px;padding:12px 0 2px}
+.psun span{display:inline-flex;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+.psun svg{width:20px;height:20px;color:var(--accent)}
+.pcard .daystrip{border:0;padding:10px 0 0;margin-top:8px;border-top:1px solid var(--line);border-radius:0;background:transparent}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 .chip{min-height:46px;margin:0;justify-content:center;text-align:center}
+.rowbtn .when{margin-left:auto;padding-left:10px;font:700 .75rem var(--body);color:var(--accent-text);white-space:nowrap}
+.rowbtn .when+.chev{margin-left:0}
+.rowbtn.gone strong{color:var(--muted);font-weight:600}
+html.bigtext .grid3{grid-template-columns:1fr}
+html.bigtext .pgrid{grid-template-columns:1fr}
+
 /* ---- Live weather (weather.js): a chip on every Today layout, and a moving sky behind the Dial and Sky heroes.
    Particles are masks filled with --wxfx, so they read on the bone day theme as well as on the dark sky card.
    Every loop moves by exactly one tile, so it never shows a seam. Reduced motion holds everything still. */

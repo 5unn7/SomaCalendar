@@ -31,7 +31,7 @@ for(const lang of ['gu','hi']){
   }
   for(const v of ['learn','personal']){w.show(v);check(v,w.document.querySelector('#app'));}
   check('nav',w.document.querySelector('#nav'));check('header',w.document.querySelector('header'));
-  const sheets={settings:()=>w.settings(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');w.festivalStory(0);},erase:()=>w.eraseProfile()};
+  const sheets={settings:()=>w.settings(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');w.festivalStory(0);},erase:()=>w.eraseProfile(),chogInfo:()=>{w.setDay('2026-11-24');w.boardInfo(0);},nightChogInfo:()=>w.boardInfo(10),info16:()=>w.boardInfo(16),info17:()=>w.boardInfo(17),info18:()=>w.boardInfo(18),info19:()=>w.boardInfo(19),info20:()=>w.boardInfo(20),info21:()=>w.boardInfo(21),info22:()=>w.boardInfo(22),info23:()=>w.boardInfo(23),info24:()=>w.boardInfo(24),info25:()=>w.boardInfo(25)};
   for(let i=0;i<9;i++)sheets['lesson'+i]=()=>w.lesson(i);
   for(const [k,open] of Object.entries(sheets)){open();check('sheet '+k,w.document.querySelector('#modal'));w.document.querySelector('#modal').close();}
   // Onboarding steps too.
