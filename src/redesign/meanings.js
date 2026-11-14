@@ -1,5 +1,5 @@
 /* Meaning of each panchang element, written from the tradition (Muhurta Chintamani groupings and common
- * panchang practice). Names in English transliteration, Gujarati and Hindi; guidance text in English for now. */
+ * panchang practice). Names in English transliteration, Gujarati and Hindi; guidance text in English with Gujarati and Hindi in TX below. */
 (function (root) {
   // Tithi groups (Nanda, Bhadra, Jaya, Rikta, Purna) repeat every five tithis.
   const TITHI_GROUP = {
@@ -139,7 +139,101 @@
     { key: 'mundan', en: 'Mundan (first haircut)', kinds: ['chara', 'kshipra', 'mridu'], weekdays: [1, 3, 4, 5], avoidTithi: ['rikta'], chaturmas: true }
   ];
 
-  const api = { tithi, nakshatra, YOGA, KARANA, VAAR, CHOG, PLANET, RASHI, TARA, PRACTICES, EVENTS, TITHI_GROUP, NAK_KIND, GROUPS };
+
+  /* Gujarati and Hindi for every guidance text above, keyed by the English. tr() falls back to English only for a
+     string that is missing here, and tests/i18n-coverage.mjs fails the build if any string is missing. */
+  const TX = {};
+  [
+    // Tithi groups
+    ['Nanda (joyful)', 'નંદા (આનંદદાયી)', 'नंदा (आनंददायक)'], ['Bhadra (steady)', 'ભદ્રા (સ્થિર)', 'भद्रा (स्थिर)'], ['Jaya (victorious)', 'જયા (વિજયી)', 'जया (विजयी)'],
+    ['Rikta (empty)', 'રિક્તા (ખાલી)', 'रिक्ता (रिक्त)'], ['Purna (complete)', 'પૂર્ણા (સંપૂર્ણ)', 'पूर्णा (पूर्ण)'], ['Amavasya', 'અમાસ', 'अमावस्या'],
+    ['celebrations, music, arts, family gatherings', 'ઉત્સવ, સંગીત, કલા, કુટુંબ મેળાવડા', 'उत्सव, संगीत, कला, पारिवारिक मिलन'],
+    ['buying, travel, routine work, starting steady projects', 'ખરીદી, પ્રવાસ, રોજિંદાં કામ, સ્થિર કામની શરૂઆત', 'खरीदारी, यात्रा, नियमित काम, स्थायी कार्यों की शुरुआत'],
+    ['competition, courage, legal matters, physical effort', 'સ્પર્ધા, હિંમતનાં કામ, કોર્ટ-કચેરી, શારીરિક મહેનત', 'प्रतियोगिता, साहस के काम, कानूनी मामले, शारीरिक परिश्रम'],
+    ['clearing obstacles, cleaning, ending what no longer serves', 'વિઘ્ન દૂર કરવાં, સાફસફાઈ, જે કામનું નથી તેનો અંત', 'बाधाएँ दूर करना, साफ़-सफ़ाई, जो काम का नहीं उसे समाप्त करना'],
+    ['completing work, all auspicious ceremonies', 'કામ પૂરાં કરવાં, બધાં શુભ કાર્ય', 'काम पूरे करना, सभी शुभ संस्कार'],
+    ['harsh words and quarrels', 'કડવાં વચન અને ઝઘડા', 'कटु वचन और झगड़े'], ['rushed decisions', 'ઉતાવળા નિર્ણય', 'जल्दबाज़ी के निर्णय'],
+    ['starting delicate or gentle work', 'નાજુક કે કોમળ કામની શરૂઆત', 'नाज़ुक या कोमल कार्यों की शुरुआत'],
+    ['new beginnings, purchases and ceremonies', 'નવી શરૂઆત, ખરીદી અને શુભ પ્રસંગ', 'नई शुरुआत, खरीदारी और संस्कार'], ['leaving things half done', 'કામ અધૂરાં છોડવાં', 'काम अधूरे छोड़ना'],
+    // Deities
+    ['Agni', 'અગ્નિ', 'अग्नि'], ['Brahma', 'બ્રહ્મા', 'ब्रह्मा'], ['Gauri', 'ગૌરી', 'गौरी'], ['Ganesha', 'ગણેશ', 'गणेश'], ['Naga devata', 'નાગ દેવતા', 'नाग देवता'],
+    ['Kartikeya', 'કાર્તિકેય', 'कार्तिकेय'], ['Surya', 'સૂર્ય', 'सूर्य'], ['Shiva (Rudra)', 'શિવ (રુદ્ર)', 'शिव (रुद्र)'], ['Durga', 'દુર્ગા', 'दुर्गा'], ['Yama', 'યમ', 'यम'],
+    ['Vishnu', 'વિષ્ણુ', 'विष्णु'], ['Vishnu (Hari)', 'વિષ્ણુ (હરિ)', 'विष्णु (हरि)'], ['Kamadeva', 'કામદેવ', 'कामदेव'], ['Shiva (Kali)', 'શિવ (કાળી)', 'शिव (काली)'],
+    ['Chandra', 'ચંદ્ર', 'चंद्र'], ['Pitru (ancestors)', 'પિતૃ (પૂર્વજો)', 'पितृ (पूर्वज)'], ['Ashwini Kumaras', 'અશ્વિની કુમાર', 'अश्विनी कुमार'], ['Soma', 'સોમ', 'सोम'],
+    ['Rudra', 'રુદ્ર', 'रुद्र'], ['Aditi', 'અદિતિ', 'अदिति'], ['Brihaspati', 'બૃહસ્પતિ', 'बृहस्पति'], ['Naga', 'નાગ', 'नाग'], ['Pitru', 'પિતૃ', 'पितृ'], ['Bhaga', 'ભગ', 'भग'],
+    ['Aryaman', 'અર્યમા', 'अर्यमा'], ['Savitr', 'સવિતા', 'सविता'], ['Vishwakarma', 'વિશ્વકર્મા', 'विश्वकर्मा'], ['Vayu', 'વાયુ', 'वायु'], ['Indra and Agni', 'ઇન્દ્ર અને અગ્નિ', 'इंद्र और अग्नि'],
+    ['Mitra', 'મિત્ર', 'मित्र'], ['Indra', 'ઇન્દ્ર', 'इंद्र'], ['Nirriti', 'નિર્ઋતિ', 'निर्ऋति'], ['Apas (waters)', 'આપ (જળ)', 'आप (जल)'], ['Vishvedevas', 'વિશ્વેદેવ', 'विश्वेदेव'],
+    ['Ashta Vasus', 'અષ્ટ વસુ', 'अष्ट वसु'], ['Varuna', 'વરુણ', 'वरुण'], ['Aja Ekapada', 'અજ એકપાદ', 'अज एकपाद'], ['Ahir Budhnya', 'અહિર્બુધ્ન્ય', 'अहिर्बुध्न्य'], ['Pushan', 'પૂષા', 'पूषा'],
+    ['Shiva', 'શિવ', 'शिव'], ['Hanuman', 'હનુમાન', 'हनुमान'], ['Lakshmi', 'લક્ષ્મી', 'लक्ष्मी'], ['Shani and Hanuman', 'શનિ અને હનુમાન', 'शनि और हनुमान'],
+    // Tithi notes
+    ['A fresh start of the fortnight.', 'પખવાડિયાની નવી શરૂઆત.', 'पक्ष की नई शुरुआत।'], ['Good for laying foundations.', 'પાયો નાખવા માટે શુભ.', 'नींव रखने के लिए शुभ।'],
+    ['Favoured for beauty, music and blessings for the household.', 'સૌંદર્ય, સંગીત અને ઘરના આશીર્વાદ માટે ઉત્તમ.', 'सौंदर्य, संगीत और घर-परिवार के आशीर्वाद के लिए उत्तम।'],
+    ['Worship Ganesha to remove obstacles.', 'વિઘ્ન દૂર કરવા ગણેશ પૂજા કરો.', 'बाधाएँ दूर करने के लिए गणेश पूजा करें।'],
+    ['Good for learning, medicine and healing.', 'વિદ્યા, ઔષધ અને ઉપચાર માટે શુભ.', 'विद्या, औषधि और उपचार के लिए शुभ।'],
+    ['Good for courage, health of children and festive work.', 'હિંમત, બાળકોના આરોગ્ય અને ઉત્સવનાં કામ માટે શુભ.', 'साहस, संतान के स्वास्थ्य और उत्सव के कार्यों के लिए शुभ।'],
+    ['Good for travel, vehicles and offering arghya to the Sun.', 'પ્રવાસ, વાહન અને સૂર્યને અર્ઘ્ય આપવા માટે શુભ.', 'यात्रा, वाहन और सूर्य को अर्घ्य देने के लिए शुभ।'],
+    ['Devi and Shiva worship; good for strong, protective work.', 'દેવી અને શિવની પૂજા; દૃઢ, રક્ષણનાં કામ માટે શુભ.', 'देवी और शिव की पूजा; दृढ़ और रक्षा के कार्यों के लिए शुभ।'],
+    ['Devi worship; avoid auspicious beginnings.', 'દેવી પૂજા; શુભ શરૂઆત ટાળો.', 'देवी पूजा; शुभ आरंभ टालें।'],
+    ['Good for righteous, lasting work and travel.', 'ધર્મનાં, લાંબું ટકે એવાં કામ અને પ્રવાસ માટે શુભ.', 'धर्म के, स्थायी कार्यों और यात्रा के लिए शुभ।'],
+    ['Fast and remember Vishnu. Ideal for japa and simple living.', 'ઉપવાસ કરો અને વિષ્ણુનું સ્મરણ કરો. જાપ અને સાદા જીવન માટે ઉત્તમ.', 'व्रत रखें और विष्णु का स्मरण करें। जप और सादे जीवन के लिए उत्तम।'],
+    ['Break the Ekadashi fast within the parana time; good for charity.', 'પારણાંના સમયમાં અગિયારસનો ઉપવાસ છોડો; દાન માટે શુભ.', 'पारण के समय में एकादशी का व्रत खोलें; दान के लिए शुभ।'],
+    ['Pradosh: worship Shiva at dusk. Good for friendship and joy.', 'પ્રદોષ: સંધ્યાકાળે શિવ પૂજા કરો. મિત્રતા અને આનંદ માટે શુભ.', 'प्रदोष: संध्या में शिव पूजा करें। मित्रता और आनंद के लिए शुभ।'],
+    ['Shiva worship; avoid new beginnings.', 'શિવ પૂજા; નવી શરૂઆત ટાળો.', 'शिव पूजा; नई शुरुआत टालें।'],
+    ['Purnima vrat, Satyanarayan katha and charity. Good for all ceremonies.', 'પૂનમનું વ્રત, સત્યનારાયણની કથા અને દાન. બધાં શુભ કાર્ય માટે ઉત્તમ.', 'पूर्णिमा व्रत, सत्यनारायण कथा और दान। सभी संस्कारों के लिए शुभ।'],
+    ['Offer tarpan to ancestors, give charity and keep quiet. Avoid new beginnings.', 'પિતૃઓને તર્પણ કરો, દાન આપો અને શાંત રહો. નવી શરૂઆત ટાળો.', 'पितरों को तर्पण करें, दान दें और शांत रहें। नई शुरुआत टालें।'],
+    ['remembering ancestors, charity, meditation', 'પિતૃ સ્મરણ, દાન, ધ્યાન', 'पितृ स्मरण, दान, ध्यान'], ['new beginnings, purchases, travel', 'નવી શરૂઆત, ખરીદી, પ્રવાસ', 'नई शुरुआत, खरीदारी, यात्रा'],
+    // Nakshatra classes
+    ['Dhruva (fixed)', 'ધ્રુવ (સ્થિર)', 'ध्रुव (स्थिर)'], ['Chara (movable)', 'ચર (ચલિત)', 'चर (चलायमान)'], ['Kshipra (swift)', 'ક્ષિપ્ર (ઝડપી)', 'क्षिप्र (शीघ्र)'],
+    ['Mridu (gentle)', 'મૃદુ (કોમળ)', 'मृदु (कोमल)'], ['Mishra (mixed)', 'મિશ્ર', 'मिश्र'], ['Ugra (fierce)', 'ઉગ્ર', 'उग्र'], ['Tikshna (sharp)', 'તીક્ષ્ણ', 'तीक्ष्ण'],
+    ['foundations, griha pravesh, planting, long-term commitments', 'પાયો, ગૃહપ્રવેશ, વાવેતર, લાંબા ગાળાનાં વચન', 'नींव, गृह प्रवेश, रोपण, दीर्घकालीन संकल्प'],
+    ['travel, vehicles, change of residence, gardening', 'પ્રવાસ, વાહન, ઘર બદલવું, બાગકામ', 'यात्रा, वाहन, निवास बदलना, बागवानी'],
+    ['trade, medicine, learning, short journeys, quick tasks', 'વેપાર, ઔષધ, વિદ્યા, ટૂંકો પ્રવાસ, ઝડપી કામ', 'व्यापार, औषधि, विद्या, छोटी यात्रा, शीघ्र कार्य'],
+    ['arts, friendship, new clothes, music, romance', 'કલા, મિત્રતા, નવાં વસ્ત્ર, સંગીત, પ્રેમ', 'कला, मित्रता, नए वस्त्र, संगीत, प्रेम'],
+    ['routine work, fire rituals, daily duties', 'રોજિંદાં કામ, હવન, નિત્ય કર્મ', 'नियमित काम, हवन, नित्य कर्म'], ['bold or difficult tasks', 'સાહસનાં કે કઠિન કામ', 'साहसिक या कठिन कार्य'],
+    ['auspicious ceremonies and new ventures', 'શુભ પ્રસંગ અને નવાં સાહસ', 'शुभ संस्कार और नए उद्यम'],
+    ['ending ties, removing obstacles, spiritual discipline', 'સંબંધ પૂરા કરવા, વિઘ્ન દૂર કરવાં, સાધના', 'संबंध समाप्त करना, बाधाएँ हटाना, साधना'],
+    ['weddings, purchases and new ventures', 'લગ્ન, ખરીદી અને નવાં સાહસ', 'विवाह, खरीदारी और नए उद्यम'], ['nothing in particular', 'ખાસ કંઈ નહીં', 'कुछ विशेष नहीं'],
+    // Weekdays
+    ['government work, authority, health, offering water to the Sun', 'સરકારી કામ, અધિકાર, આરોગ્ય, સૂર્યને જળ અર્પણ', 'सरकारी काम, अधिकार, स्वास्थ्य, सूर्य को जल अर्पण'],
+    ['Shiva puja, travel, home, family, arts', 'શિવ પૂજા, પ્રવાસ, ઘર, કુટુંબ, કલા', 'शिव पूजा, यात्रा, घर, परिवार, कला'],
+    ['courage, property matters, sport, Hanuman Chalisa', 'હિંમત, મિલકતનાં કામ, રમતગમત, હનુમાન ચાલીસા', 'साहस, संपत्ति के काम, खेल, हनुमान चालीसा'],
+    ['learning, trade, writing, accounts, communication', 'વિદ્યા, વેપાર, લેખન, હિસાબ, વાતચીત', 'विद्या, व्यापार, लेखन, हिसाब, संवाद'],
+    ['study, religious rites, meeting teachers, charity', 'અભ્યાસ, ધાર્મિક વિધિ, ગુરુ દર્શન, દાન', 'अध्ययन, धार्मिक अनुष्ठान, गुरु से भेंट, दान'],
+    ['arts, jewellery, clothes, relationships, Lakshmi puja', 'કલા, ઘરેણાં, વસ્ત્ર, સંબંધ, લક્ષ્મી પૂજા', 'कला, आभूषण, वस्त्र, संबंध, लक्ष्मी पूजा'],
+    ['hard work, service, donating oil or black sesame', 'મહેનત, સેવા, તેલ કે કાળા તલનું દાન', 'परिश्रम, सेवा, तेल या काले तिल का दान'],
+    ['starting long journeys west', 'પશ્ચિમ દિશાનો લાંબો પ્રવાસ શરૂ કરવો', 'पश्चिम दिशा की लंबी यात्रा शुरू करना'], ['harsh or violent work', 'કઠોર કે હિંસક કામ', 'कठोर या हिंसक काम'],
+    ['lending money, haircuts, new ventures', 'ઉધાર આપવું, વાળ કપાવવા, નવાં સાહસ', 'उधार देना, बाल कटवाना, नए उद्यम'], ['haircuts and nail cutting', 'વાળ અને નખ કાપવા', 'बाल और नाखून काटना'],
+    ['quarrels at home', 'ઘરમાં ઝઘડા', 'घर में झगड़े'], ['buying iron or oil, starting new ventures', 'લોખંડ કે તેલ ખરીદવું, નવાં સાહસ શરૂ કરવાં', 'लोहा या तेल खरीदना, नए उद्यम शुरू करना'],
+    // Choghadiya and Hora
+    ['government work only', 'ફક્ત સરકારી કામ', 'केवल सरकारी काम'], ['travel and movement', 'પ્રવાસ અને અવરજવર', 'यात्रा और आवागमन'], ['business, trade and gains', 'ધંધો, વેપાર અને લાભ', 'व्यवसाय, व्यापार और लाभ'],
+    ['every auspicious work', 'દરેક શુભ કાર્ય', 'हर शुभ कार्य'], ['avoid new work', 'નવું કામ ટાળો', 'नया काम टालें'], ['ceremonies, puja, marriage talks', 'શુભ પ્રસંગ, પૂજા, સગપણની વાત', 'संस्कार, पूजा, विवाह की बात'],
+    ['government work, leadership, meeting seniors', 'સરકારી કામ, નેતૃત્વ, વડીલોને મળવું', 'सरकारी काम, नेतृत्व, वरिष्ठों से मिलना'], ['travel, home, care, meeting people', 'પ્રવાસ, ઘર, સંભાળ, લોકોને મળવું', 'यात्रा, घर, देखभाल, लोगों से मिलना'],
+    ['physical effort, property, courage; avoid new ventures', 'શારીરિક મહેનત, મિલકત, હિંમત; નવાં સાહસ ટાળો', 'शारीरिक परिश्रम, संपत्ति, साहस; नए उद्यम टालें'],
+    ['study, writing, trade, communication', 'અભ્યાસ, લેખન, વેપાર, વાતચીત', 'अध्ययन, लेखन, व्यापार, संवाद'], ['puja, study, counsel, every auspicious work', 'પૂજા, અભ્યાસ, સલાહ, દરેક શુભ કાર્ય', 'पूजा, अध्ययन, परामर्श, हर शुभ कार्य'],
+    ['arts, shopping, relationships, celebrations', 'કલા, ખરીદી, સંબંધ, ઉત્સવ', 'कला, खरीदारी, संबंध, उत्सव'], ['hard labour and service; avoid new ventures', 'મહેનત અને સેવા; નવાં સાહસ ટાળો', 'परिश्रम और सेवा; नए उद्यम टालें'],
+    // Tarabalam
+    ['Janma (birth star): take care with big decisions', 'જન્મ તારા: મોટા નિર્ણયમાં સાવધાની રાખો', 'जन्म तारा: बड़े निर्णयों में सावधानी रखें'], ['Sampat (wealth): good for gains', 'સંપત તારા: લાભ માટે શુભ', 'संपत तारा: लाभ के लिए शुभ'],
+    ['Vipat (danger): avoid risks', 'વિપત તારા: જોખમ ટાળો', 'विपत तारा: जोखिम टालें'], ['Kshema (well-being): good for health and comfort', 'ક્ષેમ તારા: આરોગ્ય અને સુખ માટે શુભ', 'क्षेम तारा: स्वास्थ्य और सुख के लिए शुभ'],
+    ['Pratyari (obstacles): expect resistance', 'પ્રત્યરિ તારા: અડચણ આવી શકે', 'प्रत्यरि तारा: बाधा आ सकती है'], ['Sadhana (achievement): good for effort and goals', 'સાધના તારા: પ્રયત્ન અને ધ્યેય માટે શુભ', 'साधना तारा: प्रयास और लक्ष्य के लिए शुभ'],
+    ['Naidhana (destruction): avoid important starts', 'નૈધન તારા: મહત્ત્વની શરૂઆત ટાળો', 'नैधन तारा: महत्वपूर्ण आरंभ टालें'], ['Mitra (friend): supportive day', 'મિત્ર તારા: સાથ આપતો દિવસ', 'मित्र तारा: सहयोगी दिन'],
+    ['Param Mitra (best friend): very supportive day', 'પરમ મિત્ર તારા: ખૂબ સાથ આપતો દિવસ', 'परम मित्र तारा: बहुत सहयोगी दिन'],
+    // Muhurat finder events
+    ['Griha pravesh (house warming)', 'ગૃહપ્રવેશ', 'गृह प्रवेश'], ['Buying a vehicle', 'વાહન ખરીદી', 'वाहन खरीदना'], ['Opening a business', 'નવો ધંધો શરૂ કરવો', 'व्यवसाय आरंभ'],
+    ['Buying property or land', 'મિલકત કે જમીન ખરીદી', 'संपत्ति या भूमि खरीदना'], ['Starting study (vidyarambh)', 'વિદ્યારંભ', 'विद्यारंभ'], ['Long journey', 'લાંબો પ્રવાસ', 'लंबी यात्रा'],
+    ['Mundan (first haircut)', 'મુંડન (બાબરી)', 'मुंडन'],
+    // Festival notes
+    ['Any good work begun today is said to bear lasting fruit.', 'આજે શરૂ કરેલું દરેક સારું કામ અક્ષય ફળ આપે છે.', 'आज आरंभ किया हर शुभ कार्य अक्षय फल देता है।'],
+    ['Nine nights of Devi worship and garba.', 'દેવી ઉપાસના અને ગરબાની નવ રાત.', 'देवी उपासना और गरबा की नौ रातें।'],
+    ['Traders open new account books.', 'વેપારીઓ નવા ચોપડાનું પૂજન કરે છે.', 'व्यापारी नए बही-खाते का पूजन करते हैं।']
+  ].forEach(([en, gu, hi]) => { TX[en] = { gu, hi }; });
+  /* English text → the reader's language. Lists joined with '; ' are translated part by part. */
+  function tr(s, lang) {
+    if (!s || !lang || lang === 'en') return s;
+    const hit = TX[s]; if (hit) return hit[lang] || s;
+    return s.indexOf('; ') >= 0 ? s.split('; ').map(x => tr(x, lang)).join('; ') : s;
+  }
+
+  const api = { tr, TX, tithi, nakshatra, YOGA, KARANA, VAAR, CHOG, PLANET, RASHI, TARA, PRACTICES, EVENTS, TITHI_GROUP, NAK_KIND, GROUPS };
   if (typeof module !== 'undefined') module.exports = api;
   root.Meanings = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -20,7 +20,8 @@
     for (const p of opts.chog || []) {
       const h0 = H(p.start) + gap, h1 = H(p.end) - gap, on = now && p.start <= now && now < p.end;
       if (on) current = p;
-      s += `<path class="dial-seg ${p.nature}${p.night ? " night" : ""}${on ? " on" : ""}" d="${arc(c, R, h0, h1)}" stroke-width="${on ? w * 1.35 : w}" pathLength="1"/>`;
+      const k = p.nature === "bad" ? 0.42 : p.nature === "neutral" ? 0.72 : 1, sw = (on ? w * 1.35 : w) * k, rr = R - (w - w * k) / 2 * (on ? 1.35 : 1);
+      s += `<path class="dial-seg ${p.nature}${p.night ? " night" : ""}${on ? " on" : ""}" d="${arc(c, rr, h0, h1)}" stroke-width="${r2(sw)}" pathLength="1"/>`;
     }
     if (opts.rahu) s += `<path class="dial-rahu" d="${arc(c, R - w * 1.25, H(opts.rahu.start), H(opts.rahu.end))}" stroke-width="${Math.max(2, w * 0.22)}"/>`;
     if (opts.ticks !== false) for (let h = 0; h < 24; h++) {
