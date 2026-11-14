@@ -19,9 +19,11 @@ for(const key of ['chog','tithi','nak'])for(let i=1;i<f[key].length;i++)assert.o
 assert.ok(f.chog[0].s<=Date.parse('2026-11-14T00:00Z')&&f.chog.at(-1).e>=Date.parse('2026-11-21T00:00Z'));
 assert.ok(f.tithi.at(-1).e>=Date.parse('2026-11-21T18:00Z')&&f.nak.at(-1).e>=Date.parse('2026-11-21T18:00Z'));
 // Prabodhini Ekadashi 2026 is a kshaya tithi at Jamnagar sunrise and is kept on 20 Nov; Kartik Purnima on 24 Nov.
-assert.equal(f.vrat[0].date,'2026-11-15');assert.equal(f.vrat[0].en,'Labh Pancham');
-assert.ok(f.vrat.some(v=>v.date==='2026-11-20'&&v.en==='Ekadashi fast'));
-assert.ok(f.vrat.some(v=>v.date==='2026-11-24'&&v.en==='Purnima'));
+// A festival module's list replaces the built-in vrats.
+assert.equal(f.vrat.length,1);assert.equal(f.vrat[0].date,'2026-11-15');assert.equal(f.vrat[0].en,'Labh Pancham');
+const own=W.build(jam,new Date('2026-11-14T03:00Z'));
+assert.ok(own.vrat.some(v=>v.date==='2026-11-20'&&v.en==='Ekadashi fast'));
+assert.ok(own.vrat.some(v=>v.date==='2026-11-24'&&v.en==='Purnima'));
 assert.ok(JSON.stringify(f).length<60000);
 // Polar night: no sunrise means no Choghadiya, but tithi and nakshatra still flow.
 const polar=W.build({name:'Tromsø',lat:69.65,lon:18.96,zone:'Europe/Oslo'},new Date('2026-12-20T12:00Z'));

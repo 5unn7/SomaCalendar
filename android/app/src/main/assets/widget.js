@@ -90,6 +90,7 @@
     return rise;
   }
   function upcomingVrats(loc, obs, fromDay, limit, extra) {
+    if (extra && extra.length) return merge([], extra, fromDay, limit);
     var list = [], prev = {}, seenOn = {}, day = fromDay;
     for (var n = 0; n < VRAT_SCAN_DAYS && list.length < limit + 4; n++, day = K.addDay(day, 1)) {
       var start = K.instant(day, "00:00", loc.zone), noon = K.instant(day, "12:00", loc.zone);
@@ -109,6 +110,9 @@
     list = list.map(function(x) {
       return { date: x.date, n: x.n, en: x.en, d: x.d };
     });
+    return merge(list, extra, fromDay, limit);
+  }
+  function merge(list, extra, fromDay, limit) {
     (extra || []).forEach(function(f) {
       if (f && f.date >= fromDay) list.push({ date: f.date, n: f.n || f.name || "", en: f.en || "", d: f.d || f.note || "" });
     });
