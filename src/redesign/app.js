@@ -54,9 +54,8 @@ const titleDay = d => new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, we
 const todayKey = () => K.dateKey(now(), loc.zone);
 const isToday = () => day === todayKey();
 const daysBetween = (a, b) => Math.round((Date.parse(b + 'T12:00Z') - Date.parse(a + 'T12:00Z')) / 864e5);
-/* Status never rides on colour alone: every badge and dot carries a shape (✓ shubh, ◆ neutral, ✕ avoid). */
-const GLYPH = { good: '✓', bad: '✕', neutral: '◆', mixed: '◆', festival: '✦' };
-const badge = n => `<span class="nature ${n}"><span class="g" aria-hidden="true">${GLYPH[n] || '◆'}</span>${esc(L.nature(n))}</span>`;
+/* Status never rides on colour alone: words on badges, and dots carry a shape (circle shubh, ring neutral, diamond avoid). */
+const badge = n => `<span class="nature ${n}">${esc(L.nature(n))}</span>`;
 const hourOf = d => { const p = K.parts(d, loc.zone); return +p.hour + p.minute / 60 + p.second / 3600; };
 const methodChip = () => `<button class="chip method" onclick="settings()">${esc(t('methodBase'))} · ${esc(t(prefs.month === 'purnimanta' ? 'purnimantaShort' : 'amantaShort'))} · ${esc(loc.name)}</button>`;
 const emph = s => esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
@@ -133,9 +132,11 @@ function render() {
 function verdict(d) {
   const l = d.sunriseLimbs, ti = M.tithi(l.tithi.index), na = M.nakshatra(l.nakshatra.index), yo = M.YOGA[l.yoga.index], ka = M.KARANA[l.karana.index];
   const bad = [ti.nature, na.nature, yo.nature].filter(n => n === 'bad').length + (ka.nature === 'bad' && l.karana.index === 6 ? 1 : 0);
-  const festival = observances(d.frame.day, 1).find(x => x.day === d.frame.day && x.kind === 'festival');
+  // When two festivals share a day (Roop Chaudas and Diwali), the hero carries the main one.
+  const todays = observances(d.frame.day, 1).filter(x => x.day === d.frame.day && x.kind === 'festival');
+  const festival = todays.find(x => MAJOR_FEST.indexOf(x.key) >= 0) || todays[0];
   if (festival) {
-    const note = festNote(festival), win = festWindow(d);
+    const note = festNote(festival), win = festWindow(d, festival);
     return { nature: 'good', parva: true, festival, win, ti, na, yo,
       good: note ? t('festGood', { f: L.festName(festival), note: note.replace(/[.।]$/, '') }) : L.festName(festival),
       avoid: t('festAvoid', { span: span(d.periods.rahu) }) };
@@ -146,14 +147,28 @@ function verdict(d) {
     .filter(Boolean).join('; ') || tr(ti.avoid);
   return { nature, good, avoid, ti, na, yo, festival: null };
 }
+const MAJOR_FEST = ['diwali', 'holika', 'dhuleti', 'janmashtami', 'shivratri', 'ramnavami', 'ganesh', 'dussehra', 'navratri', 'rakhi', 'bestuvaras', 'uttarayan', 'sankranti', 'akshaya', 'labhpancham', 'dhanteras', 'kalichaudas', 'bhaidooj'];
 const festNote = f => f.note ? tr(f.note) : '';
-/* The festival's own time today: the first Amrit, Shubh or Labh Choghadiya of the day, clear of Rahu Kaal, Yamaganda and Gulika. */
-function festWindow(d) {
-  const from = isToday() && now() > d.frame.sunrise ? now() : d.frame.sunrise;
-  return P.goodWindows(d, from, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0]
-    || P.goodWindows(d, d.frame.sunrise, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0] || null;
+/* The festival's own puja time today, following the rule the festival is kept by (festivals.js): a shubh Choghadiya
+   in the day for sunrise, madhyahna and aparahna festivals, in pradosh (the first 2 h 24 min after sunset) for sunset
+   festivals, and nishita kaal (the eighth of the night around its midpoint) for midnight festivals. The window must fall
+   while the festival's own tithi runs; when none does, no puja time is offered. Moonrise festivals have no window here. */
+const SHUBH_CHOG = c => c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh';
+function festWindow(d, f) {
+  const fr = d.frame, rule = (f && f.rule) || 'sunrise';
+  if (rule === 'moonrise') return null;
+  const inTithi = w => !f || typeof f.tithi !== 'number' || (K.tithi(w.start).index === f.tithi && K.tithi(new Date(+w.end - 6e4)).index === f.tithi);
+  if (rule === 'midnight') {
+    const night = fr.nextSunrise - fr.sunset, mid = +fr.sunset + night / 2, w = { start: new Date(mid - night / 16), end: new Date(mid + night / 16), key: 'nishita' };
+    return inTithi(w) ? w : null;
+  }
+  const from = isToday() && now() > fr.sunrise ? now() : fr.sunrise;
+  let wins = P.goodWindows(d, from, { accept: c => SHUBH_CHOG(c) && !c.night });
+  if (rule === 'sunset') { const end = +fr.sunset + (fr.nextSunrise - fr.sunset) / 5; wins = P.goodWindows(d, fr.sunset, { accept: c => SHUBH_CHOG(c) && c.night }).filter(w => +w.start < end); }
+  // Late in the day the window may have passed; still name it rather than show nothing.
+  return wins.find(inTithi) || (rule !== 'sunset' && from > fr.sunrise ? P.goodWindows(d, fr.sunrise, { accept: c => SHUBH_CHOG(c) && !c.night }).find(inTithi) : null) || null;
 }
-const festWindowLine = v => v.win ? t('festWindow', { span: span(v.win), chog: L.chogName(v.win.key) }) : '';
+const festWindowLine = v => v.win ? t('festWindow', { span: span(v.win), chog: v.win.key === 'nishita' ? t('nishita') : L.chogName(v.win.key) }) : '';
 const verdictWord = n => n === 'good' ? t('favourable') : n === 'bad' ? t('takeCare') : n === 'festival' ? t('parva') : t('mixed');
 const vWord = v => v.parva ? t('parva') : verdictWord(v.nature);
 /* Rahu Kaal as a gentle heads-up: only while it runs or in the 30 minutes before. */
@@ -188,7 +203,7 @@ function dialHero(d, v, cx, eyebrow) {
   const next = nextShubh(cx);
   const dial = SomaDial.svg({ size: 340, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, label: dialLabel(d, cx, next) });
   // Lead with what to do: while a bad Choghadiya runs, the core names the next shubh time; the bad one is a quiet second line.
-  const g = n => `<span class="g" aria-hidden="true">${GLYPH[n] || '◆'}</span>`;
+  const g = () => '';
   const chogLine = cx.c && cx.c.nature === 'bad' && next
     ? `<div class="chognow good">${g('good')}${esc(t('nextShubhAt', { time: fmt(next.start) }))}</div><div class="chogsub">${esc(t('nowChog', { chog: L.chogName(cx.c.key), time: fmt(cx.c.end) }))}</div>`
     : cx.c ? `<div class="chognow ${cx.c.nature}">${g(cx.c.nature)}${esc(L.chogName(cx.c.key))} · ${esc(until(cx.c.end))}</div>`
@@ -206,7 +221,10 @@ const dialLegend = () => `<div class="legend" aria-hidden="true"><span class="go
 function sunStrip(d, cx) {
   const f = d.frame, len = Math.round((f.sunset - f.sunrise) / 6e4);
   const late = cx.now && cx.now > f.sunset, rise = late ? vedicDay(K.addDay(day, 1)).frame.sunrise : f.sunrise;
-  const cell = (k, label, at) => { const r = rel({ start: at, end: at }, cx.now); return `<div class="${k}${cx.now && at <= cx.now ? ' past' : ''}" role="group" aria-label="${esc(label + ' ' + fmt(at))}">${icon(k)}<b>${fmt(at)}</b>${r ? `<small>${esc(r)}</small>` : ''}</div>`; };
+  // "6:52" large and "am" / "સવારે" / "सुबह" small, in the order each language writes them.
+  const time = at => { if (!at) return '<b>—</b>'; const parts = new Intl.DateTimeFormat(locale(), Object.assign({ timeZone: loc.zone, hour: 'numeric', minute: '2-digit' }, L.lang === 'en' ? { hour12: true } : { dayPeriod: 'short' })).formatToParts(at);
+    return '<b>' + parts.map(p => p.type === 'dayPeriod' ? `<span class="per">${esc(p.value)}</span>` : p.type === 'literal' && /^\s+$/.test(p.value) ? ' ' : esc(p.value)).join('') + '</b>'; };
+  const cell = (k, label, at) => { const r = rel({ start: at, end: at }, cx.now); return `<div class="${k}${cx.now && at <= cx.now ? ' past' : ''}" role="group" aria-label="${esc(label + ' ' + fmt(at))}">${icon(k)}${time(at)}<small>${r ? esc(r) : ''}</small></div>`; };
   return `<div class="sunstrip">${cell('sunrise', late ? t('tomorrowRise') : t('sunrise'), rise)}<div class="len" aria-label="${esc(t('daylight'))}"><i></i><span>${esc(t('hm', { h: Math.floor(len / 60), m: len % 60 }))}</span><i></i></div>${cell('sunset', t('sunset'), f.sunset)}</div>`;
 }
 /* A group heading: a small overline that names the kind of thing, the title, and an optional action on the right. */
@@ -246,9 +264,9 @@ function folioHero(d, v, cx, eyebrow, monthName) {
   const head = v.parva ? '*' + L.festName(v.festival) + '*' : v.nature === 'good' ? t('folioGood') : v.nature === 'bad' ? t('folioBad') : t('folioMixed');
   const lede = v.parva ? [festNote(v.festival), festWindowLine(v)].filter(Boolean).join(' · ') : t('goodFor') + ': ' + v.good + (v.nature === 'good' ? '' : ' · ' + t('avoid') + ': ' + v.avoid);
   const sun = [{ at: d.frame.sunrise, html: `<span>${icon('sunrise', 'ic')} ${esc(t('sunrise'))}</span><span class="k"></span>` }, { at: d.frame.sunset, html: `<span>${icon('sunset', 'ic')} ${esc(t('sunset'))}</span><span class="k"></span>` }];
-  const items = sun.concat(d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}"><span class="g" aria-hidden="true">${GLYPH[c.nature]}</span>${esc(L.nature(c.nature))}</span>` })))
-    .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad"><span class="g" aria-hidden="true">✕</span>→ ${fmt(d.periods.rahu.end)}</span>` }])
-    .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good"><span class="g" aria-hidden="true">✓</span>→ ${fmt(d.periods.abhijit.end)}</span>` }])
+  const items = sun.concat(d.choghadiya.filter(c => !c.night).map(c => ({ at: c.start, html: `<span>${esc(L.chogName(c.key))}${cx.now && c.start <= cx.now && cx.now < c.end ? ` <span class="k good">· ${esc(t('running'))}</span>` : ''}</span><span class="k ${c.nature}">${esc(L.nature(c.nature))}</span>` })))
+    .concat([{ at: d.periods.rahu.start, html: `<span>${esc(t('rahu'))}</span><span class="k bad">→ ${fmt(d.periods.rahu.end)}</span>` }])
+    .concat(d.periods.abhijit.wednesday ? [] : [{ at: d.periods.abhijit.start, html: `<span>${esc(t('abhijit'))}</span><span class="k good">→ ${fmt(d.periods.abhijit.end)}</span>` }])
     .sort((a, b) => a.at - b.at);
   return `<section class="folio"><div class="row"><span class="eyebrow">${eyebrow}</span></div><div class="rule"></div>`
     + `<div class="eyebrow accent">${esc(monthName)} · ${esc(L.tithiName(cx.ti.index))}</div><h1 class="headline">${emph(head)}</h1><p class="lede">${esc(lede)}</p>${sunStrip(d, cx)}`

@@ -139,6 +139,7 @@
   });
   /* Launch-blocker pass: every sentence on screen, as whole templates so word order follows each language. */
   Object.assign(STR.en, {
+    nishita: "Nishita kaal",
     mainNav: "Main",
     untilT: "until {time}",
     fromT: "from {time}",
@@ -239,6 +240,7 @@
     festDayNote: "A festival day: the day itself is the muhurat. Begin its puja in a shubh Choghadiya, outside Rahu Kaal."
   });
   Object.assign(STR.gu, {
+    nishita: "નિશીથ કાળ",
     mainNav: "મુખ્ય મેનૂ",
     untilT: "{time} સુધી",
     fromT: "{time} થી",
@@ -339,6 +341,7 @@
     festDayNote: "તહેવારનો દિવસ પોતે જ મુહૂર્ત છે. તેની પૂજા રાહુ કાળ બહાર, શુભ ચોઘડિયામાં શરૂ કરો."
   });
   Object.assign(STR.hi, {
+    nishita: "निशीथ काल",
     mainNav: "मुख्य मेनू",
     untilT: "{time} तक",
     fromT: "{time} से",
