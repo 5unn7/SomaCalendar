@@ -74,11 +74,25 @@ final class SomaTests: XCTestCase {
     XCTAssertFalse(snap.tithi.isEmpty)
     XCTAssertFalse(snap.chog.isEmpty)
     XCTAssertTrue(["good", "ok", "bad"].contains(snap.chogQuality))
+    // Kaal Chakra dial: the arcs cover the 24 hours around now, and the centre shows an English tithi name.
+    XCTAssertEqual(snap.arcs.reduce(0) { $0 + $1.hours }, 24, accuracy: 0.01)
+    XCTAssertTrue((0...29).contains(snap.tithiIndex), "tithi label not recognised: \(snap.tithi)")
+    XCTAssertTrue(WidgetSnapshot.tithiEn.contains(snap.tithiName) || snap.tithiName == "Amavasya")
+    XCTAssertTrue(snap.caption.contains("·"))
+    XCTAssertTrue(snap.nowLine.contains("until"))
     let marks = feed.boundaries(from: now)
     XCTAssertGreaterThan(marks.count, 10, "a day has at least 16 Choghadiya boundaries")
     XCTAssertEqual(marks, marks.sorted())
     for m in marks.prefix(30) { XCTAssertNotNil(feed.snapshot(at: m.addingTimeInterval(1))) }
     XCTAssertGreaterThan(feed.coveredUntil.timeIntervalSince(now), 5 * 86_400, "feed should cover about a week")
+  }
+
+  func testTithiLabelsMapToIndex() {
+    XCTAssertEqual(WidgetSnapshot.tithiIndex("સુદ પાંચમ"), 4)
+    XCTAssertEqual(WidgetSnapshot.tithiIndex("વદ પાંચમ"), 19)
+    XCTAssertEqual(WidgetSnapshot.tithiIndex("સુદ પૂનમ"), 14)
+    XCTAssertEqual(WidgetSnapshot.tithiIndex("વદ અમાસ"), 29)
+    XCTAssertEqual(WidgetSnapshot.tithiIndex("?"), -1)
   }
 
   func testWidgetFeedReachesAppGroup() async throws {

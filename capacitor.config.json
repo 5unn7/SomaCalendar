@@ -2,7 +2,6 @@
   "appId": "com.soma.calendar.preview",
   "appName": "Soma",
   "webDir": "www",
-  "backgroundColor": "#050505",
   "loggingBehavior": "debug",
   "android": {
     "allowMixedContent": false,
@@ -16,11 +15,6 @@
     "scrollEnabled": true
   },
   "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 0,
-      "backgroundColor": "#050505",
-      "showSpinner": false
-    },
     "StatusBar": {
       "overlaysWebView": false
     },

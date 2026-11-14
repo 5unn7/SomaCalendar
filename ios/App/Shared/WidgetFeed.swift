@@ -60,8 +60,29 @@ struct WidgetFeed: Decodable {
       sunrise: vd.map { Self.date($0.rise) }, sunset: vd.map { Self.date($0.set) },
       nextGood: chog.first(where: { $0.s >= c.e && $0.q == "good" }).map { (name: $0.n, start: Self.date($0.s), end: Self.date($0.e)) },
       laterChog: later.map { (name: $0.n, quality: $0.q, start: Self.date($0.s), end: Self.date($0.e)) },
-      vrats: upcoming.prefix(4).map { (date: $0.date, name: $0.n, english: $0.en ?? "", note: $0.d ?? "") }
+      vrats: upcoming.prefix(4).map { (date: $0.date, name: $0.n, english: $0.en ?? "", note: $0.d ?? "") },
+      arcs: ringArcs(around: date),
+      nowHours: Self.localHours(date, timeZone),
+      tithiIndex: WidgetSnapshot.tithiIndex(ti?.n),
+      nextChog: chog.first(where: { $0.s >= c.e }).map { (name: $0.en, end: Self.date($0.e)) }
     )
+  }
+
+  /// Every Choghadiya inside the 24 hours centred on `date`, clipped, so arcs on the dial never overlap.
+  func ringArcs(around date: Date) -> [WidgetSnapshot.Arc] {
+    let t = date.timeIntervalSince1970 * 1000, lo = t - 12 * 3_600_000, hi = t + 12 * 3_600_000
+    return chog.compactMap { c in
+      let s = max(lo, c.s), e = min(hi, c.e)
+      guard e > s else { return nil }
+      return WidgetSnapshot.Arc(startHours: Self.localHours(Self.date(s), timeZone), hours: (e - s) / 3_600_000, quality: c.q, day: c.day == 1)
+    }
+  }
+
+  static func localHours(_ date: Date, _ zone: TimeZone) -> Double {
+    var cal = Calendar(identifier: .gregorian)
+    cal.timeZone = zone
+    let p = cal.dateComponents([.hour, .minute, .second], from: date)
+    return Double(p.hour ?? 0) + Double(p.minute ?? 0) / 60 + Double(p.second ?? 0) / 3600
   }
 
   /// Moments within `hours` after `from` at which something the widget shows changes.
@@ -114,6 +135,49 @@ struct WidgetSnapshot {
   let nextGood: (name: String, start: Date, end: Date)?
   let laterChog: [(name: String, quality: String, start: Date, end: Date)]
   let vrats: [(date: String, name: String, english: String, note: String)]
+  let arcs: [Arc]
+  /// Local clock hours of `date`, for the dot on the dial.
+  let nowHours: Double
+  /// 0–14 Shukla, 15–29 Krishna (29 = Amavasya); -1 if unknown.
+  let tithiIndex: Int
+  let nextChog: (name: String, end: Date)?
+
+  struct Arc { let startHours: Double; let hours: Double; let quality: String; let day: Bool }
+
+  static let tithiGu = ["પડવો", "બીજ", "ત્રીજ", "ચોથ", "પાંચમ", "છઠ", "સાતમ", "આઠમ", "નોમ", "દશમ", "અગિયારસ", "બારસ", "તેરસ", "ચૌદશ", "પૂનમ"]
+  static let tithiEn = ["Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami", "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami", "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Purnima"]
+
+  /// "સુદ પાંચમ" → 4, "વદ પાંચમ" → 19, "વદ અમાસ" → 29.
+  static func tithiIndex(_ label: String?) -> Int {
+    guard let label else { return -1 }
+    if label.contains("અમાસ") { return 29 }
+    let vad = label.hasPrefix("વદ")
+    guard let i = tithiGu.firstIndex(where: { label.hasSuffix($0) }) else { return -1 }
+    return (vad ? 15 : 0) + i
+  }
+  var tithiName: String { tithiIndex < 0 ? tithi : tithiIndex == 29 ? "Amavasya" : Self.tithiEn[tithiIndex % 15] }
+
+  /// Small dial caption, e.g. "SHUBH · 9:47".
+  var caption: String { inRahu ? "RAHU · \(clock(rahuEnd))" : "\(chogEnglish.uppercased()) · \(clock(chogEnds))" }
+  /// Medium widget: "Shubh until 9:47".
+  var nowLine: String { inRahu ? "Rahu Kaal until \(clock(rahuEnd))" : "\(chogEnglish) until \(clock(chogEnds))" }
+  /// What comes next: Rahu Kaal if it starts within three hours of this window ending, else the next window.
+  var thenLine: String {
+    if inRahu { return "Hold new starts" }
+    if let rs = rahuStart, let re = rahuEnd, rs > date, rs.timeIntervalSince(chogEnds) < 3 * 3600 {
+      return "Then Rahu Kaal \(clock(rs)) – \(clock(re))"
+    }
+    return nextChog.map { "Then \($0.name) until \(clock($0.end))" } ?? ""
+  }
+
+  func clock(_ d: Date?) -> String {
+    guard let d else { return "—" }
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.timeZone = zone
+    f.dateFormat = "h:mm"
+    return f.string(from: d)
+  }
 
   var inRahu: Bool {
     guard let s = rahuStart, let e = rahuEnd else { return false }

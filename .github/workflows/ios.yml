@@ -23,12 +23,12 @@ jobs:
       - name: Install JS dependencies
         run: npm install --no-audit --no-fund
       - name: Test, bundle the shared web app and sync it into the iOS app
-        run: npm test && npx cap sync ios
+        run: npm test
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
       - name: Generate Xcode project
-        run: brew install xcodegen && cd ios/App && xcodegen generate
+        run: brew install xcodegen && (cd ios/App && xcodegen generate) && npx cap sync ios && (cd ios/App && xcodegen generate)
       - name: Pick an iPhone simulator
         id: sim
         run: |
