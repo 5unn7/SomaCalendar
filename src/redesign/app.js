@@ -1120,16 +1120,20 @@ function moonHour() {
   const p = K.parts(now(), loc.zone);
   return Math.min(23.75, Math.floor((+p.hour + p.minute / 60) * 4) / 4);
 }
+/* The next new, first-quarter, full and last-quarter Moons after an instant, soonest first. */
+function phasesAhead(d) {
+  return [0, 90, 180, 270].map((a, i) => ({ name: L.tithiName([29, 7, 14, 22][i]), d: A.SearchMoonPhase(a, d, 32).date })).sort((a, b) => a.d - b.d)
+    .map(e => `<div class="timeline"><i class="dot"></i><div><strong>${esc(e.name)}</strong></div><div class="right">${full(e.d)}</div></div>`).join('');
+}
 function moonView() {
   const h = moonHour(), live = hour == null && isToday();
   const d = live ? now() : K.instant(day, String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0'), loc.zone), ti = K.tithi(d), data = K.dayData(day, loc), illum = A.Illumination('Moon', d);
   const nk = P.nakshatra(d), rashi = Math.floor(P.moonSid(d) / 30);
-  const next = [0, 90, 180, 270].map((a, i) => ({ name: L.tithiName([29, 7, 14, 22][i]), d: A.SearchMoonPhase(a, d, 32).date })).sort((a, b) => a.d - b.d);
   const lead = pageBar(L.tithiName(ti.index), titleDay(day)) + `<div class="moonbox" id="moonBox" role="img" aria-label="${esc(t('moonIllum'))} ${Math.round(illum.phase_fraction * 100)}%">${SomaDial.moon(260, ti.angle, 'big')}</div>`
     + `<div style="text-align:center"><h2 id="moonPct">${num(Math.round(illum.phase_fraction * 100))}%</h2><p id="moonNak">${esc(L.nakName(nk.index))} ${num(nk.pada)} · ${esc(L.rashiName(rashi))}</p></div>`
     + `<label><span id="scrubNow">${live ? esc(t('now')) + ' · ' : ''}</span><span id="scrubTime">${fmt(d)}</span><input aria-label="${esc(t('timeOfDay'))}" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="moonScrub(+this.value)"></label>${datebar()}`;
   const rest = `<div class="grid2"><div class="card"><div class="caption">${esc(t('moonrise'))}</div><div class="value">${fmt(data.moonrise)}</div></div><div class="card"><div class="caption">${esc(t('moonset'))}</div><div class="value">${fmt(data.moonset)}</div></div></div>`
-    + `<section class="section">${groupHead(t('ovSky'), esc(t('phasesAhead')))}<div class="list">${next.map(e => `<div class="timeline"><i class="dot"></i><div><strong>${esc(e.name)}</strong></div><div class="right">${full(e.d)}</div></div>`).join('')}</div></section>`;
+    + `<section class="section">${groupHead(t('ovSky'), esc(t('phasesAhead')))}<div class="list" id="moonPhases">${phasesAhead(d)}</div></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
 /* Scrubbing the Moon page: only the Moon, its numbers and the time change in place, so the slider keeps its grip and
@@ -1143,6 +1147,7 @@ function moonScrub(h) {
   $('moonPct').textContent = num(pct) + '%';
   $('moonNak').textContent = L.nakName(nk.index) + ' ' + num(nk.pada) + ' · ' + L.rashiName(rashi);
   $('scrubTime').textContent = fmt(d); $('scrubNow').textContent = '';
+  const ph = $('moonPhases'), html = phasesAhead(d); if (ph && ph.innerHTML !== html) ph.innerHTML = html;
   const bar = document.querySelector('#app .lead > h1'); if (bar && bar.textContent !== L.tithiName(ti.index)) bar.textContent = L.tithiName(ti.index);
 }
 
