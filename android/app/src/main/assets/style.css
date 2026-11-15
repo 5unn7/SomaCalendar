@@ -109,6 +109,11 @@ html[lang=gu] .eyebrow,html[lang=hi] .eyebrow{letter-spacing:.04em;font-size:0.7
 .primary{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:16px;background:var(--ink);color:var(--bg);font-weight:700;border-radius:28px;padding:15px 20px;min-height:52px}
 .primary svg,.picked svg{width:20px;height:20px;flex:none}
 .primary.gold{background:var(--accent-text);color:var(--accent-ink)}
+.remind{display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;width:100%;margin-top:16px;padding:12px 16px;min-height:52px;border:1px solid var(--line);border-radius:18px;text-align:start;font-weight:700;color:var(--ink)}
+.remind small{grid-column:2;font-weight:400;color:var(--muted);font-size:.8125rem;margin-top:2px}
+.remind.on{border-color:var(--good);background:var(--good-soft)}
+.remind svg{width:22px;height:22px;grid-row:span 2}
+.remind.on svg{color:var(--good-text)}
 .quiet{background:transparent;color:var(--accent-text);font-weight:600;padding:8px 4px;min-height:36px}
 .lesson{display:block;width:100%;text-align:left;margin-top:10px;padding:16px 18px;border:1px solid var(--line);border-radius:18px}
 .lesson h3{display:flex;justify-content:space-between;gap:8px}
@@ -353,6 +358,11 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
 #onboard .langs button{display:flex;width:100%;justify-content:space-between;align-items:center;margin-top:10px;padding:16px 18px;border:1.5px solid var(--line);border-radius:18px;font:700 1.0625rem var(--body)}
 #onboard .langs button.on{border-color:var(--accent)}
 #onboard .langs span{font:500 0.8125rem var(--body);color:var(--muted)}
+#onboard .langs.months button{flex-wrap:wrap;text-align:left}
+#onboard .langs.months small{flex:1 0 100%;order:3;font:500 0.8125rem var(--body);color:var(--muted);margin-top:2px}
+.caption.india{margin-top:6px}
+.skyline{margin-top:8px;color:var(--ink)}
+.wxwarn{color:var(--bad-text);font-weight:600;margin-top:4px}
 #onboard .foot{margin-top:auto;padding-top:24px}
 #onboard .foot .quiet{display:block;margin:6px auto 0;color:var(--muted)}
 .or{text-align:center;font-size:0.8125rem;color:var(--muted);margin:16px 0 4px}
@@ -668,3 +678,39 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 .favdays .chip.on{outline:2px solid var(--ink);outline-offset:1px}
 .favdays .caption{margin-top:10px}
 .favcta .primary{margin-top:12px}
+/* You: identity card, grouped setting rows with icons, About sheet. */
+.card.me .profile{align-items:flex-start}
+.card.me h3{margin-top:2px}
+.card.me .edit{margin-left:auto;align-self:flex-start;padding:6px 10px;min-height:36px}
+.facts2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.facts2>div{background:var(--surface2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.facts2 small{color:var(--muted);font-size:.75rem}
+.facts2 b{font-size:1.125rem;font-weight:700}
+.card .lock{margin-top:12px}
+.card.me + .personalDay,.card.me + .lesson{margin-top:10px}
+.group.rows>button{justify-content:flex-start}
+.group.rows>button>b{flex:1;min-width:0;font-weight:600}
+.group.rows .ri{width:22px;height:22px;flex:none;color:var(--accent-text)}
+.group.rows>button>span{display:flex;align-items:center;gap:6px;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group.rows>button>span i{font-style:normal;color:var(--faint)}
+.group.rows>button.danger b,.group.rows>button.danger .ri{color:var(--bad-text)}
+.chipRow.care .chip{border-color:var(--bad);color:var(--bad-text)}
+ul.gets{margin:0;padding-left:20px;display:grid;gap:8px}
+.about .abouthead{display:flex;align-items:center;gap:14px}
+.about .abouthead h2{margin:0}
+.about h3.section{margin-top:22px}
+.credit2{display:grid;grid-template-columns:1fr auto;column-gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.credit2 span{grid-column:1;color:var(--muted);font-size:.875rem}
+.credit2 small{grid-column:2;grid-row:1 / span 2;align-self:center;color:var(--muted);font-size:.75rem;text-align:right}
+pre.notices{white-space:pre-wrap;font-size:.75rem;line-height:1.5;max-height:50vh;overflow:auto;background:var(--surface2);padding:12px;border-radius:12px}
+.youtabs{margin:12px 0 4px}
+details.fold{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+details.fold>summary{display:flex;align-items:center;gap:12px;padding:14px 18px;min-height:52px;cursor:pointer;list-style:none;font-weight:600}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary b{flex:1}
+details.fold>summary span{color:var(--muted);font-weight:500}
+details.fold>summary::after{content:'›';color:var(--faint);transition:transform .2s}
+details.fold[open]>summary::after{transform:rotate(90deg)}
+details.fold .ri{width:22px;height:22px;color:var(--accent-text);flex:none}
+details.fold>.card,details.fold>.grid2,details.fold>.lesson{margin:0 12px 12px}
+details.fold>.card{border:0;box-shadow:none}

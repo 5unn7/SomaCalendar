@@ -131,38 +131,38 @@ public final class PanchangWidgets {
     JSONObject d = f.today != null ? f.today : f.vedic;
     if (!f.ok || d == null) {
       if (small) v.setTextViewText(R.id.pHeadline, "Soma");
-      v.setTextViewText(R.id.pRise, f.ok ? "No sunrise today" : "Open Soma once");
+      v.setTextViewText(R.id.pRise, f.ok ? f.t("wNoSunrise", "No sunrise today") : f.t("wOpenOnce", "Open Soma once"));
       v.setTextViewText(R.id.pSet, "");
-      if (!small) { v.setTextViewText(R.id.pHeadline, f.ok ? "Polar night or day" : "Set your city in Soma"); v.setImageViewBitmap(R.id.pArt, f.art("sun0", () -> sunArc(null, f, p))); }
+      if (!small) { v.setTextViewText(R.id.pHeadline, f.ok ? f.t("wPolar", "Polar night or day") : f.t("wSetCity", "Set your city in Soma")); v.setImageViewBitmap(R.id.pArt, f.art("sun0", () -> sunArc(null, f, p))); }
       return v;
     }
     long rise = d.optLong("rise"), set = d.optLong("set"), next = d.optLong("next");
     boolean day = f.now >= rise && f.now < set;
     long nextRise = f.now < rise ? rise : next;
-    v.setTextViewText(R.id.pRise, (small ? "↑ " : "Sunrise ") + f.time(rise));
-    v.setTextViewText(R.id.pSet, (small ? "↓ " : "Sunset ") + f.time(set));
+    v.setTextViewText(R.id.pRise, (small ? "↑ " : f.t("sunrise", "Sunrise") + " ") + f.time(rise));
+    v.setTextViewText(R.id.pSet, (small ? "↓ " : f.t("sunset", "Sunset") + " ") + f.time(set));
     if (small) {
-      v.setTextViewText(R.id.pHeadline, day ? "Sets in " + f.span(set - f.now) : "Rises in " + f.span(nextRise - f.now));
+      v.setTextViewText(R.id.pHeadline, day ? f.t("wSetsIn", "Sets in {x}", f.span(set - f.now)) : f.t("wRisesIn", "Rises in {x}", f.span(nextRise - f.now)));
       return v;
     }
     String headline;
-    if (day) headline = "Sunset in " + f.span(set - f.now);
-    else headline = "Sunrise in " + f.span(nextRise - f.now);
+    if (day) headline = f.t("wSunsetIn", "Sunset in {x}", f.span(set - f.now));
+    else headline = f.t("wSunriseIn", "Sunrise in {x}", f.span(nextRise - f.now));
     JSONArray brahma = f.nextBrahma();
-    if (brahma != null && f.now >= brahma.optLong(0) && f.now < brahma.optLong(1)) headline = "Brahma muhurat now";
+    if (brahma != null && f.now >= brahma.optLong(0) && f.now < brahma.optLong(1)) headline = f.t("wBrahmaNow", "Brahma muhurat now");
     v.setTextViewText(R.id.pHeadline, headline);
     v.setTextViewText(R.id.pSub, f.span(set - rise) + " of daylight · " + f.dateLabel());
     v.setImageViewBitmap(R.id.pArt, f.art("sun", () -> sunArc(d, f, p)));
     if (large) {
       StringBuilder b = new StringBuilder();
-      if (brahma != null) b.append("Brahma muhurat  ").append(f.range(brahma.optLong(0), brahma.optLong(1))).append('\n');
-      b.append("Solar noon  ").append(f.time(d.optLong("noon")));
+      if (brahma != null) b.append(f.t("brahma", "Brahma muhurat")).append("  ").append(f.range(brahma.optLong(0), brahma.optLong(1))).append('\n');
+      b.append(f.t("wNoon", "Solar noon")).append("  ").append(f.time(d.optLong("noon")));
       JSONArray ab = d.optJSONArray("abhijit");
       if (ab != null) b.append("   ·   Abhijit  ").append(f.range(ab.optLong(0), ab.optLong(1)));
       b.append('\n');
       long mr = d.optLong("mrise"), ms = d.optLong("mset");
-      b.append("Moonrise  ").append(mr > 0 ? f.time(mr) : "—").append("   ·   Moonset  ").append(ms > 0 ? f.time(ms) : "—");
-      if (f.tomorrow != null) b.append('\n').append("Tomorrow  ↑ ").append(f.time(f.tomorrow.optLong("rise"))).append("  ↓ ").append(f.time(f.tomorrow.optLong("set")));
+      b.append(f.t("moonrise", "Moonrise")).append("  ").append(mr > 0 ? f.time(mr) : "—").append("   ·   ").append(f.t("moonset", "Moonset")).append("  ").append(ms > 0 ? f.time(ms) : "—");
+      if (f.tomorrow != null) b.append('\n').append(f.dayLabel(f.tomorrowKey)).append("  ↑ ").append(f.time(f.tomorrow.optLong("rise"))).append("  ↓ ").append(f.time(f.tomorrow.optLong("set")));
       v.setTextViewText(R.id.pDetail, b.toString());
     }
     return v;
@@ -220,22 +220,22 @@ public final class PanchangWidgets {
     boolean wide = w >= 250, large = wide && h >= 250;
     RemoteViews v = new RemoteViews(c.getPackageName(), large ? R.layout.panchang_moon_large : wide ? R.layout.panchang_moon_wide : R.layout.panchang_moon);
     v.setImageViewBitmap(R.id.pArt, f.art("moon", () -> SomaWidget.moon(f.tithiIndex, p, 200)));
-    if (!f.ok) { v.setTextViewText(R.id.pHeadline, "Soma"); v.setTextViewText(R.id.pSub, "Open Soma once"); return v; }
-    v.setTextViewText(R.id.pHeadline, SomaWidget.tithiEnglish(f.tithiIndex));
+    if (!f.ok) { v.setTextViewText(R.id.pHeadline, "Soma"); v.setTextViewText(R.id.pSub, f.t("wOpenOnce", "Open Soma once")); return v; }
+    v.setTextViewText(R.id.pHeadline, f.tithiName());
     int lit = (int) Math.round(f.illumination() * 100);
-    v.setTextViewText(R.id.pSub, lit + "% lit · " + (f.tithiIndex < 15 ? "Shukla, waxing" : "Krishna, waning"));
+    v.setTextViewText(R.id.pSub, f.t("wLit", "{x}% lit", String.valueOf(lit)) + " · " + (f.tithiIndex < 15 ? f.t("wWaxing", "Shukla, waxing") : f.t("wWaning", "Krishna, waning")));
     if (!wide) return v;
     JSONObject ph = f.nextPhase(f.tithiIndex < 15 ? 2 : 0);
-    String nextLine = ph == null ? "" : (ph.optInt("k") == 2 ? "Purnima " : "Amavasya ") + f.when(ph.optLong("t"));
+    String nextLine = ph == null ? "" : (ph.optInt("k") == 2 ? f.t("purnima", "Purnima") : f.t("amavasya", "Amavasya")) + " " + f.when(ph.optLong("t"));
     v.setTextViewText(R.id.pDetail, nextLine);
     JSONObject civil = f.today;
     if (civil != null) {
       long mr = civil.optLong("mrise"), ms = civil.optLong("mset");
-      v.setTextViewText(R.id.pRise, "Moonrise " + (mr > 0 ? f.time(mr) : "—") + "  ·  Moonset " + (ms > 0 ? f.time(ms) : "—"));
+      v.setTextViewText(R.id.pRise, f.t("moonrise", "Moonrise") + " " + (mr > 0 ? f.time(mr) : "—") + "  ·  " + f.t("moonset", "Moonset") + " " + (ms > 0 ? f.time(ms) : "—"));
     }
     if (large) {
       StringBuilder b = new StringBuilder();
-      String[] names = {"New moon", "First quarter", "Full moon", "Last quarter"};
+      String[] names = {f.t("phase0", "New moon"), f.t("phase1", "First quarter"), f.t("phase2", "Full moon"), f.t("phase3", "Last quarter")};
       JSONArray phases = f.feed.optJSONArray("phases");
       int shown = 0;
       if (phases != null) for (int i = 0; i < phases.length() && shown < 4; i++) {
@@ -270,12 +270,12 @@ public final class PanchangWidgets {
     if (first == null) {
       v.setTextViewText(R.id.pBig, "—");
       v.setTextViewText(R.id.pUnit, "");
-      v.setTextViewText(R.id.pHeadline, f.ok ? "Nothing in the next weeks" : "Open Soma once");
+      v.setTextViewText(R.id.pHeadline, f.ok ? f.t("wNothing", "Nothing in the next weeks") : f.t("wOpenOnce", "Open Soma once"));
       return v;
     }
     int days = f.daysUntil(first.optString("date"));
-    v.setTextViewText(R.id.pBig, days == 0 ? "Today" : String.valueOf(days));
-    v.setTextViewText(R.id.pUnit, days == 0 ? "" : days == 1 ? "day to" : "days to");
+    v.setTextViewText(R.id.pBig, days == 0 ? f.t("today2", "Today") : String.valueOf(days));
+    v.setTextViewText(R.id.pUnit, days == 0 ? "" : days == 1 ? f.t("wDayTo", "day to") : f.t("wDaysTo", "days to"));
     v.setTextViewText(R.id.pHeadline, name(first));
     if (wide) {
       v.setTextViewText(R.id.pSub, f.dayLabel(first.optString("date")));
@@ -285,7 +285,9 @@ public final class PanchangWidgets {
     return v;
   }
 
-  private static String name(JSONObject x) { String en = x.optString("en"); return en.isEmpty() ? x.optString("n") : en; }
+  private static String name(JSONObject x) { String l = x.optString("l"); if (!l.isEmpty()) return l; String en = x.optString("en"); return en.isEmpty() ? x.optString("n") : en; }
+  /** A Choghadiya, tithi or nakshatra in the app language when the feed carries it. */
+  static String local(JSONObject x) { return x == null ? "" : !x.optString("l").isEmpty() ? x.optString("l") : !x.optString("en").isEmpty() ? x.optString("en") : x.optString("n"); }
 
   // ---- Now: Choghadiya strip ----------------------------------------------------------------------------------
 
@@ -293,16 +295,16 @@ public final class PanchangWidgets {
     boolean small = w < 250, tall = !small && h >= 110;
     RemoteViews v = new RemoteViews(c.getPackageName(), small ? R.layout.panchang_now_small : tall ? R.layout.panchang_now_tall : R.layout.panchang_now);
     if (!f.ok || f.chog == null) {
-      v.setTextViewText(R.id.pHeadline, f.ok ? "No sunrise today" : "Open Soma once");
+      v.setTextViewText(R.id.pHeadline, f.ok ? f.t("wNoSunrise", "No sunrise today") : f.t("wOpenOnce", "Open Soma once"));
       v.setTextViewText(R.id.pSub, "");
       return v;
     }
     String q = f.chog.optString("q");
     boolean rahu = f.inRahu();
-    v.setTextViewText(R.id.pHeadline, rahu ? "Rahu Kaal" : f.chog.optString("en"));
+    v.setTextViewText(R.id.pHeadline, rahu ? f.t("rahu", "Rahu Kaal") : local(f.chog));
     v.setTextColor(R.id.pHeadline, rahu ? p.bad : p.quality(q));
     long until = rahu ? f.rahuEnd() : f.chog.optLong("e");
-    v.setTextViewText(R.id.pSub, (rahu ? "Hold new starts" : meaning(q)) + " · until " + f.time(until));
+    v.setTextViewText(R.id.pSub, (rahu ? f.t("wHold", "Hold new starts") : meaning(f, q)) + " · " + f.t("until", "until {x}", f.time(until)) + temp(c, f));
     if (!small) v.setImageViewBitmap(R.id.pArt, f.art("strip", () -> strip(f, p)));
     if (tall) {
       StringBuilder b = new StringBuilder();
@@ -310,19 +312,26 @@ public final class PanchangWidgets {
       for (int i = f.chogIdx + 1; i < f.chogs.length() && shown < 3; i++, shown++) {
         JSONObject x = f.chogs.optJSONObject(i);
         if (shown > 0) b.append("   ·   ");
-        b.append(f.time(x.optLong("s"))).append(' ').append(x.optString("en"));
+        b.append(f.time(x.optLong("s"))).append(' ').append(local(x));
       }
       v.setTextViewText(R.id.pDetail, b.toString());
       JSONObject d = f.today;
       if (d != null) {
         JSONArray r = d.optJSONArray("rahu");
-        if (r != null) v.setTextViewText(R.id.pRise, "Rahu Kaal " + f.range(r.optLong(0), r.optLong(1)));
+        if (r != null) v.setTextViewText(R.id.pRise, f.t("rahu", "Rahu Kaal") + " " + f.range(r.optLong(0), r.optLong(1)));
       }
     }
     return v;
   }
 
-  static String meaning(String q) { return "good".equals(q) ? "Good to begin" : "bad".equals(q) ? "Avoid new beginnings" : "Good for travel"; }
+  /** " · 12° Clear" when live weather is on and fresh for this place; empty otherwise. */
+  private static String temp(Context c, Feed f) {
+    if (!f.ok || !Weather.on(c)) return "";
+    Weather.Now wx = Weather.Now.at(Weather.storedFor(c, f.lat, f.lon), f.now, f.endOfToday());
+    return wx.ok ? " · " + Weather.deg(wx.temp, Weather.fahrenheit(c)) + " " + f.t("wx_" + wx.kind, Weather.label(wx.kind)) : "";
+  }
+
+  static String meaning(Feed f, String q) { return "good".equals(q) ? f.t("wGoodBegin", "Good to begin") : "bad".equals(q) ? f.t("wAvoidBegin", "Avoid new beginnings") : f.t("wGoodTravel", "Good for travel"); }
 
   /** The Vedic day from sunrise to the next sunrise as 16 Choghadiya blocks; night dimmed, Rahu Kaal outlined, a gold tick at now. */
   private static Bitmap strip(Feed f, SomaWidget.Palette p) {
@@ -368,18 +377,18 @@ public final class PanchangWidgets {
   private static RemoteViews day(Context c, Feed f, SomaWidget.Palette p, float w, float h) {
     boolean wide = w >= 450;
     RemoteViews v = new RemoteViews(c.getPackageName(), wide ? R.layout.panchang_day_wide : R.layout.panchang_day);
-    v.setTextViewText(R.id.pSub, f.ok ? f.dateLabel() + (f.city.isEmpty() ? "" : " · " + f.city) : "Open Soma once to set your city");
+    v.setTextViewText(R.id.pSub, f.ok ? f.dateLabel() + (f.city.isEmpty() ? "" : " · " + f.city) + temp(c, f) : f.t("wSetCityOnce", "Open Soma once to set your city"));
     if (!f.ok) return v;
-    v.setTextViewText(R.id.pHeadline, SomaWidget.tithiEnglish(f.tithiIndex) + (f.nak == null ? "" : " · " + f.nak.optString("n")));
+    v.setTextViewText(R.id.pHeadline, f.tithiName() + (f.nak == null ? "" : " · " + local(f.nak)));
     v.setImageViewBitmap(R.id.pArt, f.art("moon", () -> SomaWidget.moon(f.tithiIndex, p, 200)));
     JSONObject civil = f.today != null ? f.today : f.vedic, d = f.vedic;
     if (civil != null) {
-      v.setTextViewText(R.id.pRise, "Sunrise " + f.time(civil.optLong("rise")) + "   ·   Sunset " + f.time(civil.optLong("set")));
+      v.setTextViewText(R.id.pRise, f.t("sunrise", "Sunrise") + " " + f.time(civil.optLong("rise")) + "   ·   " + f.t("sunset", "Sunset") + " " + f.time(civil.optLong("set")));
       StringBuilder k = new StringBuilder();
-      appendRange(k, f, "Rahu Kaal", civil.optJSONArray("rahu"));
-      appendRange(k, f, "Yamaganda", civil.optJSONArray("yama"));
-      appendRange(k, f, "Gulika", civil.optJSONArray("gulika"));
-      appendRange(k, f, "Abhijit", civil.optJSONArray("abhijit"));
+      appendRange(k, f, f.t("rahu", "Rahu Kaal"), civil.optJSONArray("rahu"));
+      appendRange(k, f, f.t("yamaganda", "Yamaganda"), civil.optJSONArray("yama"));
+      appendRange(k, f, f.t("gulika", "Gulika"), civil.optJSONArray("gulika"));
+      appendRange(k, f, f.t("abhijit", "Abhijit"), civil.optJSONArray("abhijit"));
       v.setTextViewText(R.id.pDetail, k.toString());
     }
     if (d != null) {
@@ -392,7 +401,7 @@ public final class PanchangWidgets {
         int at = isDay ? di++ : ni++;
         if (at >= rows.length) continue;
         boolean current = f.chogIdx == i;
-        v.setTextViewText(rows[at], (current ? "● " : "") + f.time(x.optLong("s")) + "   " + x.optString("en"));
+        v.setTextViewText(rows[at], (current ? "● " : "") + f.time(x.optLong("s")) + "   " + local(x));
         v.setTextColor(rows[at], p.quality(x.optString("q")));
       }
     }
@@ -448,16 +457,18 @@ public final class PanchangWidgets {
     v.setInt(R.id.widgetRoot, "setBackgroundResource", background(kind, phase, day));
     for (int id : FX) v.setViewVisibility(id, View.GONE);
     if (wx.ok) effects(v, kind, day, wx.windy);
-    v.setImageViewResource(R.id.wIcon, icon(kind, day));
+    // A windy, dry sky shows the wind rather than a plain sun or cloud.
+    boolean dryWind = wx.ok && wx.windy && ("clear".equals(kind) || "fair".equals(kind) || "partly".equals(kind) || "cloudy".equals(kind));
+    v.setImageViewResource(R.id.wIcon, dryWind ? R.drawable.wx_ic_wind : icon(kind, day));
 
     String place = f.city.isEmpty() ? "SKY" : f.city.toUpperCase(Locale.ROOT);
     v.setTextViewText(R.id.wPlace, place);
-    String sunNext = !f.ok || civil == null ? "" : day ? "Sunset " + f.time(set) : nextRise > 0 ? "Sunrise " + f.time(nextRise) : "";
-    String sunIn = !f.ok || civil == null ? "" : day ? "Sunset in " + Feed.span(set - f.now) : nextRise > 0 ? "Sunrise in " + Feed.span(nextRise - f.now) : "";
-    String cond = wx.ok ? Weather.label(kind) + (wx.windy && !"thunder".equals(kind) ? " · Windy" : "") : "";
+    String sunNext = !f.ok || civil == null ? "" : day ? f.t("sunset", "Sunset") + " " + f.time(set) : nextRise > 0 ? f.t("sunrise", "Sunrise") + " " + f.time(nextRise) : "";
+    String sunIn = !f.ok || civil == null ? "" : day ? f.t("wSunsetIn", "Sunset in {x}", Feed.span(set - f.now)) : nextRise > 0 ? f.t("wSunriseIn", "Sunrise in {x}", Feed.span(nextRise - f.now)) : "";
+    String cond = wx.ok ? f.t("wx_" + kind, Weather.label(kind)) + (wx.windy && !"thunder".equals(kind) ? " · " + f.t("wxWindy", "Windy") : "") : "";
     String hiLo = wx.ok ? "H " + Weather.deg(wx.hi, fahr) + "  L " + Weather.deg(wx.lo, fahr) : "";
-    String hint = on ? "Fetching the weather…" : "Turn on live weather in Soma";
-    if (!f.ok) hint = "Open Soma once to set your city";
+    String hint = on ? f.t("wFetching", "Fetching the weather…") : f.t("wTurnOn", "Turn on live weather in Soma");
+    if (!f.ok) hint = f.t("wSetCityOnce", "Open Soma once to set your city");
     if (wx.ok) {
       v.setTextViewText(R.id.wTemp, Weather.deg(wx.temp, fahr));
       v.setTextViewText(R.id.wCond, cond);
@@ -481,14 +492,14 @@ public final class PanchangWidgets {
     if (large) {
       StringBuilder d = new StringBuilder();
       if (wx.ok) {
-        d.append("Wind ").append(fahr ? Math.round(wx.wind * 2.237) + " mph" : Math.round(wx.wind * 3.6) + " km/h");
-        d.append("  ·  Humidity ").append(wx.humidity).append('%');
+        d.append(f.t("wWind", "Wind")).append(' ').append(fahr ? Math.round(wx.wind * 2.237) + " " + f.t("mph", "mph") : Math.round(wx.wind * 3.6) + " " + f.t("kmh", "km/h"));
+        d.append("  ·  ").append(f.t("wHumidity", "Humidity")).append(' ').append(wx.humidity).append('%');
         JSONObject h0 = wx.hour(0);
         double mm = h0 == null ? 0 : h0.optDouble("p");
-        if (mm >= 0.1) d.append("  ·  ").append(String.format(Locale.US, "%.1f mm", mm)).append(" this hour");
+        if (mm >= 0.1) d.append("  ·  ").append(String.format(Locale.US, "%.1f mm", mm)).append(' ').append(f.t("wThisHour", "this hour"));
       } else {
-        if (civil != null) d.append(Feed.span(set - rise)).append(" of daylight  ·  ");
-        d.append(SomaWidget.tithiEnglish(f.tithiIndex));
+        if (civil != null) d.append(f.t("wDaylight", "{x} of daylight", Feed.span(set - rise))).append("  ·  ");
+        d.append(f.tithiName());
       }
       v.setTextViewText(R.id.wDetail, d.toString());
       v.setViewVisibility(R.id.wHours, wx.ok ? View.VISIBLE : View.GONE);
@@ -587,7 +598,8 @@ public final class PanchangWidgets {
     JSONArray chogs = new JSONArray();
     int chogIdx = -1, tithiIndex = -1;
     long now, next;
-    String city = "", todayKey = "", tomorrowKey = "";
+    String city = "", todayKey = "", tomorrowKey = "", lang = "en";
+    JSONObject tx = new JSONObject();
     double lat = Double.NaN, lon = Double.NaN;
     TimeZone tz = TimeZone.getDefault();
     private SimpleDateFormat timeFmt, keyFmt, dayFmt, dateFmt, hourFmt;
@@ -610,7 +622,10 @@ public final class PanchangWidgets {
     private void fill(JSONObject j) throws Exception {
       feed = j;
       tz = TimeZone.getTimeZone(j.optString("zone", TimeZone.getDefault().getID()));
-      timeFmt = fmt("h:mm a"); hourFmt = fmt("h a"); keyFmt = fmt("yyyy-MM-dd"); dayFmt = fmt("EEE d MMM"); dateFmt = fmt("EEEE d MMMM");
+      lang = j.optString("lang", "en");
+      JSONObject words = j.optJSONObject("t"); if (words != null) tx = words;
+      Locale words2 = "gu".equals(lang) ? new Locale("gu", "IN") : "hi".equals(lang) ? new Locale("hi", "IN") : Locale.US;
+      timeFmt = fmt("h:mm a"); hourFmt = fmt("h a"); keyFmt = fmt("yyyy-MM-dd"); dayFmt = fmt("EEE d MMM", words2); dateFmt = fmt("EEEE d MMMM", words2);
       city = j.optString("city", "");
       lat = j.optDouble("lat", Double.NaN); lon = j.optDouble("lon", Double.NaN);
       long midnight = startOfNextDay();
@@ -711,8 +726,8 @@ public final class PanchangWidgets {
     String range(long a, long b) { return time(a) + " – " + time(b); }
     String dateLabel() { return dateFmt.format(new Date(now)); }
     String dayLabel(String key) {
-      if (key.equals(todayKey)) return "Today";
-      if (key.equals(tomorrowKey)) return "Tomorrow";
+      if (key.equals(todayKey)) return t("today2", "Today");
+      if (key.equals(tomorrowKey)) return cap(t("tomorrow", "Tomorrow"));
       try { return dayFmt.format(keyFmt.parse(key)); } catch (Exception e) { return key; }
     }
     String when(long t) {
@@ -729,7 +744,13 @@ public final class PanchangWidgets {
       for (int i = 0; i < a.length(); i++) { JSONObject o = a.getJSONObject(i); if (o.optLong("s") <= now && now < o.optLong("e")) return o; }
       return null;
     }
-    private SimpleDateFormat fmt(String pattern) { SimpleDateFormat f = new SimpleDateFormat(pattern, Locale.US); f.setTimeZone(tz); return f; }
+    private SimpleDateFormat fmt(String pattern) { return fmt(pattern, Locale.US); }
+    private SimpleDateFormat fmt(String pattern, Locale locale) { SimpleDateFormat f = new SimpleDateFormat(pattern, locale); f.setTimeZone(tz); return f; }
+    /** A word in the app language, as the app wrote it into the feed; the English fallback covers older feeds. */
+    String t(String key, String fallback) { String s = tx.optString(key, ""); return s.isEmpty() ? fallback : s; }
+    String t(String key, String fallback, String x) { return t(key, fallback).replace("{x}", x); }
+    String tithiName() { return tithi != null && !tithi.optString("l").isEmpty() ? tithi.optString("l") : SomaWidget.tithiEnglish(tithiIndex); }
+    static String cap(String s) { return s.isEmpty() ? s : Character.toUpperCase(s.charAt(0)) + s.substring(1); }
     private long startOfNextDay() {
       Calendar cal = Calendar.getInstance(tz);
       cal.setTimeInMillis(now); cal.add(Calendar.DAY_OF_MONTH, 1);

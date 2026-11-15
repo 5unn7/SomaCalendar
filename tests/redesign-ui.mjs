@@ -13,7 +13,7 @@ assert.equal(w.SomaPrototype.health().ready,true);
 // First launch: guided setup asks for language, then a place by name (never coordinates), then optional birth details.
 assert.ok(w.document.querySelector('#onboard').classList.contains('open'));
 w.onboard(2);w.placeSearch('jamn','loc');assert.ok(w.document.querySelector('#locResults').textContent.includes('Jamnagar'));w.pickPlace(0,'loc');
-assert.ok(w.document.querySelector('#onboard #birthDate'),'birth step follows the place step');w.finishOnboard('today');assert.ok(!w.document.querySelector('#onboard').classList.contains('open'));
+assert.ok(w.document.querySelector('#onboard .months'),'the calendar step (month system, festivals) follows the place step');w.onboard(4);assert.ok(w.document.querySelector('#onboard #birthDate'),'birth step follows the calendar step');w.finishOnboard('today');assert.ok(!w.document.querySelector('#onboard').classList.contains('open'));
 assert.ok(w.document.querySelector('#app .dial'),'Today shows the Kaal Chakra dial');
 for(const lay of ['sky','folio','dial']){w.setLayout(lay);assert.ok(w.document.querySelector('#app h1'),lay+' layout renders');{const g=[...w.document.querySelectorAll('#app .sunstrip [role=group]')].map(e=>e.getAttribute('aria-label')).join('|');assert.ok(/Sunrise.*\d.*\|Sunset.*\d/.test(g),lay+' shows sunrise and sunset: '+g);assert.ok(w.document.querySelector('#app .sunstrip svg'),'sun times use icons');}assert.ok(!/\d{4}-\d{2}-\d{2}/.test(w.document.querySelector('.datepick span').textContent),'date bar shows a readable date');}
 {w.setLayout('sky');const hero=w.document.querySelector('.skyhero'),h1=hero.querySelector('h1').textContent;assert.equal(hero.textContent.split(h1).length-1,1,'sky headline is not repeated');w.setLayout('dial');}
@@ -49,7 +49,7 @@ w.document.querySelector('#eventTime').value='03:00';w.timingCheck();assert.ok(!
 // The widget feed follows the chosen place and carries the festival list.
 await new Promise(r=>setTimeout(r,600));assert.ok(feeds.length>=1&&feeds.at(-1).city==='Regina'&&feeds.at(-1).chog.length>50&&feeds.at(-1).vrat.length>0,'widget feed pushed for the chosen place');
 // Preview updates: off unless the native shell says so; when on, You lists Updates, a newer build shows a gentle note, and Install hands off to native.
-{w.setLang('en');w.show('personal');assert.ok(!/Updates/.test(w.document.querySelector('#app').textContent),'no update row without the native updater');
+{w.setLang('en');w.show('personal');w.setYouTab('settings');assert.ok(!/Updates/.test(w.document.querySelector('#app').textContent),'no update row without the native updater');
 let checks=0,installs=0;Object.assign(w.SomaNative,{updateInfo:()=>JSON.stringify({enabled:true,versionCode:1040,versionName:'0.8.0-b40'}),checkForUpdate(){checks++},installUpdate(){installs++}});
 w.show('personal');assert.ok(/Updates/.test(w.document.querySelector('#app').textContent));
 w.autoCheckUpdate();assert.equal(checks,1);w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1042,versionName:'0.8.0-b42',notes:'Fix <b>widget</b>'}));

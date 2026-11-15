@@ -27,7 +27,20 @@ public final class MainActivity extends Activity {
   private static final int LOCATION_PERMISSION_REQUEST = 412;
   private static final int NOTIFICATION_PERMISSION_REQUEST = 413;
   private WebView web;
-  private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
+  static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
+  /** The app's own files on its private https origin; anything else gets an empty answer. */
+  static WebResourceResponse asset(Context c, android.net.Uri uri) {
+    if("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
+      String path=uri.getPath();
+      if(path!=null && path.startsWith("/assets/") && !path.contains("..")) {
+        try {
+          String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":"application/octet-stream";
+          return new WebResourceResponse(type,"UTF-8",c.getAssets().open(path.substring(8)));
+        } catch(java.io.IOException ignored) { }
+      }
+    }
+    return new WebResourceResponse("text/plain","UTF-8",new java.io.ByteArrayInputStream(new byte[0]));
+  }
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
     // Bars and WebView ground follow the phone's light/dark setting (Kaal Chakra: bone paper or OLED black).
@@ -63,17 +76,7 @@ public final class MainActivity extends Activity {
     });
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
-        android.net.Uri uri=request.getUrl();
-        if("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
-          String path=uri.getPath();
-          if(path!=null && path.startsWith("/assets/") && !path.contains("..")) {
-            try {
-              String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":"application/octet-stream";
-              return new WebResourceResponse(type,"UTF-8",getAssets().open(path.substring(8)));
-            } catch(java.io.IOException ignored) { }
-          }
-        }
-        return new WebResourceResponse("text/plain","UTF-8",new java.io.ByteArrayInputStream(new byte[0]));
+        return asset(MainActivity.this,request.getUrl());
       }
       @Override public void onPageFinished(WebView v, String url) {
         Log.i("SomaJS", "WebView document loaded: " + url);
@@ -93,6 +96,7 @@ public final class MainActivity extends Activity {
     });
     setContentView(web);
     web.loadUrl(ASSET_ORIGIN + "index.html");
+    RefreshJob.schedule(getApplicationContext());
   }
   private void send(String function, String payload) {
     runOnUiThread(() -> {
@@ -171,24 +175,12 @@ public final class MainActivity extends Activity {
       });
     }
     @JavascriptInterface public void appFailure(String detail){Log.e("SomaJS","App initialization error: "+detail);}
-    @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("date",safe(date)).putString("phase",safe(phase))
-        .putString("tithi",safe(tithi)).putString("city",safe(city)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
-    }
     /** A week of precomputed Panchang intervals for the home-screen widget (built by widget.js). */
     @JavascriptInterface public void updateWidgetFeed(String json) {
       if(json==null||json.length()>300000)return;
       try{new JSONObject(json);}catch(Exception e){Log.w("SomaJS","Rejected widget feed");return;}
       getSharedPreferences(SomaWidget.PREFS,MODE_PRIVATE).edit().putString(SomaWidget.FEED,json).apply();
       runOnUiThread(() -> { SomaWidget.refreshAll(MainActivity.this); PanchangWidgets.refreshAll(MainActivity.this); });
-    }
-    @JavascriptInterface public void updateAtmosphere(String temp,String cloud,String status) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("temp",safe(temp)).putString("cloud",safe(cloud))
-        .putString("weatherStatus",safe(status)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
     }
     /** Reminders computed by the web layer: JSON [{id, at, title, body}]. Scheduled locally with AlarmManager. */
     @JavascriptInterface public void scheduleReminders(String json){

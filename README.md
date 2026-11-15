@@ -1,4 +1,4 @@
-# Soma 0.7 Preview — your daily panchang, in your language
+# Soma 0.8 Preview — your daily panchang, in your language
 
 Know the right time, keep every vrat. Soma is an offline, private panchang for Android that speaks from inside the tradition: what today is, what it is good for, when the shubh times are, and which vrat or festival is coming, computed for your own city.
 
@@ -24,7 +24,7 @@ cd android
 gradle --no-daemon assembleDebug
 ```
 
-Output: `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions builds the redesign branch and has an Android emulator smoke workflow. Canonical UI source lives in `src/redesign`; `npm run bundle` copies it and bundles the natal engine. Do not use the old Horizon transpiler or `src/app.js` for this preview.
+Output: `android/app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions builds the redesign branch and has an Android emulator smoke workflow. Canonical UI source lives in `src/redesign`; `npm run bundle` copies it and bundles the natal engine.
 
 ## Computation and accuracy
 Astronomy Engine 2.1.19 computes geocentric ecliptic Moon–Sun elongation. Tithi is floor(elongation/12°), with numerical searches for boundaries. Rise/set uses its standard atmospheric model at zero elevation. Times are rounded to minutes. Tithi instants are global; sunrise assignment and local clock labels depend on place and time zone.

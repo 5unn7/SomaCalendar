@@ -151,18 +151,30 @@ final class Weather {
     } finally { if (conn != null) conn.disconnect(); }
   }
 
-  /** {v, at, lat, lon, hours:[{t, c, s, k, p, w, cl, h}]}: time, °C, MET symbol, Soma kind, mm/h, wind m/s, cloud %, humidity %. */
+  /**
+   * {v, at, lat, lon, hours:[{t, c, s, k, p, w, cl, h}], six:[...]}: time, °C, MET symbol, Soma kind, mm/h, wind m/s, cloud %,
+   * humidity %. hours holds the hourly steps (about two days); six holds MET's 6-hour blocks after them, out to about ten
+   * days, for the festival sky lines and the travel storm flag.
+   */
   static JSONObject summarise(JSONObject met, double lat, double lon, long now) throws Exception {
     JSONArray series = met.getJSONObject("properties").getJSONArray("timeseries");
     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
     iso.setTimeZone(TimeZone.getTimeZone("UTC"));
     JSONArray hours = new JSONArray();
-    for (int i = 0; i < series.length() && hours.length() < 48; i++) {
+    JSONArray six = new JSONArray();
+    for (int i = 0; i < series.length(); i++) {
       JSONObject row = series.getJSONObject(i), data = row.getJSONObject("data");
       Date t = iso.parse(row.getString("time"));
       if (t == null || t.getTime() < now - 3600_000L) continue;
-      JSONObject next = data.optJSONObject("next_1_hours");
-      if (next == null) break; // hourly steps end after ~2.5 days; the 6-hourly tail is not needed here
+      JSONObject next = hours.length() < 48 ? data.optJSONObject("next_1_hours") : null;
+      boolean block = next == null;
+      if (block) {
+        next = data.optJSONObject("next_6_hours");
+        if (next == null || six.length() >= 40 || t.getTime() > now + 10 * 86_400_000L) continue;
+        // One block per 6 hours, starting after the last hourly step.
+        JSONObject last = six.length() > 0 ? six.getJSONObject(six.length() - 1) : hours.length() > 0 ? hours.getJSONObject(hours.length() - 1) : null;
+        if (last != null && t.getTime() < last.getLong("t") + (six.length() > 0 ? 6 : 1) * 3600_000L) continue;
+      }
       JSONObject d = data.getJSONObject("instant").getJSONObject("details");
       String symbol = next.getJSONObject("summary").optString("symbol_code", "");
       JSONObject nd = next.optJSONObject("details");
@@ -175,12 +187,13 @@ final class Weather {
       h.put("w", Math.round(d.optDouble("wind_speed", 0) * 10) / 10.0);
       h.put("cl", Math.round(d.optDouble("cloud_area_fraction", 0)));
       h.put("h", Math.round(d.optDouble("relative_humidity", 0)));
-      hours.put(h);
+      if (block) six.put(h); else hours.put(h);
     }
     if (hours.length() == 0) return null;
     JSONObject out = new JSONObject();
     out.put("v", 1); out.put("at", now); out.put("lat", lat); out.put("lon", lon); out.put("src", "MET Norway");
     out.put("hours", hours);
+    out.put("six", six);
     return out;
   }
 
