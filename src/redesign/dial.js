@@ -52,12 +52,24 @@
     if (Math.abs(now - sunset) < HR) return 'dusk';
     return now > sunrise && now < sunset ? 'day' : 'night';
   }
-  /* The Moon as it looks tonight: the photographed full Moon (img/moon.webp), with the unlit part laid over it in shadow.
-     angle is the elongation (0 new, 180 full). The shadow is the disc minus the lit lune, so a full Moon has none. */
+  /* The Moon as it looks tonight, as a lit sphere: the photographed full Moon (img/moon.webp) clipped to its disc, the
+     unlit part laid over it with a soft terminator (the shadow edge is blurred, as on the real Moon), limb darkening at
+     the rim and a faint earthshine left on the dark side. angle is the elongation (0 new, 180 full). Pure SVG, no WebGL,
+     so it costs nothing to draw thirty of them in a month. */
   function moon(size, angle, cls) {
     const k = Math.cos((angle * Math.PI) / 180), r = 40, rx = r2(Math.abs(k) * r), waxing = angle < 180;
-    const shade = waxing ? `M50 10A40 40 0 0 0 50 90A${rx} 40 0 0 ${k > 0 ? 0 : 1} 50 10Z` : `M50 10A40 40 0 0 1 50 90A${rx} 40 0 0 ${k > 0 ? 1 : 0} 50 10Z`;
-    return `<svg class="moonsvg ${cls || ''}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true"><circle class="glow" cx="50" cy="50" r="46"/><circle class="dark" cx="50" cy="50" r="${r}"/><image href="img/moon.webp" x="10" y="10" width="80" height="80"/><path class="shade" d="${shade}"/></svg>`;
+    // The shadow is drawn a little wider than the disc so the blurred edge never shows a seam at the rim.
+    const R = 41.5, rxw = r2(Math.abs(k) * R);
+    const shade = waxing ? `M50 ${50 - R}A${R} ${R} 0 0 0 50 ${50 + R}A${rxw} ${R} 0 0 ${k > 0 ? 0 : 1} 50 ${50 - R}Z` : `M50 ${50 - R}A${R} ${R} 0 0 1 50 ${50 + R}A${rxw} ${R} 0 0 ${k > 0 ? 1 : 0} 50 ${50 - R}Z`;
+    void rx; void r;
+    const blur = size < 40 ? 0.9 : 1.8;
+    return `<svg class="moonsvg ${cls || ''}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true"><defs>`
+      + `<clipPath id="mdisc"><circle cx="50" cy="50" r="40"/></clipPath>`
+      + `<radialGradient id="mlimb" cx="50%" cy="50%" r="50%"><stop offset="62%" stop-color="#000" stop-opacity="0"/><stop offset="92%" stop-color="#000" stop-opacity=".28"/><stop offset="100%" stop-color="#000" stop-opacity=".5"/></radialGradient>`
+      + `<radialGradient id="msheen" cx="${waxing ? 66 : 34}%" cy="34%" r="60%"><stop offset="0" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`
+      + `<filter id="msoft${size < 40 ? 's' : 'b'}" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${blur}"/></filter></defs>`
+      + `<circle class="glow" cx="50" cy="50" r="46"/><circle class="dark" cx="50" cy="50" r="40"/>`
+      + `<g clip-path="url(#mdisc)"><image href="img/moon.webp" x="10" y="10" width="80" height="80"/><path class="shade" d="${shade}" filter="url(#msoft${size < 40 ? 's' : 'b'})"/><circle cx="50" cy="50" r="40" fill="url(#msheen)"/><circle cx="50" cy="50" r="40" fill="url(#mlimb)"/></g></svg>`;
   }
   const api = { svg, skyPhase, moon, point };
   if (typeof module !== 'undefined') module.exports = api;

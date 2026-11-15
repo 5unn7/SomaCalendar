@@ -93,7 +93,12 @@ const ICON = {
   sunrise: '<path d="M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0M12 3.5v6M9.2 6.3 12 3.5l2.8 2.8M4.6 12.6l1.5 1.5M19.4 12.6l-1.5 1.5"/>',
   sunset: '<path d="M3 19h18M6.5 19a5.5 5.5 0 0 1 11 0M12 3.5v6M9.2 6.7 12 9.5l2.8-2.8M4.6 12.6l1.5 1.5M19.4 12.6l-1.5 1.5"/>',
   gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.2"/>',
-  pin: '<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>'
+  pin: '<path d="M12 21s-6.5-6.2-6.5-11a6.5 6.5 0 0 1 13 0c0 4.8-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.3"/>',
+  home: '<path d="M3.5 11L12 4l8.5 7M6 9.5V20h12V9.5M10 20v-5h4v5"/>',
+  car: '<path d="M4 16v-3.5L6 7.5h12l2 5V16M4 16h16v2.5h-3V16M4 16v2.5h3V16"/><circle cx="7.5" cy="13" r=".8"/><circle cx="16.5" cy="13" r=".8"/>',
+  shop: '<path d="M4 9l1.5-5h13L20 9M4 9h16v1.5a2.7 2.7 0 0 1-5.3 0 2.7 2.7 0 0 1-5.4 0 2.7 2.7 0 0 1-5.3 0zM5.5 12.5V20h13v-7.5M10 20v-4h4v4"/>',
+  plane: '<path d="M10.5 13.5L3 11l1.5-1.5 8 .5 4.5-4.5a1.8 1.8 0 0 1 2.5 2.5L15 12.5l.5 8L14 22l-2.5-7.5-3 3V20l-1.5 1-1-3-3-1 1-1.5h2.5z"/>',
+  sparkle: '<path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/>'
 };
 // City names people read in their own script. Unknown places keep the name they were saved with.
 const CITY = {
@@ -150,7 +155,7 @@ let pages = [];
 function show(v) { if (v !== view || pages.length) { haptic('select'); if (v === 'moon') hour = null; } pages = []; view = v; render(); window.scrollTo(0, 0); }
 function push(v) { if (v === view) return; haptic('select'); if (v === 'moon') hour = null; pages.push({ view, y: window.scrollY || 0 }); view = v; render(); window.scrollTo(0, 0); }
 function back() { if (!pages.length) return false; haptic('select'); const p = pages.pop(); view = p.view; render(); window.scrollTo(0, p.y); return true; }
-const TAB_LABEL = { today: 'today', calendar: 'calendar', muhurat: 'muhurat', personal: 'you', panchang: 'todayTitle', moon: 'moon', learn: 'learnMore', settings: 'settings' };
+const TAB_LABEL = { today: 'today', calendar: 'calendar', muhurat: 'muhurat', personal: 'you', panchang: 'todayTitle', moon: 'moon', learn: 'learnMore', settings: 'settings', festivals: 'allFestivals' };
 /* The top of a pushed page: ‹ and where it goes back to, then the page's own title. */
 const pageBar = (title, sub) => `<div class="pagebar"><button class="back" onclick="back()"><span aria-hidden="true">‹</span> ${esc(t(TAB_LABEL[pages.length ? pages[pages.length - 1].view : 'today']))}</button></div><h1>${esc(title)}</h1>${sub ? `<p class="pagesub">${esc(sub)}</p>` : ''}`;
 window.somaBack = function () {
@@ -183,15 +188,22 @@ function render() {
   $('location').innerHTML = icon('pin') + '<span>' + esc(placeName(loc.name)) + '</span>';
   $('location').setAttribute('aria-label', t('changePlace') + ': ' + placeName(loc.name));
   const tabs = [['today', 'today'], ['calendar', 'calendar'], ['muhurat', 'muhurat'], ['personal', 'you']];
-  const tabOf = pages.length ? pages[0].view : view;
+  const tabOf = view === 'moon' && (!pages.length || pages[pages.length - 1].view === 'today') ? 'moon' : pages.length ? pages[0].view : view;
   // Tapping the tab you are on goes back to its top (and pops any pushed page), as on iOS and Android.
-  $('nav').innerHTML = tabs.map(([v, label]) => `<button class="${tabOf === v ? 'active' : ''}" aria-current="${tabOf === v ? 'page' : 'false'}" onclick="show('${v}')">${icon(v)}<span>${esc(t(label))}</span></button>`).join('');
+  // Phones: the four tabs in a bar on the bottom edge (UITabBar / Material navigation bar). Tablets: a sidebar
+  // (UISplitViewController / navigation drawer) that also carries Moon, what is coming up, and the place.
+  const tb = (v, label, cls) => `<button class="${tabOf === v ? 'active' : ''}${cls ? ' ' + cls : ''}" aria-current="${tabOf === v ? 'page' : 'false'}" onclick="${v === 'moon' ? "pages=[];view='today';push('moon')" : `show('${v}')`}">${icon(v)}<span>${esc(t(label))}</span></button>`;
+  const soon = []; observances(todayKey(), 30).forEach(f => { if (soon.length < 3 && !soon.some(x => x.day === f.day) && f.day >= todayKey()) soon.push(f); });
+  $('nav').innerHTML = `<div class="sideonly sbrand"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-opacity=".25" stroke-width="2"/><path d="M16 2a14 14 0 0 1 0 28a8 14 0 0 0 0-28z" fill="currentColor"/></svg><span>Soma</span></div>`
+    + tabs.map(([v, label]) => tb(v, label)).join('') + tb('moon', 'moon', 'sideonly')
+    + `<div class="sideonly sup"><div class="eyebrow">${esc(t('comingUp'))}</div>${soon.map(f => { const n = daysBetween(todayKey(), f.day); return `<button onclick="festivalSheet('${f.key}','${f.day}')"><i class="dot ${f.kind}" aria-hidden="true"></i><span><b>${esc(L.festName(f))}</b><small>${esc(n === 0 ? t('todayWord') : n === 1 ? t('tomorrow') : t('inDays', { n: num(n) }))}</small></span></button>`; }).join('')}</div>`
+    + `<button class="sideonly sloc" onclick="locationSheet()">${icon('pin')}<span>${esc(placeName(loc.name))}</span></button>`;
   document.body.dataset.view = view;
   // Entrance motion only when the screen changes, not on the minute tick.
   const paint = view + '|' + day + '|' + L.lang + '|' + (view === 'muhurat' ? muhuratTab : '');
   // A repaint of the same screen (the minute tick) keeps whatever the reader had opened.
   const opened = paint === lastPaint ? Array.from($('app').querySelectorAll('details')).map(x => x.open) : [];
-  ({ today: todayView, calendar: calendarView, muhurat: muhuratView, moon: moonView, learn: learnView, personal: personalView, panchang: panchangView, settings: settingsView })[view]();
+  ({ today: todayView, calendar: calendarView, muhurat: muhuratView, moon: moonView, learn: learnView, personal: personalView, panchang: panchangView, settings: settingsView, festivals: festivalsView })[view]();
   const app = $('app');
   app.classList.remove('enter', 'still');
   if (paint !== lastPaint) { void app.offsetWidth; app.classList.add('enter'); } else app.classList.add('still');
@@ -527,19 +539,35 @@ function todayHero(d, v, cx) {
   const dial = SomaDial.svg({ size: 300, hourOf, chog: cx.dd.choghadiya, rahu: d.periods.rahu, kaal, sunrise: cx.dd.frame.sunrise, sunset: cx.dd.frame.sunset, now: cx.now, nums: dialNums(), label: dialLabel(d, ns) });
   const tithi = L.tithiName(cx.ti.index);
   const fest = v.parva ? `<button class="festband" onclick="festivalSheet('${v.festival.key}','${v.festival.day}')"><span class="over">${esc(v.carried ? t('festNight') : t('festToday'))}</span><b>${esc(L.festName(v.festival))}</b>${festWindowLine(v) ? `<span>${esc(festWindowLine(v))}</span>` : ''}<i aria-hidden="true">›</i></button>` : '';
-  return `<section class="skyhero today" data-sky="${cx.sky}"${wx.tint ? ` data-tint="${wx.tint}"` : ''}>${night && !wx.tint ? stars(70, 7) : ''}${wx.fx}`
-    + `<div class="herotop">${dateNav(d)}${chip}</div>${fest}`
-    + `<div class="status"><span class="pill ${lv}"><i aria-hidden="true"></i>${esc(word)}</span>${info ? `<button class="tip" onclick="${info}" aria-label="${esc(t('whatIsX', { x: big }))}">${icon('info')}</button>` : ''}</div>`
+  return todayTitle(d)
+    + `<section class="skyhero today" data-sky="${cx.sky}"${wx.tint ? ` data-tint="${wx.tint}"` : ''}>${night && !wx.tint ? stars(70, 7) : ''}${wx.fx}`
+    // Tonight's Moon as a lit sphere in the corner of the sky, its real phase; it opens the Moon page.
+    + `<button class="skyorb" onclick="push('moon')" aria-label="${esc(t('moonPage') + ': ' + tithi)}">${SomaDial.moon(120, cx.ti.angle, 'orb')}</button>`
+    + `<div class="herotop"><div class="status"><span class="pill ${lv}"><i aria-hidden="true"></i>${esc(word)}</span>${info ? `<button class="tip" onclick="${info}" aria-label="${esc(t('whatIsX', { x: big }))}">${icon('info')}</button>` : ''}</div>${chip}</div>${fest}`
     + `<h1 class="big">${esc(big)}</h1>${l1 ? `<p class="lineone">${esc(l1)}</p>` : ''}${l2 ? `<p class="linetwo">${esc(l2)}</p>` : ''}${then ? `<p class="then"><i aria-hidden="true"></i>${esc(then)}</p>` : ''}`
-    + nextRow(d, cx, ns) + sunStrip(d, cx) + `</section>`
-    // The day at a glance under the Sky card: the Kaal Chakra on its own card, the Moon and tithi at its centre.
-    + `<section class="section dialsec">${groupHead(t('ovGlance'), esc(t('dialTitle')))}<div class="card dialbox">` + `<div class="dialwrap">${dial.svg}<button class="dialcore" onclick="push('moon')" aria-label="${esc(t('moonPage') + ': ' + tithi)}">${SomaDial.moon(52, cx.ti.angle)}<span class="tithi">${esc(tithi)}</span><small>${esc(L.nakName(Math.floor(P.moonSid(cx.at) / (360 / 27)) % 27))}</small></button></div>` + dialLegend() + `</div></section>`;
+    + sunStrip(d, cx) + `</section>`
+    // The whole day under the Sky card: the Kaal Chakra with the Moon and tithi at its centre, and the four angas under it.
+    + `<section class="card dialbox"><div class="dialwrap">${dial.svg}<button class="dialcore" onclick="push('moon')" aria-label="${esc(t('moonPage') + ': ' + tithi)}">${SomaDial.moon(52, cx.ti.angle)}<span class="tithi">${esc(tithi)}</span><small>${esc(L.nakName(Math.floor(P.moonSid(cx.at) / (360 / 27)) % 27))}</small></button></div>` + nextRow(d, cx, ns) + angaRow(d) + dialLegend() + `</section>`;
 }
-/* Date line inside the hero: weekday, date, lunar month and samvat, with the day before and after one tap away. */
-function dateNav(d) {
+/* The screen's own large title (iOS) / top app bar (Material): its name, a line under it, and a control on the right. */
+const titleBar = (title, sub, trail) => `<header class="atitle"><h1>${title}</h1>${trail ? `<div class="atrail">${trail}</div>` : ''}${sub ? `<div class="asub">${sub}</div>` : ''}</header>`;
+const locPill = () => `<button class="locpill" onclick="locationSheet()" aria-label="${esc(t('changePlace') + ': ' + placeName(loc.name))}">${icon('pin')}<span>${esc(placeName(loc.name))}</span></button>`;
+/* Today's title: "Today" (or the weekday when another day is open), the date, lunar month and samvat under it with
+   the day before and after one tap away, and the place on the right. */
+function todayTitle(d) {
   const monthName = P.monthName(d.frame.sunrise, prefs.month, L.monthNames), samvat = P.samvat(d.frame.sunrise, samvatSystem());
-  const label = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'short', day: 'numeric', month: 'short' }).format(K.instant(day, '12:00', loc.zone));
-  return `<div class="datenav"><button class="arrow" aria-label="${esc(t('prevDay'))}" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick"><span><b>${esc(label)}</b> <span class="nowrap">${esc(monthName)} · ${esc(t('vsShort'))} ${num(samvat)}</span></span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button class="arrow" aria-label="${esc(t('nextDay'))}" onclick="setDay(K.addDay(day,1))">›</button>${isToday() ? '' : `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>`}</div>`;
+  const at = K.instant(day, '12:00', loc.zone);
+  const label = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: isToday() ? 'short' : undefined, day: 'numeric', month: 'short' }).format(at);
+  const title = isToday() ? t('today') : new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long' }).format(at);
+  const sub = `<div class="datenav"><button class="arrow" aria-label="${esc(t('prevDay'))}" onclick="setDay(K.addDay(day,-1))">‹</button><label class="datepick"><span>${esc(label)} · ${esc(monthName)} · ${esc(t('vsShort'))} ${num(samvat)}</span><input aria-label="${esc(t('pickDate'))}" type="date" min="1900-01-01" max="2100-12-31" value="${day}" onchange="setDay(this.value)"></label><button class="arrow" aria-label="${esc(t('nextDay'))}" onclick="setDay(K.addDay(day,1))">›</button></div>`;
+  return titleBar(esc(title), sub, (isToday() ? '' : `<button class="now" onclick="setDay(todayKey())">${esc(t('today2'))}</button>`) + locPill());
+}
+/* The four angas under the dial, each one tap from the full panchang. */
+function angaRow(d) {
+  const l = d.sunriseLimbs;
+  const cell = (k, name, end, nature) => `<button class="anga" onclick="push('panchang')" aria-label="${esc(t(k) + ': ' + name + (end ? ', ' + until(end) : ''))}"><small>${esc(t(k))}</small><b class="${nature ? level(nature) : ''}">${esc(name)}</b>${end ? `<span>${esc(until(end))}</span>` : ''}</button>`;
+  return `<div class="angas">${cell('tithi', L.tithiName(l.tithi.index), l.tithi.end, M.tithi(l.tithi.index).nature)}${cell('nakshatra', L.nakName(l.nakshatra.index), l.nakshatra.end, M.nakshatra(l.nakshatra.index).nature)}`
+    + `${cell('yoga', L.yogaName(l.yoga.index), l.yoga.end, M.YOGA[l.yoga.index].nature)}${cell('karana', L.karanaName(l.karana.index), l.karana.end, M.KARANA[l.karana.index].nature)}</div>`;
 }
 /* Three times worth knowing, each one tap from what it means: Rahu Kaal, Abhijit (or Brahma at night), and the next good window. */
 function nextRow(d, cx, ns) {
@@ -854,10 +882,12 @@ function miniPanchang(d, v) {
 function todayView() {
   const d = vedicDay(day), v = todayVerdict(d), cx = heroContext(d);
   const polar = d.frame.polar ? `<p class="notice card">${esc(t('polarNote'))}</p>` : '';
-  $('app').innerHTML = `<div class="split"><div class="lead">${todayHero(d, v, cx)}</div><div class="rest">`
-    + polar + paranaToday(day) + miniPanchang(d, v)
-    + `<div class="wideonly">${dayBoard(d)}</div>`
-    + `<div class="tiles section"><button onclick="plan()">${icon('calendar')}<b>${esc(t('planEvent'))}</b></button><button onclick="muhuratTab='find';show('muhurat')">${icon('muhurat')}<b>${esc(t('findMuhurat'))}</b></button></div></div></div>`;
+  // Phone: the Sky card and the dial fill one screen. Tablet and open foldables: the day's verdict, the day board
+  // and what is coming up sit beside them, so the wide screen is used rather than scrolled.
+  const dayCard = `<section class="card dayline"><div class="row"><span class="eyebrow">${esc(t('ovPanchang'))}</span><button class="quiet more" onclick="push('panchang')">${esc(t('fullPanchang'))} ›</button></div><p>${esc(daySentence(v))}</p></section>`;
+  $('app').innerHTML = `<div class="split today"><div class="lead">${todayHero(d, v, cx)}</div><div class="rest">`
+    + polar + paranaToday(day)
+    + `<div class="wideonly">${dayCard}${dayBoard(d)}${upcomingSection(todayKey().slice(0, 7), todayKey(), 3)}</div></div></div>`;
   scheduleNative();
   wxRequest();
 }
@@ -890,6 +920,42 @@ const shortTithi = i => i === 14 || i === 29 ? L.tithiName(i) : PAKSHA[L.lang][i
    phones and in the side pane on wide screens. Below: your favourable days, what is coming up by week, and your plans. */
 const wide = () => window.innerWidth >= 900;
 function pickDay(key) { day = key; hour = null; haptic('select'); calendarView(); if (!wide()) daySheet(key); }
+/* The lunar month, the way the panchang counts it: each paksha as fifteen Moons, the English date under each tithi.
+   The month runs Shukla then Krishna (amanta) or Krishna then Shukla (purnimanta), as chosen in Settings. A tithi that
+   rises on no sunrise (kshaya) is marked so; one that holds two sunrises (vriddhi) shows both dates. */
+let lunarAt = null;
+function setCalView(v) { prefs.calView = v === 'lunar' ? 'lunar' : 'month'; lunarAt = null; persist(); haptic('select'); calendarView(); }
+function lunarMonth(key, tk) {
+  const off = prefs.month === 'purnimanta' ? 15 : 0;
+  const tiOf = k => { const data = K.dayData(k, loc); return data.atSunrise || K.tithi(K.instant(k, '12:00', loc.zone)); };
+  const j = k => (tiOf(k).index - off + 30) % 30;
+  // Start: the latest day on or before key where the count starts again (a lower slot than the day before).
+  let start = key; for (let i = 0; i < 32; i++) { const prev = K.addDay(start, -1); if (j(start) < j(prev)) break; start = prev; }
+  let end = start; for (let i = 0; i < 32; i++) { const nx = K.addDay(end, 1); if (j(nx) < j(end)) break; end = nx; }
+  const slots = Array.from({ length: 30 }, () => []);
+  for (let k = start; k <= end; k = K.addDay(k, 1)) slots[j(k)].push({ k, ti: tiOf(k) });
+  const fest = observances(start, daysBetween(start, end) + 1);
+  const mid = K.instant(K.addDay(start, 10), '12:00', loc.zone);
+  const name = P.monthName(mid, prefs.month, L.monthNames), samvat = P.samvat(mid, samvatSystem());
+  const short = k => new Intl.DateTimeFormat(locale(), { timeZone: 'UTC', day: 'numeric', month: 'short' }).format(new Date(k + 'T12:00Z'));
+  const dnum = k => num(+k.slice(8));
+  let hasToday = false;
+  const paksha = (from) => {
+    const idx0 = (from + off) % 30, krishna = idx0 >= 15, list = slots.slice(from, from + 15);
+    const days = list.flat(); const a = days[0] && days[0].k, b = days.length && days[days.length - 1].k;
+    let cells = '';
+    list.forEach((ds, i) => {
+      const tIndex = (idx0 + i) % 30, label = i === 14 ? L.tithiName(tIndex) : num(i + 1);
+      if (!ds.length) { cells += `<div class="lt kshaya" aria-label="${esc(L.tithiName(tIndex) + ' · ' + t('kshaya'))}">${SomaDial.moon(30, ((tIndex + 0.5) * 12) % 360)}<b>${esc(label)}</b><span>${esc(t('kshaya'))}</span></div>`; return; }
+      const k = ds[0].k, f = fest.filter(x => ds.some(d => d.k === x.day)), top = f.find(x => x.kind !== 'vrat') || f[0];
+      if (ds.some(d => d.k === tk)) hasToday = true;
+      const cls = (ds.some(d => d.k === day) ? ' selected' : '') + (ds.some(d => d.k === tk) ? ' today' : '') + (ds[ds.length - 1].k < tk ? ' gone' : '') + (top ? ' holy ' + top.kind : '');
+      cells += `<button class="lt${cls}" onclick="lunarAt='${k}';pickDay('${k}')" aria-label="${esc(L.tithiName(tIndex) + ' · ' + ds.map(d => dayLabel(d.k)).join(', ') + (f.length ? ' · ' + f.map(x => L.festName(x)).join(', ') : ''))}">${SomaDial.moon(30, ds[0].ti.angle)}<b>${esc(label)}</b><span>${ds.map(d => d.k === start || +d.k.slice(8) === 1 ? short(d.k) : dnum(d.k)).join(', ')}</span>${top ? `<em class="${top.kind === 'vrat' ? 'v' : 'f'}" aria-hidden="true"></em>` : ''}</button>`;
+    });
+    return `<section class="paksha"><div class="phead"><h2>${esc(t(krishna ? 'krishnaPaksha' : 'shuklaPaksha'))}</h2><span>${esc(t(krishna ? 'waningWord' : 'waxingWord'))}${a ? ' · ' + esc(short(a)) + ' – ' + esc(short(b)) : ''}</span></div><div class="lgrid">${cells}</div></section>`;
+  };
+  return { start, end, name, hasToday, sub: `${t('vsShort')} ${num(samvat)} · ${t(prefs.month === 'purnimanta' ? 'purnimantaShort' : 'amantaShort')}`, html: `<div class="lunar">${paksha(0)}${paksha(15)}</div>` };
+}
 function calendarView() {
   const first = monthView + '-01', start = new Date(first + 'T12:00Z').getUTCDay(), count = new Date(+monthView.slice(0, 4), +monthView.slice(5), 0).getDate();
   const fest = observances(first, count + 1), bm = birthMoon(), tk = todayKey();
@@ -907,13 +973,20 @@ function calendarView() {
   // The samvat can turn over inside a month (Gujarati New Year in Kartik): say both years then, so it matches Today on every day.
   const s1 = P.samvat(K.instant(first, '12:00', loc.zone), samvatSystem()), s2 = P.samvat(K.instant(last, '12:00', loc.zone), samvatSystem());
   const monthTitle = new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', year: 'numeric', timeZone: 'UTC' });
-  const lead = `<div class="eyebrow">${esc(m1 === m2 ? m1 : m1 + ' – ' + m2)} · ${esc(t('vsShort'))} ${num(s1)}${s2 !== s1 ? '–' + num(s2) : ''}</div>`
-    + `<div class="monthhead"><h1>${esc(monthTitle)}</h1><div class="arrows">${monthView !== tk.slice(0, 7) ? `<button class="now" onclick="day=todayKey();monthView=day.slice(0,7);calendarView()">${esc(t('today2'))}</button>` : ''}<button onclick="changeMonth(-1)" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="changeMonth(1)" aria-label="${esc(t('nextMonth'))}">›</button></div></div>`
-    + `<div class="week" aria-hidden="true">${weekNames.map(w => `<span>${esc(w)}</span>`).join('')}</div><div class="calendar">${cells}</div>`
-    + `<div class="legend callegend" aria-hidden="true"><span class="fest"><i></i>${esc(t('ovFest'))}</span><span class="vrat"><i></i>${esc(t('vratWord'))}</span><span class="full"><i></i>${esc(t('fullNew'))}</span>${bm != null ? `<span class="mine"><i></i>${esc(t('personalDays'))}</span>` : ''}</div>`
-    + `<details class="setfilter"><summary>${esc(t('festivalSets'))}</summary>${setChips()}</details>`
-    + `<div class="wideonly">${dayDetail(day)}</div>`;
-  const rest = favSection(monthView, tk) + upcomingSection(monthView, tk)
+  const lunar = prefs.calView === 'lunar';
+  const modeSeg = `<div class="calmode">${seg(t('calendar'), lunar ? 'lunar' : 'month', [['lunar', t('lunarView')], ['month', new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' })]], 'setCalView')}</div>`;
+  let lead;
+  if (lunar) {
+    const lm = lunarMonth(lunarAt || day, tk);
+    lead = titleBar(esc(lm.name), `${esc(lm.sub)}`, `<div class="arrows">${lm.hasToday ? '' : `<button class="now" onclick="lunarAt=null;day=todayKey();monthView=day.slice(0,7);calendarView()">${esc(t('today2'))}</button>`}<button onclick="lunarAt=K.addDay('${lm.start}',-3);haptic('select');calendarView()" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="lunarAt=K.addDay('${lm.end}',3);haptic('select');calendarView()" aria-label="${esc(t('nextMonth'))}">›</button></div>`)
+      + modeSeg + lm.html + `<div class="wideonly">${dayDetail(day)}</div>`;
+  } else {
+    lead = titleBar(esc(monthTitle), `${esc(m1 === m2 ? m1 : m1 + ' – ' + m2)} · ${esc(t('vsShort'))} ${num(s1)}${s2 !== s1 ? '–' + num(s2) : ''}`, `<div class="arrows">${monthView !== tk.slice(0, 7) ? `<button class="now" onclick="day=todayKey();monthView=day.slice(0,7);calendarView()">${esc(t('today2'))}</button>` : ''}<button onclick="changeMonth(-1)" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="changeMonth(1)" aria-label="${esc(t('nextMonth'))}">›</button></div>`)
+      + modeSeg + `<div class="card calcard"><div class="week" aria-hidden="true">${weekNames.map(w => `<span>${esc(w)}</span>`).join('')}</div><div class="calendar">${cells}</div>`
+      + `<div class="legend callegend" aria-hidden="true"><span class="fest"><i></i>${esc(t('ovFest'))}</span><span class="vrat"><i></i>${esc(t('vratWord'))}</span><span class="full"><i></i>${esc(t('fullNew'))}</span>${bm != null ? `<span class="mine"><i></i>${esc(t('personalDays'))}</span>` : ''}</div></div>`
+      + `<div class="wideonly">${dayDetail(day)}</div>`;
+  }
+  const rest = favSection(monthView, tk) + upcomingSection(monthView, tk, 5)
     + `<section class="section">${groupHead(t('ovPlans'), esc(t('myPlans')), `<button class="quiet more" onclick="plan()">＋ ${esc(t('addEvent'))}</button>`)}${events.length ? `<div class="list">${events.slice().sort((a, b) => a.start.localeCompare(b.start)).map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(dayLabel(e.day))} · ${esc(fmt(new Date(e.start)))} · ${esc(e.place)}</p><p>${esc(e.tithi)}${e.muhurat ? ' · ' + esc(e.muhurat) : ''}</p><button class="quiet" onclick="exportEvent('${e.id}')">${esc(t('addToCal'))}</button></div><div class="right"><button class="quiet x" aria-label="${esc(t('deleteEvent'))}: ${esc(e.title)}" onclick="deleteEvent('${e.id}')">×</button></div></div>`).join('')}</div>` : `<div class="card empty">${icon('calendar')}<div><h3>${esc(t('emptyPlansTitle'))}</h3><p>${esc(t('emptyPlansBody'))}</p></div></div>`}</section>`;
   $('app').innerHTML = `<div class="split cal"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
@@ -932,9 +1005,12 @@ function dayDetail(key) {
 }
 function daySheet(key) { sheet(titleDay(key), `<div class="eyebrow">${esc(key === todayKey() ? t('todayWord') : t('ovDay'))}</div>`, dayDetail(key)); }
 /* What is coming: grouped by week, one row per day (two names on one date share a row). */
-function upcomingSection(ym, tk) {
+function upcomingSection(ym, tk, limit) {
   const thisMonth = ym === tk.slice(0, 7), from = thisMonth ? tk : ym + '-01', list = observances(from, thisMonth ? 35 : 31).filter(x => thisMonth || x.day.slice(0, 7) === ym);
-  const byDay = []; list.forEach(f => { const g = byDay[byDay.length - 1]; if (g && g.day === f.day) g.items.push(f); else byDay.push({ day: f.day, items: [f] }); });
+  let byDay = []; list.forEach(f => { const g = byDay[byDay.length - 1]; if (g && g.day === f.day) g.items.push(f); else byDay.push({ day: f.day, items: [f] }); });
+  // A short list where it sits beside other things (Calendar, Today on tablet); the whole run is one tap away, on its own page.
+  const more = limit && byDay.length > limit ? `<button class="quiet more" onclick="push('festivals')">${esc(t('allFestivals'))} ›</button>` : '';
+  if (limit) byDay = byDay.slice(0, limit);
   const weekOf = k => { const wd = new Date(k + 'T12:00Z').getUTCDay(); return K.addDay(k, -wd); }, w0 = weekOf(tk);
   const weekName = w => w === w0 ? t('thisWeek') : w === K.addDay(w0, 7) ? t('nextWeek') : t('weekOf', { d: dayLabel(w, { weekday: undefined }) });
   let html = '', cur = '';
@@ -945,9 +1021,14 @@ function upcomingSection(ym, tk) {
     html += `<button type="button" class="timeline rowbtn${g.day < tk ? ' gone' : ''}" onclick="festivalSheet('${main.key}','${g.day}')"><i class="dot ${main.kind}" aria-hidden="true"></i><div><strong>${esc(g.items.map(x => L.festName(x)).join(' · '))}</strong><p>${dayLabel(g.day)}${main.parana ? ' · ' + esc(t('parana')) + ' ' + span(main.parana) : ''}</p></div>${when ? `<span class="when">${esc(when)}</span>` : ''}<span class="chev" aria-hidden="true">›</span></button>`;
   }
   if (cur) html += '</div>';
-  return `<section class="section">${groupHead(t('ovFest'), esc(thisMonth ? t('comingUp') : t('festIn', { m: new Date(ym + '-15T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' }) })))}${html || `<p class="caption">${esc(t('none'))}</p>`}</section>`;
+  return `<section class="section">${groupHead(t('ovFest'), esc(thisMonth ? t('comingUp') : t('festIn', { m: new Date(ym + '-15T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' }) })), more)}${html || `<p class="caption">${esc(t('none'))}</p>`}</section>`;
 }
 
+/* Every observance coming up, on its own page pushed over Calendar, with the festival filter at the top. */
+function festivalsView() {
+  const tk = todayKey();
+  $('app').innerHTML = `<div class="split"><div class="lead">${pageBar(t('allFestivals'))}<label>${esc(t('festivalSets'))}</label>${setChips()}</div><div class="rest">${upcomingSection(tk.slice(0, 7), tk)}</div></div>`;
+}
 /* The month's favourable days for this user, and the Chandrashtama days to go gently; without birth details, the way in. */
 function favSection(ym, tk) {
   const m = monthPersonal(ym), name = new Date(ym + '-15T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' });
@@ -1000,14 +1081,16 @@ function muhuratView() {
   const d = vedicDay(day);
   const tabs = `<div class="youtabs">${seg(t('muhurat'), muhuratTab, [['find', t('findTab')], ['times', t('timings')]], 'setMuhuratTab')}</div>`;
   if (muhuratTab === 'times') {
-    const lead = `<h1>${esc(t('muhurat'))}</h1>${tabs}${datebar()}` + muhuratSummary(d);
+    const lead = titleBar(esc(t('muhurat')), '') + tabs + datebar() + muhuratSummary(d);
     const rest = dayBoard(d) + `<section class="section"><details class="fold"><summary>${icon('today', 'ri')}<b>${esc(t('hora'))}</b><span>24</span></summary><div class="list">${d.hora.map(h => { const live = isToday(), at = now(); return `<div class="timeline ${live && h.start <= at && at < h.end ? 'current' : live && h.end <= at ? 'past' : ''}"><i class="dot ${level(h.nature)}" aria-hidden="true"></i><div><strong>${esc(L.planetName(h.lord))}</strong><p>${esc(tr(M.PLANET[h.lord].good))}</p></div><div class="right">${span(h)}</div></div>`; }).join('')}</div></details></section>`;
     $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
     return;
   }
   const from = todayKey() > day ? todayKey() : day;
   mHits = muhuratDays(muhuratEvent, from, 60);
-  const lead = `<h1>${esc(t('muhurat'))}</h1>${tabs}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;haptic('select');muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(tr(e.en))}</option>`).join('')}</select></label>`
+  // The occasion as chips (iOS/Material filter chips), not a dropdown: every choice is in view and one tap away.
+  const evIcon = { griha: 'home', vehicle: 'car', business: 'shop', property: 'pin', learning: 'book', travel: 'plane', mundan: 'sparkle' };
+  const lead = titleBar(esc(t('muhurat')), '') + tabs + `<div class="eyebrow occhead">${esc(t('eventType'))}</div><div class="chipRow occ" role="radiogroup" aria-label="${esc(t('eventType'))}">${M.EVENTS.map(e => `<button class="chip${e.key === muhuratEvent ? ' on' : ''}" role="radio" aria-checked="${e.key === muhuratEvent}" onclick="muhuratEvent='${e.key}';haptic('select');muhuratView()">${icon(evIcon[e.key] || 'muhurat')}${esc(tr(e.en).replace(/\s*[(（].*[)）]\s*$/, ''))}</button>`).join('')}</div>`
     + `<p class="caption" style="margin-top:10px">${esc(t('vivahNote'))}</p>`;
   const rest = `<section class="section first">${groupHead(t('ovPlan'), esc(t('goodDays')))}${mHits.length ? `<div class="list">${mHits.map((x, i) => `<button type="button" class="timeline rowbtn" onclick="muhuratSheet(${i})"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)}</strong><p>${span(x.win)} · ${esc(L.chogName(x.win.key))}</p>${muhuratEvent === 'travel' && wxStorm(x.key) ? `<p class="wxwarn">${esc(wxStorm(x.key))}</p>` : ''}</div><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>` : `<div class="card"><p>${esc(t('noGoodDays'))}</p></div>`}</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
@@ -1261,7 +1344,7 @@ function personalView() {
   }
   void bm;
   // Who you are first, then what today and this month hold for you, then the kundali; settings are one row away.
-  const top = `<div class="titlerow"><div><div class="eyebrow">${esc(t('yourSky'))}</div><h1>${esc(t('you'))}</h1></div><button class="gear" onclick="push('settings')" aria-label="${esc(t('settings'))}">${icon('gear')}</button></div>`;
+  const top = titleBar(esc(t('you')), esc(t('yourSky')), `<button class="gear" onclick="push('settings')" aria-label="${esc(t('settings'))}">${icon('gear')}</button>`);
   const tail = `<section class="section"><div class="group rows"><button onclick="push('settings')">${icon('gear', 'ri')}<b>${esc(t('settings'))}</b><span>${updatesOn() && pendingUpdate() ? `<b class="newdot">${esc(t('updNew'))}</b> ` : ''}<i aria-hidden="true">›</i></span></button><button onclick="push('learn')">${icon('book', 'ri')}<b>${esc(t('learnMore'))}</b><span><i aria-hidden="true">›</i></span></button></div></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${top}${id}</div><div class="rest">${natal}${tail}</div></div>`;
 }
