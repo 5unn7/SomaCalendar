@@ -301,7 +301,8 @@ public final class PanchangWidgets {
     }
     String q = f.chog.optString("q");
     boolean rahu = f.inRahu();
-    v.setTextViewText(R.id.pHeadline, rahu ? f.t("rahu", "Rahu Kaal") : local(f.chog));
+    String kk = f.kaalKey();
+    v.setTextViewText(R.id.pHeadline, rahu ? ("yama".equals(kk) ? f.t("yamaganda", "Yamaganda") : "gulika".equals(kk) ? f.t("gulika", "Gulika") : f.t("rahu", "Rahu Kaal")) : local(f.chog));
     v.setTextColor(R.id.pHeadline, rahu ? p.bad : p.quality(q));
     long until = rahu ? f.rahuEnd() : f.chog.optLong("e");
     v.setTextViewText(R.id.pSub, (rahu ? f.t("wHold", "Hold new starts") : meaning(f, q)) + " · " + f.t("until", "until {x}", f.time(until)) + temp(c, f));
@@ -656,7 +657,7 @@ public final class PanchangWidgets {
       }
       for (JSONObject d : new JSONObject[]{vedic, today}) {
         if (d == null) continue;
-        for (String key : new String[]{"rahu", "brahma", "abhijit"}) {
+        for (String key : new String[]{"rahu", "yama", "gulika", "brahma", "abhijit"}) {
           JSONArray r = d.optJSONArray(key);
           if (r == null) continue;
           if (r.optLong(0) > now) soonest = Math.min(soonest, r.optLong(0));
@@ -667,12 +668,21 @@ public final class PanchangWidgets {
       next = soonest;
     }
 
-    boolean inRahu() {
+    /** In Rahu Kaal, Yamaganda or Gulika: any of the three means Avoid, as in the app. */
+    boolean inRahu() { return kaalNow() != null; }
+    JSONArray kaalNow() {
       JSONObject d = vedic != null ? vedic : today;
-      JSONArray r = d == null ? null : d.optJSONArray("rahu");
-      return r != null && r.optLong(0) <= now && now < r.optLong(1);
+      if (d == null) return null;
+      for (String k : new String[]{"rahu", "yama", "gulika"}) { JSONArray r = d.optJSONArray(k); if (r != null && r.optLong(0) <= now && now < r.optLong(1)) return r; }
+      return null;
     }
-    long rahuEnd() { JSONObject d = vedic != null ? vedic : today; return d.optJSONArray("rahu").optLong(1); }
+    String kaalKey() {
+      JSONObject d = vedic != null ? vedic : today;
+      if (d == null) return "rahu";
+      for (String k : new String[]{"rahu", "yama", "gulika"}) { JSONArray r = d.optJSONArray(k); if (r != null && r.optLong(0) <= now && now < r.optLong(1)) return k; }
+      return "rahu";
+    }
+    long rahuEnd() { JSONArray k = kaalNow(); if (k != null) return k.optLong(1); JSONObject d = vedic != null ? vedic : today; return d.optJSONArray("rahu").optLong(1); }
 
     /** Brahma muhurat before the coming sunrise (or today's, while it is still running). */
     JSONArray nextBrahma() {

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Preview builds carry their own name so they are easy to tell from the store app. -->
+  <string name="app_name">Soma Preview</string>
+</resources>

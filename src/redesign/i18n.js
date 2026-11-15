@@ -624,6 +624,91 @@
   const GU_TITHI = ['પડવો', 'બીજ', 'ત્રીજ', 'ચોથ', 'પાંચમ', 'છઠ', 'સાતમ', 'આઠમ', 'નોમ', 'દશમ', 'અગિયારસ', 'બારસ', 'તેરસ', 'ચૌદશ', 'પૂનમ'];
   const GU_NAK = ['અશ્વિની', 'ભરણી', 'કૃત્તિકા', 'રોહિણી', 'મૃગશીર્ષ', 'આર્દ્રા', 'પુનર્વસુ', 'પુષ્ય', 'આશ્લેષા', 'મઘા', 'પૂર્વા ફાલ્ગુની', 'ઉત્તરા ફાલ્ગુની', 'હસ્ત', 'ચિત્રા', 'સ્વાતિ', 'વિશાખા', 'અનુરાધા', 'જ્યેષ્ઠા', 'મૂળ', 'પૂર્વાષાઢા', 'ઉત્તરાષાઢા', 'શ્રવણ', 'ધનિષ્ઠા', 'શતભિષા', 'પૂર્વા ભાદ્રપદા', 'ઉત્તરા ભાદ્રપદા', 'રેવતી'];
 
+  /* Today hero, puja lines, info tips and the trimmed copy from the design review (2026-11). */
+  Object.assign(STR.en, {
+    good: 'Good', festivalSets: 'Festivals', remVrat: 'Evening before vrats and festivals', remParana: 'When parana opens', remRahu: 'When Rahu Kaal begins',
+    lvGood: 'Good time', lvNeutral: 'Neutral', lvBad: 'Avoid',
+    underKaal: '{chog} is running, but {kaal} outranks it', holdNew: 'Hold new starts until it ends', kaalFrom: '{kaal} from {time}',
+    thenT: 'Next good: {what} {span}', thenTomorrow: 'Next good: {what}, tomorrow {span}',
+    festNight: 'Festival night', festToday: 'Today', whatIsX: 'What is {x}?', vsShort: 'VS', abhijitShort: 'Abhijit', brahmaShort: 'Brahma', kaalWord: 'Kaal',
+    pujaTime: 'Puja time', pujaAt: '{name} {span}', pujaWas: '{name} was {span}', moonriseLine: 'Moonrise {time}', moonriseWas: 'Moon rose at {time}',
+    arghyaLine: 'Sunset arghya by {set} · dawn arghya {rise}', arghyaWas: 'Dawn arghya {rise}', afterBhadra: 'after Bhadra', arghyaName: 'Arghya', sutak: 'Sutak', howKept: 'How it is kept',
+    pujaFest: { diwali: 'Lakshmi puja', dhanteras: 'Dhanteras puja', ganesh: 'Ganesh sthapana', vinayaka: 'Ganesh puja', gudi: 'Ghatasthapana', navratri: 'Ghatasthapana', rakhi: 'Rakhi time', holika: 'Holika Dahan', govardhan: 'Annakut puja', dussehra: 'Vijay muhurat', bhaidooj: 'Tilak time', sarvapitru: 'Shraddha time', narak: 'Abhyanga snan', uttarayan: 'Punya kaal', sankranti: 'Punya kaal' },
+    pujaKind: { ghata: 'Ghatasthapana', madhyahna: 'Madhyahna puja', purvahna: 'Morning puja', pratah: 'Morning puja', aparahna: 'Afternoon puja', pradosh: 'Pradosh puja', nishita: 'Nishita puja', snan: 'Snan time', punya: 'Punya kaal' },
+    remindEvery: 'Every {f}', remindEveryWhat: 'The evening before each one',
+    term: {
+      tithi: 'The lunar day. Each tithi is the Moon moving 12° ahead of the Sun, and the tithi at sunrise rules the day.',
+      nakshatra: 'The lunar mansion the Moon is in, one of 27. It sets the mood of the day and decides most muhurats.',
+      yoga: 'The Sun and Moon added together, one of 27. It tells whether the day leans auspicious.',
+      karana: 'Half a tithi. Vishti karana is Bhadra, avoided for new starts.',
+      vaar: 'The weekday, with its ruling planet and deity.',
+      choghadiya: 'Day and night are each split into eight parts. Amrit, Shubh and Labh are good, Char suits travel, and Rog, Kaal and Udveg are avoided.',
+      hora: 'Each hour is ruled by a planet in turn. Choose the hora of the planet that suits the work.',
+      amanta: 'Amanta months end on Amas (Gujarat, Maharashtra, the South). Purnimanta months end on Purnima (North India). Festivals fall on the same day either way.'
+    },
+    fullPanchang: 'Full panchang', fullNew: 'Purnima, Amas', openToday: 'Open day', timings: 'Timings', findTab: 'Find a day',
+    thisWeek: 'This week', nextWeek: 'Next week', weekOf: 'Week of {d}',
+    whyNak: '{nak} nakshatra: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'Why this day', whyClean: 'Clear of Rahu Kaal, Yamaganda, Gulika, Dur Muhurta and Bhadra',
+    grihaDay: 'Kharmas and Chaturmas are skipped for griha pravesh.', nowKaal: '{kaal} until {time}', planThis: 'Plan this', phasesAhead: 'Next phases',
+    saveAnyway: 'Save anyway', avoidConfirm: 'This time is marked Avoid. Tap again to save anyway.', view: 'View', moonCredit: 'Moon photo used with permission, free licence.'
+  });
+  Object.assign(STR.gu, {
+    festivalSets: 'તહેવાર', remVrat: 'વ્રત અને તહેવારની આગલી સાંજે', remParana: 'પારણાં શરૂ થાય ત્યારે', remRahu: 'રાહુ કાળ શરૂ થાય ત્યારે',
+    lvGood: 'શુભ સમય', lvNeutral: 'સામાન્ય', lvBad: 'અશુભ',
+    underKaal: '{chog} ચાલે છે, પણ {kaal} વધુ ભારે છે', holdNew: 'તે પૂરો થાય ત્યાં સુધી નવું કામ રોકો', kaalFrom: '{time} થી {kaal}',
+    thenT: 'પછી શુભ: {what} {span}', thenTomorrow: 'પછી શુભ: {what}, આવતીકાલે {span}',
+    festNight: 'તહેવારની રાત', festToday: 'આજે', whatIsX: '{x} એટલે શું?', vsShort: 'વિ.સં.', abhijitShort: 'અભિજિત', brahmaShort: 'બ્રહ્મ', kaalWord: 'કાળ',
+    pujaTime: 'પૂજાનો સમય', pujaAt: '{name} {span}', pujaWas: '{name} {span} હતું', moonriseLine: 'ચંદ્રોદય {time}', moonriseWas: 'ચંદ્રોદય {time} એ થયો',
+    arghyaLine: 'સાંજનું અર્ઘ્ય {set} સુધી · સવારનું અર્ઘ્ય {rise}', arghyaWas: 'સવારનું અર્ઘ્ય {rise}', afterBhadra: 'ભદ્રા પછી', arghyaName: 'અર્ઘ્ય', sutak: 'સૂતક', howKept: 'કેવી રીતે ઉજવાય',
+    pujaFest: { diwali: 'લક્ષ્મી પૂજન', dhanteras: 'ધનતેરસ પૂજન', ganesh: 'ગણેશ સ્થાપના', vinayaka: 'ગણેશ પૂજન', gudi: 'ઘટસ્થાપના', navratri: 'ઘટસ્થાપના', rakhi: 'રાખડીનો સમય', holika: 'હોલિકા દહન', govardhan: 'અન્નકૂટ પૂજન', dussehra: 'વિજય મુહૂર્ત', bhaidooj: 'તિલકનો સમય', sarvapitru: 'શ્રાદ્ધનો સમય', narak: 'અભ્યંગ સ્નાન', uttarayan: 'પુણ્ય કાળ', sankranti: 'પુણ્ય કાળ' },
+    pujaKind: { ghata: 'ઘટસ્થાપના', madhyahna: 'મધ્યાહ્ન પૂજા', purvahna: 'સવારની પૂજા', pratah: 'સવારની પૂજા', aparahna: 'બપોર પછીની પૂજા', pradosh: 'પ્રદોષ પૂજા', nishita: 'નિશીથ પૂજા', snan: 'સ્નાનનો સમય', punya: 'પુણ્ય કાળ' },
+    remindEvery: 'દરેક {f}', remindEveryWhat: 'દરેકની આગલી સાંજે',
+    term: {
+      tithi: 'ચાંદ્ર દિવસ. ચંદ્ર સૂર્યથી 12° આગળ જાય ત્યારે એક તિથિ પૂરી થાય, અને સૂર્યોદય સમયની તિથિ આખો દિવસ ગણાય.',
+      nakshatra: 'ચંદ્ર જે નક્ષત્રમાં છે તે, 27 માંથી એક. તે દિવસનો સ્વભાવ નક્કી કરે છે અને મોટાભાગનાં મુહૂર્ત તેના પર આધારિત છે.',
+      yoga: 'સૂર્ય અને ચંદ્રનો સરવાળો, 27 માંથી એક. દિવસ શુભ તરફ છે કે નહીં તે બતાવે છે.',
+      karana: 'તિથિનો અડધો ભાગ. વિષ્ટિ કરણ એટલે ભદ્રા, તેમાં નવું કામ ટાળવું.',
+      vaar: 'અઠવાડિયાનો દિવસ, તેના સ્વામી ગ્રહ અને દેવતા સાથે.',
+      choghadiya: 'દિવસ અને રાત આઠ આઠ ભાગમાં વહેંચાય છે. અમૃત, શુભ અને લાભ શુભ છે, ચલ પ્રવાસ માટે, અને રોગ, કાળ અને ઉદ્વેગ ટાળવા.',
+      hora: 'દરેક કલાક વારાફરતી એક ગ્રહનો હોય છે. કામને અનુકૂળ ગ્રહની હોરા પસંદ કરો.',
+      amanta: 'અમાંત માસ અમાસે પૂરો થાય (ગુજરાત, મહારાષ્ટ્ર, દક્ષિણ). પૂર્ણિમાંત માસ પૂનમે પૂરો થાય (ઉત્તર ભારત). તહેવાર બંનેમાં એક જ દિવસે આવે છે.'
+    },
+    fullPanchang: 'આખું પંચાંગ', fullNew: 'પૂનમ, અમાસ', openToday: 'દિવસ ખોલો', timings: 'સમય', findTab: 'દિવસ શોધો',
+    thisWeek: 'આ અઠવાડિયે', nextWeek: 'આવતા અઠવાડિયે', weekOf: '{d} નું અઠવાડિયું',
+    whyNak: '{nak} નક્ષત્ર: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'આ દિવસ કેમ', whyClean: 'રાહુ કાળ, યમગંડ, ગુલિક, દુર્મુહૂર્ત અને ભદ્રા વગર',
+    grihaDay: 'ગૃહપ્રવેશ માટે કમૂરતાં અને ચાતુર્માસ છોડી દેવાય છે.', nowKaal: '{time} સુધી {kaal}', planThis: 'આયોજન કરો', phasesAhead: 'આગળની કળા',
+    saveAnyway: 'છતાં સાચવો', avoidConfirm: 'આ સમય અશુભ છે. છતાં સાચવવા ફરી દબાવો.', view: 'જુઓ', moonCredit: 'ચંદ્રનો ફોટો મફત લાઇસન્સ સાથે વાપર્યો છે.'
+  });
+  Object.assign(STR.hi, {
+    festivalSets: 'पर्व', remVrat: 'व्रत और पर्व की पिछली शाम', remParana: 'पारण शुरू होने पर', remRahu: 'राहु काल शुरू होने पर',
+    lvGood: 'शुभ समय', lvNeutral: 'सामान्य', lvBad: 'अशुभ',
+    underKaal: '{chog} चल रहा है, पर {kaal} भारी है', holdNew: 'इसके खत्म होने तक नया काम रोकें', kaalFrom: '{time} से {kaal}',
+    thenT: 'आगे शुभ: {what} {span}', thenTomorrow: 'आगे शुभ: {what}, कल {span}',
+    festNight: 'पर्व की रात', festToday: 'आज', whatIsX: '{x} क्या है?', vsShort: 'वि.सं.', abhijitShort: 'अभिजित', brahmaShort: 'ब्रह्म', kaalWord: 'काल',
+    pujaTime: 'पूजा का समय', pujaAt: '{name} {span}', pujaWas: '{name} {span} था', moonriseLine: 'चंद्रोदय {time}', moonriseWas: 'चंद्रोदय {time} पर हुआ',
+    arghyaLine: 'संध्या अर्घ्य {set} तक · उषा अर्घ्य {rise}', arghyaWas: 'उषा अर्घ्य {rise}', afterBhadra: 'भद्रा के बाद', arghyaName: 'अर्घ्य', sutak: 'सूतक', howKept: 'कैसे मनाते हैं',
+    pujaFest: { diwali: 'लक्ष्मी पूजन', dhanteras: 'धनतेरस पूजन', ganesh: 'गणेश स्थापना', vinayaka: 'गणेश पूजन', gudi: 'घटस्थापना', navratri: 'घटस्थापना', rakhi: 'राखी का समय', holika: 'होलिका दहन', govardhan: 'अन्नकूट पूजन', dussehra: 'विजय मुहूर्त', bhaidooj: 'तिलक का समय', sarvapitru: 'श्राद्ध का समय', narak: 'अभ्यंग स्नान', uttarayan: 'पुण्य काल', sankranti: 'पुण्य काल' },
+    pujaKind: { ghata: 'घटस्थापना', madhyahna: 'मध्याह्न पूजा', purvahna: 'सुबह की पूजा', pratah: 'सुबह की पूजा', aparahna: 'अपराह्न पूजा', pradosh: 'प्रदोष पूजा', nishita: 'निशीथ पूजा', snan: 'स्नान का समय', punya: 'पुण्य काल' },
+    remindEvery: 'हर {f}', remindEveryWhat: 'हर एक की पिछली शाम',
+    term: {
+      tithi: 'चंद्र दिवस। चंद्रमा सूर्य से 12° आगे जाए तो एक तिथि पूरी होती है, और सूर्योदय की तिथि पूरे दिन मानी जाती है।',
+      nakshatra: 'चंद्रमा जिस नक्षत्र में है, 27 में से एक। यह दिन का स्वभाव तय करता है और ज़्यादातर मुहूर्त इसी पर टिके हैं।',
+      yoga: 'सूर्य और चंद्रमा का योग, 27 में से एक। यह बताता है कि दिन शुभ की ओर है या नहीं।',
+      karana: 'तिथि का आधा भाग। विष्टि करण ही भद्रा है, इसमें नया काम टालें।',
+      vaar: 'सप्ताह का दिन, अपने स्वामी ग्रह और देवता के साथ।',
+      choghadiya: 'दिन और रात आठ-आठ भागों में बँटते हैं। अमृत, शुभ और लाभ शुभ हैं, चर यात्रा के लिए, और रोग, काल और उद्वेग टालें।',
+      hora: 'हर घंटा बारी-बारी से एक ग्रह का होता है। काम के अनुकूल ग्रह की होरा चुनें।',
+      amanta: 'अमांत मास अमावस्या पर पूरा होता है (गुजरात, महाराष्ट्र, दक्षिण)। पूर्णिमांत मास पूर्णिमा पर पूरा होता है (उत्तर भारत)। पर्व दोनों में एक ही दिन आते हैं।'
+    },
+    fullPanchang: 'पूरा पंचांग', fullNew: 'पूर्णिमा, अमावस्या', openToday: 'दिन खोलें', timings: 'समय', findTab: 'दिन खोजें',
+    thisWeek: 'इस सप्ताह', nextWeek: 'अगले सप्ताह', weekOf: '{d} का सप्ताह',
+    whyNak: '{nak} नक्षत्र: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'यह दिन क्यों', whyClean: 'राहु काल, यमगंड, गुलिक, दुर्मुहूर्त और भद्रा से मुक्त',
+    grihaDay: 'गृह प्रवेश के लिए खरमास और चातुर्मास छोड़े जाते हैं।', nowKaal: '{time} तक {kaal}', planThis: 'योजना बनाएँ', phasesAhead: 'आगे की कलाएँ',
+    saveAnyway: 'फिर भी सहेजें', avoidConfirm: 'यह समय अशुभ है। फिर भी सहेजने के लिए दोबारा दबाएँ।', view: 'देखें', moonCredit: 'चंद्रमा की फ़ोटो मुफ़्त लाइसेंस के साथ।'
+  });
+  Object.assign(STR.en, { back: 'Back', placeGuess: 'Using {p} for now. Change it any time in Settings.', notifyTitle: 'Remind you of vrats?', notifyWhy: 'Soma can tell you the evening before each vrat and festival, and when Rahu Kaal begins. Nothing else.', notifyYes: 'Turn on reminders', notNow: 'Not now', dobDay: 'Day', dobMonth: 'Month', dobYear: 'Year' });
+  Object.assign(STR.gu, { back: 'પાછા', placeGuess: 'હાલ {p} રાખ્યું છે. સેટિંગ્સમાં ગમે ત્યારે બદલો.', notifyTitle: 'વ્રતની યાદ અપાવું?', notifyWhy: 'દરેક વ્રત અને તહેવારની આગલી સાંજે, અને રાહુ કાળ શરૂ થાય ત્યારે સોમ જણાવશે. બીજું કંઈ નહીં.', notifyYes: 'યાદ ચાલુ કરો', notNow: 'હમણાં નહીં', dobDay: 'દિવસ', dobMonth: 'મહિનો', dobYear: 'વર્ષ' });
+  Object.assign(STR.hi, { back: 'वापस', placeGuess: 'अभी {p} रखा है। सेटिंग्स में कभी भी बदलें।', notifyTitle: 'व्रत की याद दिलाएँ?', notifyWhy: 'हर व्रत और पर्व की पिछली शाम, और राहु काल शुरू होने पर सोम बताएगा। और कुछ नहीं।', notifyYes: 'याद चालू करें', notNow: 'अभी नहीं', dobDay: 'दिन', dobMonth: 'महीना', dobYear: 'वर्ष' });
   function make(lang) {
     const L = STR[lang] ? lang : 'en', s = STR[L];
     const t = (key, vars) => { let v = s[key] != null ? s[key] : STR.en[key]; if (vars) for (const k in vars) v = v.replace('{' + k + '}', vars[k]); return v; };
@@ -645,7 +730,7 @@
       practiceName(p) { return pick(p); },
       festName(f) { return L === 'en' ? f.en : (f[L] || f.en); },
       monthNames: { months: MONTHS[L], adhik: ADHIK[L] },
-      nature(n) { return n === 'good' ? s.good : n === 'bad' ? s.bad : n === 'mixed' ? s.mixed : n === 'festival' ? s.parva : s.neutral; },
+      nature(n) { return n === 'good' || n === 'festival' ? s.good : n === 'bad' ? s.bad : s.neutral; },
       /* Guidance text from Meanings in this language. */
       tr(text) { return M.tr ? M.tr(text, L) : text; }
     };

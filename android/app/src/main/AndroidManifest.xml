@@ -8,7 +8,7 @@
   <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
   <application android:allowBackup="false" android:fullBackupContent="false"
-    android:icon="@drawable/soma_icon" android:label="Soma Preview" android:theme="@style/SomaTheme"
+    android:icon="@drawable/soma_icon" android:label="@string/app_name" android:theme="@style/SomaTheme"
     android:usesCleartextTraffic="false" android:supportsRtl="true">
     <activity android:name="com.soma.calendar.MainActivity" android:exported="true">
       <intent-filter>

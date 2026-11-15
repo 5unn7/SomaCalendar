@@ -280,19 +280,6 @@ html[lang=gu] .skyhero .big,html[lang=hi] .skyhero .big{font-size:2.875rem;line-
 /* Content fades out before it reaches the floating tab bar. */
 body::after{content:'';position:fixed;left:0;right:0;bottom:0;height:calc(104px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,transparent,var(--bg) 62%);pointer-events:none;z-index:5}
 
-/* ---- Folio layout ---- */
-.folio{padding-top:6px}
-.folio .rule{height:2px;background:var(--ink);margin:10px 0 14px}
-.folio .hairline{height:1px;background:var(--line);margin:16px 0}
-.folio .headline{font:400 3.125rem/1 var(--display);letter-spacing:-.01em;margin-top:8px}
-html[lang=gu] .folio .headline,html[lang=hi] .folio .headline{font-size:2.25rem;line-height:1.3}
-.folio .headline em{color:var(--accent-text)}
-.folio .lede{font-size:1rem;line-height:1.55;margin-top:12px}
-.folio .tl{display:grid;grid-template-columns:66px 1fr auto;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);align-items:baseline}
-.folio .tl .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:0.8125rem}
-.folio .tl .k{font:700 0.6562rem var(--body);letter-spacing:.1em;text-transform:uppercase}
-.k.good{color:var(--good-text)}.k.bad{color:var(--bad-text)}.k.neutral{color:var(--neutral-text)}
-
 /* ---- Calendar ---- */
 .monthhead{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
 .monthhead h2{font-size:2.125rem}
@@ -424,7 +411,7 @@ html[lang=gu] .dialcore .chognow,html[lang=hi] .dialcore .chognow{font-size:min(
 .daytitle .festhead{font:400 1.75rem/1.15 var(--display);margin-top:4px;color:var(--accent-text)}
 html[lang=gu] .daytitle .festhead,html[lang=hi] .daytitle .festhead{font-size:1.5rem;line-height:1.35}
 .pillrow{margin-top:10px;display:flex;justify-content:center}
-.sky .pill,.folio .pill{background:var(--bad-soft);color:var(--bad-text)}
+.sky .pill{background:var(--bad-soft);color:var(--bad-text)}
 .pill.bad i,.pill.rahu i{border-radius:1px;transform:rotate(45deg) scale(.9)}
 .sky .pill i{background:var(--bad)}
 .skyhero .facts .pill{min-height:34px;padding:7px 12px;border-radius:16px;letter-spacing:.04em;text-transform:none;font-size:.8125rem;background:rgba(0,0,0,.28)}
@@ -440,20 +427,16 @@ dialog>.close{position:sticky;top:0;float:right;margin:-8px -4px 0 12px;width:44
 .eyebrow.accent{color:var(--accent-text)}
 .chip.method{color:var(--muted)}
 /* Large text (phone set to Large or bigger): let tight rows wrap instead of clipping. */
-html.bigtext html.bigtext .dialcore .chogsub,html.bigtext .dialcore .moonsvg{display:none}
+html.bigtext .dialcore .chogsub{display:none}
 html.bigtext .calendar button small{display:none}
 html.bigtext .calendar button{min-height:56px}
 html.bigtext .timeline .right{white-space:normal;max-width:45%}
 html.bigtext .nn{flex-wrap:wrap}
 html.bigtext .nn .when{text-align:left;flex-basis:100%;padding-left:20px}
-html.bigtext .folio .tl{grid-template-columns:auto 1fr;row-gap:2px}
-html.bigtext .folio .tl>:last-child{grid-column:2}
 html.bigtext .upnext button{width:200px}
 html.bigtext .tiles{grid-template-columns:1fr}
 html.bigtext .grid2{grid-template-columns:1fr}
-html.bigtext nav button{font-size:min(.65625rem,13px)}
 html.bigtext .skyhero .big{font-size:min(3.75rem,64px)}
-html.bigtext .folio .headline{font-size:min(3.125rem,56px)}
 /* ---- Sun strip: one grid for every language and size. Each side is icon + time (digits large, day-period small)
    with its countdown underneath; daylight sits between and wraps rather than pushing into the times. ---- */
 .sunstrip{display:grid;grid-template-columns:auto minmax(48px,1fr) auto;align-items:center;column-gap:10px;margin-top:14px;padding:12px 16px;border-radius:20px;background:var(--surface);border:1px solid var(--line)}
@@ -637,7 +620,7 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 .wxchip[data-tint=snow]{--c1:#4a607a;--c2:#6e849d}.wxchip[data-tint=nightcloud]{--c1:#12161f;--c2:#2a303d}.wxchip[data-tint=night]{--c1:#060a1c;--c2:#1a2448}
 .wxchip.invite>span{background:var(--accent-soft);color:var(--accent-text);box-shadow:none}
 .skyhero .wxchip>span{background:rgba(255,255,255,.16);box-shadow:none}
-.skyhero .wxrow,.folio .wxrow{margin-top:6px}
+.skyhero .wxrow{margin-top:6px}
 .dateline .wxchip{margin:-6px 0}
 .wxsheet .wxnow{display:flex;align-items:center;gap:14px;padding:18px;border-radius:24px;color:#fff;background:linear-gradient(160deg,var(--c1,#1f5fa8),var(--c2,#3f82c6));position:relative;overflow:hidden}
 .wxsheet .wxnow>:not(.wxfx){position:relative}.wxsheet .wxnow .wxfx{--fx:255,255,255}
@@ -655,8 +638,6 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 .wxchip,.wxchip span,.wxchip small{white-space:nowrap}
 .wxsheet .hours>div span{white-space:nowrap}
 .wxsheet .hours .wxicon path[stroke="#CFE6FF"]{stroke:#5b86b8}.wxsheet .hours .wxicon path[fill="#CFE6FF"]{fill:#5b86b8}
-/* Folio's hour-by-hour sunrise and sunset glyphs had no size and filled the column. */
-.folio .tl svg.ic{width:16px;height:16px;vertical-align:-3px}
 /* The running Choghadiya row sits on the accent tint, which took "Shubh" green to 4.41:1; a touch deeper clears AA in light. */
 :root:not([data-theme=dark]) .timeline.current .nature.good{color:#235f3f}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .timeline.current .nature.good{color:var(--good-text)}}
@@ -714,3 +695,200 @@ details.fold[open]>summary::after{transform:rotate(90deg)}
 details.fold .ri{width:22px;height:22px;color:var(--accent-text);flex:none}
 details.fold>.card,details.fold>.grid2,details.fold>.lesson{margin:0 12px 12px}
 details.fold>.card{border:0;box-shadow:none}
+
+/* ======================================================================================================
+   Design review pass (2026-11): one Today card (Sky colours, weather and the Kaal Chakra inside it),
+   pages with a back bar, sheets with a title row, ⓘ tips, a full-width tab bar on phones and a rail on tablets.
+   ====================================================================================================== */
+.nowrap{white-space:nowrap}
+dialog:focus{outline:none}
+.wideonly{display:none}
+
+/* ---- Tab bar: full width on phones, flush with the safe area, as iOS and Material both expect ---- */
+nav{left:0;right:0;bottom:0;transform:none;width:auto;border-radius:0;border:0;border-top:1px solid var(--line);box-shadow:none;
+  padding:4px 6px calc(4px + env(safe-area-inset-bottom));justify-content:space-around;gap:2px}
+nav button{max-width:128px;border-radius:16px;min-height:56px;padding:6px 2px 4px;font:600 .6875rem/1.25 var(--body);gap:3px}
+nav button svg{box-sizing:content-box;padding:3px 16px;border-radius:15px;transition:background .2s}
+nav button.active{background:none}
+nav button.active svg{background:var(--accent-soft)}
+nav button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html.bigtext nav button{font-size:min(.75rem,16px)}
+main{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+body::after{display:none}
+#toast,#updateNote{bottom:calc(80px + env(safe-area-inset-bottom))}
+#toast{align-items:center;gap:6px}
+#toast button{background:transparent;color:var(--accent);font-weight:800;min-height:36px;padding:4px 8px;margin:-6px -8px -6px 4px;border-radius:10px}
+
+/* ---- Touch targets: 44pt (iOS) / 48dp (Android) for everything tappable ---- */
+.chip{min-height:44px;display:inline-flex;align-items:center;gap:6px}
+.chip svg{width:18px;height:18px;flex:none}
+.chip.method{min-height:36px}
+.seg button{min-height:44px}
+.quiet{min-height:44px}
+.monthhead .arrows button{width:44px;height:44px}
+.sets .chip.on{background:var(--accent-soft);color:var(--accent-text);border-color:var(--accent)}
+.sets .chip.on::before{content:'✓';font-weight:800}
+
+/* ---- Page bar for pushed pages (Moon, Panchang, Learn, Settings) ---- */
+.pagebar{margin:2px 0 2px -6px}
+.back{display:inline-flex;align-items:center;gap:2px;background:transparent;color:var(--accent-text);font:600 1rem var(--body);padding:8px 6px;min-height:44px}
+.back span{font-size:1.75rem;line-height:.8;margin-top:-3px}
+.pagebar+h1{margin-top:2px}
+.pagesub{margin-top:4px}
+.titlerow{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-top:6px}
+.gear{width:48px;height:48px;min-height:48px;padding:0;border-radius:24px;border:1px solid var(--line);display:grid;place-items:center;flex:none}
+.gear svg{width:22px;height:22px;color:var(--ink)}
+
+/* ---- ⓘ tips: small to see, full size to tap ---- */
+.tip{display:inline-grid;place-items:center;width:44px;height:44px;min-height:44px;margin:-14px -12px -14px -6px;padding:0;background:transparent;border-radius:22px;color:var(--muted);vertical-align:middle}
+.tip svg{width:17px;height:17px}
+.eyebrow .tip,.caption .tip,label .tip{color:var(--accent-text)}
+
+/* ---- Sheets ---- */
+.sheethead{padding-right:52px;margin-bottom:6px}
+.sheethead h2{margin-top:4px}
+.leadline{color:var(--ink);font-size:1rem;line-height:1.6}
+.pujabox{background:var(--accent-soft);border-radius:16px;padding:12px 14px;margin-top:12px}
+.pujabox small{display:block;font:700 .6875rem/1.4 var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--accent-text)}
+html[lang=gu] .pujabox small,html[lang=hi] .pujabox small{letter-spacing:.02em;font-size:.8125rem}
+.pujabox b{display:block;font:600 1rem/1.45 var(--body);color:var(--ink);margin-top:2px}
+.pujabox.bad{background:var(--bad-soft)}.pujabox.bad small{color:var(--bad-text)}
+h3.sub{margin:22px 0 8px}
+ol.steps{margin:0;padding-left:22px;display:grid;gap:8px;color:var(--ink)}
+ol.steps li::marker{color:var(--accent-text);font-weight:700}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.weekhead{font:700 .6875rem/1.4 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:22px 0 -4px}
+html[lang=gu] .weekhead,html[lang=hi] .weekhead{letter-spacing:.02em;font-size:.8125rem}
+.card.empty{display:flex;gap:14px;align-items:flex-start}
+.card.empty>svg{width:28px;height:28px;flex:none;color:var(--accent)}
+.card.empty p{margin-top:4px;font-size:.875rem}
+
+/* ---- Switches (Settings): instant, no Save button ---- */
+.card.switches{padding:2px 18px}
+.switch{position:relative;display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:56px;margin:0;padding:8px 0;border-bottom:1px solid var(--line);font:500 .9375rem/1.4 var(--body);color:var(--ink)}
+.switch:last-child{border-bottom:0}
+.switch input{position:absolute;inset:0;width:100%;height:100%;min-height:0;margin:0;opacity:0;cursor:pointer;-webkit-appearance:none;appearance:none}
+.switch i{position:relative;flex:none;width:51px;height:31px;border-radius:16px;background:var(--surface2);box-shadow:inset 0 0 0 1px var(--line);transition:background .2s}
+.switch i::after{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.22);transition:transform .2s}
+.switch input:checked+i{background:var(--good)}
+.switch input:checked+i::after{transform:translateX(20px)}
+.switch input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---- Onboarding: top bar with back, step and Skip ---- */
+#onboard{padding-top:calc(env(safe-area-inset-top) + 8px)}
+.obbar{display:grid;grid-template-columns:48px 1fr auto;align-items:center;margin:0 -8px 18px}
+.obback{width:48px;height:48px;min-height:48px;padding:0;background:transparent;font-size:1.75rem;line-height:1;color:var(--ink)}
+.obback:disabled{visibility:hidden}
+.obstep{text-align:center;font:700 .75rem var(--body);letter-spacing:.06em;color:var(--muted)}
+.obskip{background:transparent;color:var(--accent-text);font-weight:700;min-height:48px;padding:8px 12px}
+#onboard .chipRow{margin-top:10px}
+fieldset.dob{border:0;padding:0;margin:16px 0 0;min-width:0}
+fieldset.dob legend{padding:0;font:600 .75rem var(--body);color:var(--muted)}
+.dobrow{display:grid;grid-template-columns:1fr 1.3fr 1.3fr;gap:8px}
+.dobrow select{padding-left:12px}
+
+/* ---- Today: the Sky card holds everything about now ---- */
+.skyhero.today{padding:10px 16px 16px;border-radius:32px}
+.skyhero .herotop{display:flex;align-items:center;justify-content:space-between;gap:6px;margin:0 -6px}
+.datenav{display:flex;align-items:center;flex:1;min-width:0}
+.datenav .arrow{flex:none;width:40px;height:44px;min-height:44px;padding:0;background:transparent;color:#fff;font-size:1.375rem;border-radius:14px}
+.skyhero .datepick{color:#fff;justify-content:flex-start;font-size:.875rem;gap:4px;padding:0 2px}
+.skyhero .datepick>span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.25}
+.skyhero .datepick .nowrap{font-weight:500;font-size:.75rem;opacity:.82}
+.datenav .now{flex:none;background:rgba(255,255,255,.18);color:#fff;font:700 .75rem var(--body);min-height:34px;padding:4px 12px;border-radius:17px;margin-left:4px}
+.festband{display:grid;grid-template-columns:1fr auto;column-gap:10px;width:100%;margin-top:10px;padding:10px 14px;border-radius:18px;text-align:left;color:#fff;background:rgba(255,224,163,.2);box-shadow:inset 0 0 0 1px rgba(255,224,163,.35)}
+.festband .over{grid-column:1;font:700 .6562rem/1.4 var(--body);letter-spacing:.14em;text-transform:uppercase;color:#ffe0a3}
+html[lang=gu] .festband .over,html[lang=hi] .festband .over{letter-spacing:.02em;font-size:.75rem}
+.festband b{grid-column:1;font:400 1.5rem/1.15 var(--display)}
+.festband>span:not(.over){grid-column:1;font:600 .8125rem/1.4 var(--body);opacity:.92}
+.festband i{grid-column:2;grid-row:1/span 3;align-self:center;font-style:normal;font-size:1.375rem;opacity:.8}
+.skyhero.today .status{margin-top:14px;gap:4px}
+.skyhero .pill{font-size:.75rem;padding:6px 12px 6px 10px;letter-spacing:.1em}
+html[lang=gu] .skyhero .pill,html[lang=hi] .skyhero .pill{letter-spacing:.02em;font-size:.875rem}
+.skyhero .pill.good{background:rgba(142,240,180,.24)}.skyhero .pill.bad{background:rgba(255,120,96,.3)}.skyhero .pill.neutral{background:rgba(245,213,138,.22)}
+.skyhero .pill.bad i{border-radius:1.5px;transform:rotate(45deg) scale(.9)}
+.skyhero .pill.neutral i{background:transparent;border:2px solid #f5d58a}
+.skyhero .tip{color:rgba(255,255,255,.85);margin:-10px -10px -10px -4px}
+.skyhero.today .big{font-size:3.25rem;margin:4px 0 2px}
+html[lang=gu] .skyhero.today .big,html[lang=hi] .skyhero.today .big{font-size:2.625rem}
+.skyhero .lineone{font:600 1rem/1.4 var(--body);color:#fff}
+.skyhero .linetwo{font-size:.9062rem;opacity:.86;margin-top:2px}
+.skyhero .then{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border-radius:14px;background:rgba(255,255,255,.13);font:600 .8125rem/1.35 var(--body);color:#fff;width:max-content;max-width:100%}
+.skyhero .then i{width:8px;height:8px;border-radius:50%;background:#8ef0b4;flex:none}
+/* The dial in the sky: the same marks in light ink */
+.skyhero .dialwrap{width:min(100%,320px);margin:14px auto 0}
+.skyhero .dial-track{stroke:rgba(255,255,255,.14)}
+.skyhero .dial-seg.good{stroke:#8ef0b4}.skyhero .dial-seg.bad{stroke:#ff9c86}.skyhero .dial-seg.neutral{stroke:#f5d58a}
+.skyhero .dial-seg.night{opacity:.38}.skyhero .dial-seg.on{opacity:1}
+.skyhero .dial-rahu{stroke:#ff9c86}
+.dial-rahu.yamaganda,.dial-rahu.gulika{opacity:.55}
+.skyhero .dial-tick{stroke:rgba(255,255,255,.3)}.skyhero .dial-tick.major{stroke:rgba(255,255,255,.6)}
+.skyhero .dial-num{fill:rgba(255,255,255,.8)}
+.dial-hz{stroke:var(--accent);stroke-width:2;stroke-linecap:round}
+.skyhero .dial-sun{fill:#ffe0a3}.skyhero .dial-hz{stroke:#ffe0a3}
+.skyhero .dial-hand line{stroke:#fff}.skyhero .dial-hand .knob{fill:#fff}.skyhero .dial-hand .halo{stroke:#fff}
+.dialwrap .dialcore{inset:25%;color:#fff}
+.dialwrap .dialcore:active{transform:scale(.97)}
+.dialcore .moonsvg{width:52px;height:52px}
+.skyhero .dialcore .tithi{font-size:min(1.5rem,30px);color:#fff}
+html[lang=gu] .skyhero .dialcore .tithi,html[lang=hi] .skyhero .dialcore .tithi{font-size:min(1.25rem,26px)}
+.dialcore small{font:600 min(.75rem,15px)/1.3 var(--body);opacity:.8}
+.skyhero .legend{color:rgba(255,255,255,.82);margin-top:10px}
+.skyhero .legend .good i{background:#8ef0b4}.skyhero .legend .bad i{background:#ff9c86}
+.skyhero .legend .neutral i{border-color:#f5d58a}.skyhero .legend .rahu i{border-top-color:#ff9c86}
+/* The Moon: the photograph, with the night side laid over it */
+.moonsvg image{clip-path:circle(40% at 50% 50%)}
+.moonsvg .shade{fill:rgba(6,6,10,.8)}
+.moonsvg .dark{fill:#0b0b0e;stroke:none}
+.skyhero .moonsvg .glow{fill:#fff;opacity:.1}
+/* Three times that matter: Rahu Kaal, Abhijit (or Brahma), and the next good Choghadiya */
+.nextrow{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px;margin-top:14px}
+.nx{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:58px;padding:9px 11px;border-radius:16px;background:rgba(255,255,255,.12);color:#fff;text-align:left;min-width:0}
+.nx small{font:700 .625rem/1.3 var(--body);letter-spacing:.08em;text-transform:uppercase;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+html[lang=gu] .nx small,html[lang=hi] .nx small{letter-spacing:0;font-size:.75rem}
+.nx b{font:600 .875rem/1.3 var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.nx.bad small{color:#ffb8a8}.nx.good small{color:#a9f3c6}
+.nx.past{opacity:.55}.nx.past b{text-decoration:line-through}
+.skyhero .sunstrip{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16);border-radius:0}
+html.bigtext .nextrow{grid-auto-flow:row}
+html.bigtext .nx{flex-direction:row;justify-content:space-between;align-items:center}
+/* Large text: the dial keeps its marks; the moon, tithi and nakshatra move under it instead of crowding the centre */
+html.bigtext .dialwrap{aspect-ratio:auto}
+html.bigtext .dialwrap .dial{height:auto;aspect-ratio:1}
+html.bigtext .dialwrap .dialcore{position:static;inset:auto;flex-direction:row;gap:10px;width:100%;margin-top:8px;border-radius:18px;min-height:56px}
+html.bigtext .dialcore .moonsvg{width:40px;height:40px;margin:0}
+.pline{color:var(--ink)}
+
+/* ---- Calendar marks: shape as well as colour ---- */
+.calendar button em{left:50%;margin-left:-2.5px}
+.calendar button em.v{background:transparent!important;border:1.5px solid var(--good);width:7px;height:7px;margin-left:-3.5px;bottom:3px}
+.calendar button em.f:not(:last-child){margin-left:-7px}
+.calendar button em.f+em.v{margin-left:1px}
+.calendar button.selected em.v{border-color:var(--accent-ink)}
+.calendar button.mine:not(.selected)::after,.calendar button.mine::after{top:0;right:0;width:0;height:0;border-radius:0 16px 0 0;background:none;border-style:solid;border-width:0 13px 13px 0;border-color:transparent var(--good) transparent transparent}
+.callegend .vrat i{background:transparent;border:1.5px solid var(--good)}
+.callegend .mine i{width:0;height:0;border-radius:0;background:none;border-style:solid;border-width:0 10px 10px 0;border-color:transparent var(--good) transparent transparent}
+.callegend .full i{border-radius:4px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--line);width:12px;height:12px}
+@media (max-width:399px){.calendar button small{display:none}.calendar button{min-height:58px}}
+/* Taller kaal marks on the Muhurat board, so Rahu Kaal reads at arm's length */
+.ribbon .over,.ribbon .under{height:9px}
+.ribbon .over i,.ribbon .under i{height:8px}
+
+/* ---- Foldables and tablets: a top-aligned rail from 700px, the day's detail beside the list ---- */
+@media (min-width:700px){
+  .wideonly{display:block}
+  header{max-width:none;margin-left:100px;padding-left:var(--gutter);padding-right:var(--gutter)}
+  main{max-width:1340px;margin-left:100px;margin-right:auto;padding-bottom:48px}
+  nav{left:14px;right:auto;top:calc(env(safe-area-inset-top) + 76px);bottom:auto;transform:none;width:76px;flex-direction:column;justify-content:flex-start;gap:6px;padding:8px;border-radius:30px;border:1px solid var(--line);box-shadow:var(--shadow)}
+  nav button{min-height:64px;flex:none}
+  nav button svg{padding:3px 12px}
+  #toast,#updateNote{bottom:28px}
+  dialog{margin:auto;border-radius:28px}
+  dialog::before{display:none}
+}
+@media (min-width:1000px){
+  .split.cal{grid-template-columns:minmax(420px,6fr) 5fr}
+  .split.cal .calendar button{min-height:88px}
+}
+/* Times wrap inside their tile rather than spilling over the next one */
+.nx b{white-space:normal;overflow-wrap:anywhere;font-size:.8125rem}

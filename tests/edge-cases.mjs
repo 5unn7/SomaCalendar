@@ -65,7 +65,7 @@ function boot(loc,prefs,opt={}){
 {const dom=boot({name:'La Ronge',lat:55.1,lon:-105.28,zone:'America/Regina'},{onboarded:true,lang:'en'}),w=dom.window;
   const h=w.eval("Fe.list('2026-02-25',15,loc).find(x=>x.key==='dhuleti')");assert.equal(h.day,'2026-03-03');
   w.SomaClock.set(new Date('2026-03-03T18:00:00Z'));w.SomaClock.tick('clock');
-  assert.match(w.document.querySelector('#app .festival').textContent,/In India: Wed, 4 Mar|In India: Wed 4 Mar/);dom.window.close();}
+  w.festivalSheet('dhuleti','2026-03-03');assert.match(w.document.querySelector('#modal').textContent,/In India: Wed, 4 Mar|In India: Wed 4 Mar/);dom.window.close();}
 // Background refresh (app closed): the off-screen run hands over a widget week in the app language and 30 days of reminders, then says it is done.
 {const got={};const native={fontScale:()=>1,appReady(){},appFailure(m){got.fail=m},updateWidgetFeed(j){got.feed=JSON.parse(j)},scheduleReminders(j){got.rem=JSON.parse(j)},bgDone(){got.done=(got.done||0)+1}};
   const dom=boot({name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'},{onboarded:true,lang:'gu',custom:true,sets:['gujarati','india','vrat'],reminders:{vrat:true}},{url:'https://soma.local/index.html?bg=1',native}),w=dom.window;
@@ -78,13 +78,13 @@ function boot(loc,prefs,opt={}){
 // "Remind me" on one festival works with festival reminders off: the evening before, and half an hour before moonrise for Karwa Chauth.
 {const dom=boot({name:'Toronto',lat:43.65,lon:-79.38,zone:'America/Toronto'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],reminders:{vrat:false,parana:false}}),w=dom.window;
   w.SomaClock.set(new Date('2026-10-20T14:00:00Z'));w.SomaClock.tick('clock');w.show('today');
-  const i=w.eval("upList.findIndex(x=>x.key==='karwa')");assert.ok(i>=0);w.festivalStory(i);
-  assert.match(w.document.querySelector('dialog .remind').textContent,/Remind me/);w.toggleRemind('karwa',i);
+  const kd=w.eval("observances(todayKey(),40).find(x=>x.key==='karwa').day");w.festivalSheet('karwa',kd);
+  assert.match(w.document.querySelector('dialog .remind').textContent,/Remind me/);w.toggleRemind('karwa|'+kd,'karwa',kd);
   assert.equal(w.document.querySelector('dialog .remind').getAttribute('aria-pressed'),'true');
   const plan=w.eval('reminderPlan()'),mine=plan.find(r=>r.id.startsWith('mine-karwa')),eve=plan.find(r=>r.id.startsWith('eve-karwa'));
   assert.ok(mine&&eve,'two Karwa Chauth reminders');assert.match(mine.body,/^Moonrise /);
-  const mr=w.eval("vedicDay(upList["+i+"].day).frame.data.moonrise");assert.equal(+mr-mine.at,30*6e4);
-  w.toggleRemind('karwa',i);assert.ok(!w.eval('reminderPlan()').some(r=>r.id.includes('karwa')),'turned off again');dom.window.close();}
+  const mr=w.eval("vedicDay('"+kd+"').frame.data.moonrise");assert.equal(+mr-mine.at,30*6e4);
+  w.toggleRemind('karwa|'+kd,'karwa',kd);assert.ok(!w.eval('reminderPlan()').some(r=>r.id.includes('karwa')),'turned off again');dom.window.close();}
 // Weather on the days that matter: cloud at Karwa Chauth moonrise in the sheet and its reminder, and a storm flag on a travel day.
 {const at=Date.parse('2026-10-27T12:00:00Z'),hours=[],six=[];for(let i=0;i<48;i++)hours.push({t:at+i*36e5,c:5,k:'cloudy',w:4,cl:90,h:70,p:0});
   for(let i=0;i<30;i++)six.push({t:at+48*36e5+i*6*36e5,c:3,k:i>10&&i<14?'thunder':'partly',w:5,cl:40,h:60,p:0});
@@ -92,11 +92,11 @@ function boot(loc,prefs,opt={}){
   const native={fontScale:()=>1,appReady(){},appFailure(){},weatherConfigure(){},weatherNow:()=>JSON.stringify(data),scheduleReminders(){},updateWidgetFeed(){}};
   const dom=boot({name:'Toronto',lat:43.65,lon:-79.38,zone:'America/Toronto'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],weather:true,remind:{karwa:true}},{native}),w=dom.window;
   w.SomaClock.set(new Date(at+60e3));w.SomaClock.tick('clock');w.show('today');
-  const i=w.eval("upList.findIndex(x=>x.key==='karwa')");w.festivalStory(i);
+  const kd=w.eval("observances(todayKey(),40).find(x=>x.key==='karwa').day");w.festivalSheet('karwa',kd);
   assert.match(w.document.querySelector('dialog .skyline').textContent,/Clouds may hide the moon at 7:39 pm \(90% cloud\)/);
   assert.ok(w.eval("reminderPlan()").some(r=>/clouds may hide the moon \(90%\)/.test(r.body)),'the Karwa Chauth reminder carries the cloud');
   assert.match(w.eval("wxStorm('2026-11-01')"),/Thunderstorm/);assert.equal(w.eval("wxStorm('2026-11-02')"),'');
-  w.eval("prefs.weather=false");assert.equal(w.eval("festSky(upList["+i+"])"),'','weather off: no sky lines');dom.window.close();}
+  w.eval("prefs.weather=false");assert.equal(w.eval("festSky(findObs('karwa','"+kd+"'))"),'','weather off: no sky lines');dom.window.close();}
 // A rebuilt plan just after midnight keeps the Shivratri nishita reminder (the festival is dated the day before).
 {const dom=boot({name:'New Delhi',lat:28.61,lon:77.21,zone:'Asia/Kolkata'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],reminders:{vrat:false,parana:false},remind:{shivratri:true}}),w=dom.window;
   w.SomaClock.set(new Date('2026-02-15T18:31:00Z'));w.SomaClock.tick('clock');
@@ -107,9 +107,9 @@ function boot(loc,prefs,opt={}){
 // You is two short pages: Your sky (birth, today for you, favourable days, kundali and numerology folded) and Settings.
 {const dom=boot({name:'La Ronge',lat:55.1,lon:-105.28,zone:'America/Regina'},{onboarded:true,lang:'en'}),w=dom.window;
   w.eval("profile={date:'1990-03-12',time:'06:40',zone:'Asia/Kolkata',lat:22.47,lon:70.06,place:'Jamnagar'}");w.show('personal');
-  const app=()=>w.document.querySelector('#app');assert.ok(app().querySelector('.card.me'));assert.ok(!app().querySelector('.group.rows'),'settings not on Your sky');
+  const app=()=>w.document.querySelector('#app');assert.ok(app().querySelector('.card.me'));assert.ok(!app().querySelector('.switch'),'settings not on Your sky');
   assert.equal(app().querySelectorAll('details.fold').length,2);assert.ok([...app().querySelectorAll('details.fold')].every(d=>!d.open),'kundali and numerology start folded');
-  w.setYouTab('settings');assert.ok(!app().querySelector('.card.me'));assert.ok(app().querySelector('.group.rows'));assert.ok(!app().querySelector('[role=radiogroup][aria-label=Theme]'),'appearance is a sheet');
+  w.push('settings');assert.ok(!app().querySelector('.card.me'));assert.ok(app().querySelector('.switch'),'settings save as they change');assert.ok(app().querySelector('.pagebar .back'),'settings has a back button');
   w.appearanceSheet();w.setTheme('dark');assert.ok(w.document.querySelector('#modal').open&&w.document.querySelector('#dialogBody .appearance'),'sheet stays open after a change');
   w.setLang('gu');assert.match(w.document.querySelector('#dialogBody .appearance h2').textContent,/[\u0A80-\u0AFF]/,'sheet follows the new language');dom.window.close();}
 console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival, moonrise cloud and travel storm flag');

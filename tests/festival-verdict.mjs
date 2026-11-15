@@ -20,20 +20,19 @@ for(const loc of [{name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'}
     const v=w.eval(`verdict(vedicDay('${f.day}'))`);
     assert.ok(v.parva,`${f.en} ${f.day} ${loc.name} is a parva day`);
     assert.ok(!BAN.test(v.avoid),`${f.en} ${f.day}: avoid text contradicts the festival: ${v.avoid}`);
-    for(const lay of ['dial','sky','folio']){
-      w.setLayout(lay);const hero=w.document.querySelector('#app .lead').textContent;
-      assert.ok(!/A mixed day|Take care|A day for care/i.test(hero),`${lay} hero on ${f.en} calls the day mixed or care: ${hero.slice(0,200)}`);
-      assert.ok(hero.includes(w.eval('L').festName(w.eval(`verdict(vedicDay('${f.day}'))`).festival)),`${lay} hero names the festival on ${f.day}`);
-    }
+    {const hero=w.document.querySelector('#app .skyhero.today').textContent;
+      assert.ok(!/A mixed day|Take care|A day for care/i.test(hero),`hero on ${f.en} calls the day mixed or care: ${hero.slice(0,200)}`);
+      assert.ok(hero.includes(w.eval('L').festName(w.eval(`verdict(vedicDay('${f.day}'))`).festival)),`hero names the festival on ${f.day}`);
+      assert.ok(w.document.querySelector('#app .festband'),`festival band on ${f.day}`);}
     // Midnight festivals keep the nishita of their own night even when the tithi ends minutes before it (Janmashtami 2026).
-    if(v.win&&typeof v.festival.tithi==='number'){const vf=v.festival,ti=w.Kaal.tithi(v.win.start).index;if(vf.rule!=='midnight')assert.equal(ti,vf.tithi,`${f.en} ${f.day}: puja window ${v.win.start.toISOString()} falls in tithi ${ti}, not ${vf.en}'s ${vf.tithi}`);
-      const fr=w.eval(`vedicDay('${f.day}').frame`);if(vf.rule==='sunset'||vf.rule==='midnight')assert.ok(v.win.start>=fr.sunset,`${vf.en} ${f.day}: ${vf.rule} festival puja window is after sunset`);else assert.ok(v.win.end<=fr.sunset,`${f.en}: daytime window`);windows++;}
-    const full=w.document.querySelector('.card.verdict').textContent;assert.ok(!BAN.test(full),`Full panchang on ${f.en} ${f.day}: ${full}`);
+    if(v.win&&typeof v.festival.tithi==='number'){const vf=v.festival,ti=w.Kaal.tithi(v.win.start).index;if(vf.rule!=='midnight'&&v.win.key!=='moonrise'&&v.win.key!=='arghya')assert.equal(ti,vf.tithi,`${f.en} ${f.day}: puja window ${v.win.start.toISOString()} falls in tithi ${ti}, not ${vf.en}'s ${vf.tithi}`);
+      const fr=w.eval(`vedicDay('${f.day}').frame`);if(['pradosh','nishita','moonrise'].includes(v.win.key))assert.ok(+v.win.start>=+fr.sunset-(v.win.key==='moonrise'?36e5:0),`${vf.en} ${f.day}: ${v.win.key} puja window is after sunset`);else assert.ok(v.win.end<=fr.sunset,`${f.en}: daytime window`);windows++;}
+    w.push('panchang');const full=w.document.querySelector('#app .card.verdict').textContent;w.back();assert.ok(!BAN.test(full),`Full panchang on ${f.en} ${f.day}: ${full.slice(0,300)}`);
     checked++;
   }
   const dw=fests.find(f=>f.key==='diwali');if(dw&&loc.name==='Ahmedabad'){const v=w.eval(`verdict(vedicDay('${dw.day}'))`);assert.ok(!v.win||v.win.start>=w.eval(`vedicDay('${dw.day}').frame.sunset`),'Diwali puja time is in the evening');}
   // Labh Pancham itself: the hero gives the puja window.
-  const lp=fests.find(f=>f.key==='labhpancham');if(lp){w.SomaClock.set(new Date(lp.day+'T00:00:00Z'));w.SomaClock.advance(-2*864e5);w.setDay(lp.day);w.setLayout('dial');assert.match(w.document.querySelector('.daytitle').textContent,/Best time for puja: .+ · (Amrit|Shubh|Labh)/);}
+  const lp=fests.find(f=>f.key==='labhpancham');if(lp){w.SomaClock.set(new Date(lp.day+'T00:00:00Z'));w.SomaClock.advance(-2*864e5);w.setDay(lp.day);assert.match(w.document.querySelector('.festband').textContent,/Labh Pancham.*Morning puja \d/);}
   assert.deepEqual(errors,[]);dom.window.close();
 }
 // Saskatoon, Labh Pancham 2026, default settings: Labh Pancham shows (Gujarati festivals are on by default abroad), the
@@ -46,16 +45,15 @@ for(const loc of [{name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'}
  const load=f=>{const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);};
  load('clock.js');w.SomaClock.set(new Date('2026-11-14T15:00:00Z')); // 9:00 am in Saskatoon
  for(const f of ['astronomy.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js'])load(f);
- const hero=()=>$('#app .lead').textContent;
+ const hero=()=>$('#app .skyhero.today').textContent;
  assert.match(hero(),/Labh Pancham/,'default sets abroad include Gujarati festivals');
  const v0=w.eval("verdict(vedicDay(day))");assert.ok(v0.win&&!v0.win.passed&&v0.win.end>w.SomaClock.now(),'before the window it is ahead');
- assert.match(hero(),/Best time for puja: /);
+ assert.match($('.festband').textContent,/Morning puja \d/);assert.doesNotMatch($('.festband').textContent,/ was /);
  w.SomaClock.set(new Date('2026-11-14T16:52:00Z'));w.somaClockChanged('clock'); // 10:52 am, after the 9:35-10:38 Shubh
  const v1=w.eval("verdict(vedicDay(day))");
  assert.ok(!v1.win||v1.win.passed||v1.win.end>w.SomaClock.now(),'never offers an ended window as the best time');
- for(const lay of ['sky','dial','folio']){w.setLayout(lay);const h=hero();
-   if(v1.win&&v1.win.passed)assert.doesNotMatch(h,/Best time for puja: /,lay+': a passed window is not shown as ahead');
-   if(v1.win&&v1.win.passed)assert.match(h,/Best time for puja has passed: .+ · Next shubh · /,lay+' says the window passed and gives the next shubh: '+h.slice(0,300));}
+ {const h=$('.festband').textContent;
+   if(v1.win&&v1.win.passed)assert.match(h,/Morning puja was \d/,'a passed window is called passed: '+h.slice(0,300));}
  assert.ok(v1.win&&v1.win.passed,'10:52 am: the morning window has passed');console.log('Saskatoon 10:52:',hero().replace(/\s+/g,' ').slice(0,160));
  assert.deepEqual(errors,[]);dom.window.close();}
 console.log(`PASS: ${checked} festival days (${windows} with a puja time inside the festival's own tithi and timing rule) in 2026 (Ahmedabad, Toronto) lead with the festival and never contradict it`);

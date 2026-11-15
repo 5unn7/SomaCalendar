@@ -31,15 +31,15 @@ w.saveProfile({preventDefault(){}});assert.ok(w.document.querySelector('.natal s
 // Unknown birth time: rashi and nakshatra stay, the lagna-based kundali is not drawn.
 {const keep=w.localStorage.getItem('soma-redesign-v1');w.editProfile();w.document.querySelector('#birthDate').value='1990-01-01';w.document.querySelector('#birthUnknown').checked=true;w.saveProfile({preventDefault(){}});assert.equal(w.document.querySelector('.natal svg'),null);assert.ok(w.document.querySelector('#app').textContent.includes('lagna'));w.editProfile();w.document.querySelector('#birthDate').value='1993-08-18';w.document.querySelector('#birthUnknown').checked=false;w.document.querySelector('#birthTime').disabled=false;w.document.querySelector('#birthTime').value='10:45';w.saveProfile({preventDefault(){}});assert.ok(w.document.querySelector('.natal svg'));void keep;}
 // Small towns are in the offline list, and switching place keeps Today on today in the new time zone.
-{w.settings();w.placeSearch('La Ronge','loc');assert.ok(w.document.querySelector('#locResults').textContent.includes('Saskatchewan'));w.pickPlace(0,'loc');w.show('today');assert.equal(w.document.querySelector('#app input[type=date]').value,w.Kaal.dateKey(new w.Date(),'America/Regina'));assert.ok(!w.document.querySelector('.datebar .now'),'no Today button on today');}
-w.settings();w.placeSearch('Regina','loc');w.pickPlace(0,'loc');assert.ok(w.document.querySelector('#location').textContent.includes('Regina'));assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).profile.zone,'Asia/Kolkata');
-w.settings();w.document.querySelector('#zone').value='Not/AZone';w.saveLocation();assert.ok(w.document.querySelector('#modal').open);assert.ok(w.document.querySelector('#toast').textContent.includes('valid'));
+{w.locationSheet();w.placeSearch('La Ronge','loc');assert.ok(w.document.querySelector('#locResults').textContent.includes('Saskatchewan'));w.pickPlace(0,'loc');w.show('today');assert.equal(w.document.querySelector('#app input[type=date]').value,w.Kaal.dateKey(new w.Date(),'America/Regina'));assert.ok(!w.document.querySelector('.datenav .now'),'no Today button on today');}
+w.locationSheet();w.placeSearch('Regina','loc');w.pickPlace(0,'loc');assert.ok(w.document.querySelector('#location').textContent.includes('Regina'));assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).profile.zone,'Asia/Kolkata');
+w.locationSheet();w.document.querySelector('#zone').value='Not/AZone';w.saveLocation();assert.ok(w.document.querySelector('#modal').open);assert.ok(w.document.querySelector('#toast').textContent.includes('valid'));
 // Believer-facing content: verdict, Rahu Kaal, choghadiya and festivals render; no in-flow disclaimers remain.
-w.show('today');{const txt=w.document.querySelector('#app').textContent;assert.ok(/Rahu Kaal/.test(txt));assert.ok(/Coming up/.test(txt));assert.ok(!/not (a )?scientific|NOT SCIENCE|not validated/i.test(txt));}
-w.show('muhurat');assert.equal(w.document.querySelectorAll('.chog .timeline').length,16);
+w.show('today');{const txt=w.document.querySelector('#app').textContent;assert.ok(/Rahu Kaal/.test(txt));w.show('calendar');assert.ok(/Coming up/.test(w.document.querySelector('#app').textContent),'Coming up lives on Calendar');assert.ok(!/not (a )?scientific|NOT SCIENCE|not validated/i.test(txt));}
+w.show('muhurat');w.setMuhuratTab('times');assert.equal(w.document.querySelectorAll('.chogboard .ctile').length,16);
 // Festival filters and language switch persist.
 w.show('calendar');{const had=w.eval("prefs.sets.includes('gujarati')");w.toggleSet('gujarati');assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).prefs.sets.includes('gujarati'),!had);}
-w.settings();w.document.querySelector('#langPick').value='gu';w.document.querySelector('#monthPick').value='purnimanta';w.savePrefs();assert.ok(w.document.querySelector('#nav').textContent.includes('આજ'));assert.equal(w.document.documentElement.lang,'gu');assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).prefs.month,'purnimanta');
+w.settings();w.setLang('gu');w.setMonthSys('purnimanta');assert.ok(w.document.querySelector('#nav').textContent.includes('આજ'));assert.equal(w.document.documentElement.lang,'gu');assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).prefs.month,'purnimanta');
 // Reminders: the plan handed to Android is a list of future alarms with titles.
 {const plan=w.reminderPlan();assert.ok(plan.length>0);assert.ok(plan.every(r=>r.at>Date.now()&&r.title&&r.id));}
 // Planning an event shows a muhurat check for the chosen time.
@@ -49,9 +49,9 @@ w.document.querySelector('#eventTime').value='03:00';w.timingCheck();assert.ok(!
 // The widget feed follows the chosen place and carries the festival list.
 await new Promise(r=>setTimeout(r,600));assert.ok(feeds.length>=1&&feeds.at(-1).city==='Regina'&&feeds.at(-1).chog.length>50&&feeds.at(-1).vrat.length>0,'widget feed pushed for the chosen place');
 // Preview updates: off unless the native shell says so; when on, You lists Updates, a newer build shows a gentle note, and Install hands off to native.
-{w.setLang('en');w.show('personal');w.setYouTab('settings');assert.ok(!/Updates/.test(w.document.querySelector('#app').textContent),'no update row without the native updater');
+{w.setLang('en');w.show('personal');w.push('settings');assert.ok(!/Updates/.test(w.document.querySelector('#app').textContent),'no update row without the native updater');
 let checks=0,installs=0;Object.assign(w.SomaNative,{updateInfo:()=>JSON.stringify({enabled:true,versionCode:1040,versionName:'0.8.0-b40'}),checkForUpdate(){checks++},installUpdate(){installs++}});
-w.show('personal');assert.ok(/Updates/.test(w.document.querySelector('#app').textContent));
+w.show('personal');w.push('settings');assert.ok(/Updates/.test(w.document.querySelector('#app').textContent));
 w.autoCheckUpdate();assert.equal(checks,1);w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1042,versionName:'0.8.0-b42',notes:'Fix <b>widget</b>'}));
 const note=w.document.querySelector('#updateNote');assert.ok(note&&note.style.display==='flex'&&/0\.8\.0-b42/.test(note.textContent));
 w.updateSheet();assert.ok(/Fix <b>widget<\/b>/.test(w.document.querySelector('#updateBody').textContent));assert.equal(w.document.querySelector('#updateBody b'),null);
@@ -66,7 +66,7 @@ note.querySelector('.x').click();assert.equal(note.style.display,'none');
 w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1043,versionName:'0.8.0-b43'}));assert.equal(note.style.display,'none','snoozed build stays hidden');
 w.somaReceiveUpdate(JSON.stringify({state:'available',versionCode:1044,versionName:'0.8.0-b44'}));assert.equal(note.style.display,'flex','a newer build shows again');
 assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).prefs.updateFeed.versionCode,1044,'last answer kept for the next launch');
-w.show('personal');assert.ok(w.document.querySelector('#app .newdot'),'Updates row is marked New');
+w.show('personal');w.push('settings');assert.ok(w.document.querySelector('#app .newdot'),'Updates row is marked New');
 // A return to the app looks again (not once per 12 hours).
 {const c=checks;w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));const RealNow=w.Date.now;w.Date.now=()=>RealNow()+120000;w.somaClockChanged('resume');w.Date.now=RealNow;assert.equal(checks,c+1,'resume triggers a check');}
 w.somaReceiveUpdate(JSON.stringify({state:'latest',versionCode:1040,versionName:'0.8.0-b40'}));}

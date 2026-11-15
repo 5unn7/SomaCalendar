@@ -40,7 +40,7 @@ function boot(lang,layout,weather,store){
   return {w,errors,calls,fresh};
 }
 const latin=el=>{const txt=el.textContent+' '+[...el.querySelectorAll('[aria-label]')].map(x=>x.getAttribute('aria-label')).join(' ');return (txt.match(/[A-Za-z]{3,}/g)||[]).filter(x=>!ALLOW.has(x));};
-for(const lang of ['en','gu','hi'])for(const layout of ['dial','sky','folio']){
+for(const lang of ['en','gu','hi'])for(const layout of ['today']){
   const {w,errors,calls}=boot(lang,layout,true);
   const chip=w.document.querySelector('#app .wxchip');
   assert.ok(chip,`${lang}/${layout}: weather chip`);assert.match(chip.textContent,/\d°/);assert.ok(chip.getAttribute('aria-label').length>10);
