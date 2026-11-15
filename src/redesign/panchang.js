@@ -80,7 +80,10 @@
   function frame(day, loc) {
     const data = K.dayData(day, loc), nextData = K.dayData(K.addDay(day, 1), loc);
     const sunrise = data.sunrise || K.instant(day, '06:00', loc.zone);
-    const sunset = data.sunset && data.sunset > sunrise ? data.sunset : K.instant(day, '18:00', loc.zone);
+    // The day's own sunset is the first one after its sunrise. Far north in summer (Reykjavik, Fairbanks) it falls after
+    // local midnight, so the civil date holds only the previous evening's sunset, which comes before sunrise.
+    const own = data.sunrise ? A.SearchRiseSet('Sun', new A.Observer(loc.lat, loc.lon, 0), -1, data.sunrise, 1) : null;
+    const sunset = own && own.date - data.sunrise < 864e5 ? own.date : data.sunset && data.sunset > sunrise ? data.sunset : K.instant(day, '18:00', loc.zone);
     const nextSunrise = nextData.sunrise || K.instant(K.addDay(day, 1), '06:00', loc.zone);
     const weekday = new Date(Date.parse(day + 'T12:00Z')).getUTCDay();
     return { day, sunrise, sunset, nextSunrise, weekday, polar: !data.sunrise || !data.sunset, data };

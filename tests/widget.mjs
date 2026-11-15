@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-const require=createRequire(import.meta.url),W=require('../src/redesign/widget.js');
+const require=createRequire(import.meta.url),W=require('../src/redesign/widget.js'),P=require('../src/redesign/panchang.js');
 const en=(w,i,night)=>W.CHOG[night?W.chogNightIndex(w,i):W.chogDayIndex(w,i)].en;
 // Standard Choghadiya tables: first and last slot of each weekday's day and night.
 assert.deepEqual([0,1,2,3,4,5,6].map(w=>en(w,0)),['Udveg','Amrit','Rog','Labh','Shubh','Char','Kaal']);
@@ -34,7 +34,11 @@ console.log('PASS: Choghadiya tables, Rahu Kaal, gapless week of intervals, vrat
 assert.notEqual(b.date,'2027-01-05');assert.equal(a.date,'2027-01-04');}
 // Extra fields for the Sun, Moon and Day widgets.
 {const g=W.build(jam,new Date('2026-11-14T03:00Z')),d=g.days.find(x=>x.date==='2026-11-14');
-assert.equal(d.brahma[1]-d.brahma[0],48*6e4);assert.equal(d.rise-d.brahma[1],48*6e4);
+assert.ok(Math.abs((d.brahma[1]-d.brahma[0])-(d.rise-d.brahma[1]))<=1000);
+// Brahma muhurat follows the night's length, as in the app: the widget and the Today screen must name the same time.
+for(const [where,lat,lon,zone,day] of [['Jamnagar',22.47,70.06,'Asia/Kolkata','2026-11-14'],['La Ronge',55.1,-105.28,'America/Regina','2026-12-21'],['La Ronge',55.1,-105.28,'America/Regina','2026-06-21']]){
+  const loc={name:where,lat,lon,zone},x=W.build(loc,new Date(day+'T18:00Z')).days.find(y=>y.date===day),b=P.day(day,loc).periods.brahma;
+  assert.ok(Math.abs(x.brahma[0]-b.start)<2000&&Math.abs(x.brahma[1]-b.end)<2000,`${where} ${day}: widget Brahma ${new Date(x.brahma[0]).toISOString()} vs app ${b.start.toISOString()}`);}
 assert.ok(d.noon>d.rise&&d.noon<d.set);assert.ok(d.mrise>0||d.mset>0);
 assert.equal(g.phases.length,8);assert.ok(g.phases.every((p,i)=>i===0||p.t>g.phases[i-1].t));
 const full=g.phases.find(p=>p.k===2);assert.equal(new Date(full.t).toISOString().slice(0,10),'2026-11-24');

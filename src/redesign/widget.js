@@ -75,8 +75,9 @@ function dayWindows(day,loc,obs,out){
     rahu:slot(RAHU[w]),yama:slot(YAMA[w]),gulika:slot(GULIKA[w]),
     /* Abhijit muhurta is traditionally not used on Wednesday. */
     abhijit:w===3?null:[round(noon-muhurta/2),round(noon+muhurta/2)],
-    /* Brahma muhurat: the two muhurtas (2 x 48 min) before sunrise, the second of which is the practice window. */
-    brahma:[round(+rise-96*6e4),round(+rise-48*6e4)],
+    /* Brahma muhurat: the 14th of the night's 15 muhurtas, the same rule as the app (panchang.js), so the widget and the
+       app agree. A night muhurta is 48 min only at the equinox: in La Ronge in December it is about 68 min. */
+    brahma:[round(+rise-2*(rise-(set-864e5))/15),round(+rise-(rise-(set-864e5))/15)],
     noon:round(noon),
     mrise:moonEvent(obs,1,start,end),mset:moonEvent(obs,-1,start,end)
   });
