@@ -47,11 +47,11 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-  # Every build of the redesign branch replaces the rolling "preview" release. Soma Preview reads its
+  # Every build of main (and of the old redesign branch) replaces the rolling "preview" release. Soma Preview reads its
   # version.json (You > Updates) and installs the newer APK in place, so nothing is downloaded by hand.
   publish-preview:
     needs: apk
-    if: github.event_name == 'push' && github.ref == 'refs/heads/redesign/gujarati-time'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/redesign/gujarati-time')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
