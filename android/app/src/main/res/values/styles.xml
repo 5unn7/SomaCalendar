@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+  <!-- Bone paper by day. The WebView reads isLightTheme from this theme for prefers-color-scheme, so the night variant lives in values-night. -->
   <style name="SomaTheme" parent="android:style/Theme.Material.Light.NoActionBar">
     <item name="android:fontFamily">sans</item>
+    <item name="android:colorBackground">#F3EFE7</item>
+    <!-- The window paints the app's own ground before the WebView is ready, so launch shows no white flash. -->
+    <item name="android:windowBackground">#F3EFE7</item>
     <item name="android:windowLightStatusBar">true</item>
-    <item name="android:statusBarColor">#F6F7F2</item>
-    <item name="android:navigationBarColor">#F6F7F2</item>
+    <item name="android:statusBarColor">#F3EFE7</item>
+    <item name="android:navigationBarColor">#F3EFE7</item>
     <item name="android:windowLightNavigationBar">true</item>
   </style>
 </resources>

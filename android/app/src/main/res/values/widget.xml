@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <!-- Kaal Chakra palette, day (bone). Night values live in values-night/widget.xml. -->
+  <color name="widget_ground">#F3EFE7</color>
+  <color name="widget_ink">#151310</color>
+  <color name="widget_muted">#6F695E</color>
+  <color name="widget_gold">#A8741C</color>
+  <color name="widget_good">#2F7D55</color>
+  <color name="widget_ok">#A88A3C</color>
+  <color name="widget_bad">#C2482E</color>
+  <string name="widget_description">The day as a dial: Choghadiya now, Rahu Kaal and your next vrat.</string>
+</resources>

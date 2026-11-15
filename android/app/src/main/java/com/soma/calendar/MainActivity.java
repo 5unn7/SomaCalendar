@@ -16,14 +16,8 @@ import android.webkit.WebChromeClient;
 import android.webkit.ConsoleMessage;
 import android.webkit.WebResourceResponse;
 import android.util.Log;
-import androidx.webkit.WebViewAssetLoader;
+
 import android.webkit.WebResourceRequest;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import org.json.JSONArray;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.json.JSONObject;
@@ -31,15 +25,34 @@ import org.json.JSONObject;
 /** Privacy-first Android shell. Location and weather are explicitly requested by the user. */
 public final class MainActivity extends Activity {
   private static final int LOCATION_PERMISSION_REQUEST = 412;
+  private static final int NOTIFICATION_PERMISSION_REQUEST = 413;
   private WebView web;
-  private static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
+  static final String ASSET_ORIGIN = "https://appassets.androidplatform.net/assets/";
+  /** The app's own files on its private https origin; anything else gets an empty answer. */
+  static WebResourceResponse asset(Context c, android.net.Uri uri) {
+    if("https".equals(uri.getScheme()) && "appassets.androidplatform.net".equals(uri.getHost())) {
+      String path=uri.getPath();
+      if(path!=null && path.startsWith("/assets/") && !path.contains("..")) {
+        try {
+          String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":path.endsWith(".webp")?"image/webp":path.endsWith(".woff2")?"font/woff2":"application/octet-stream";
+          return new WebResourceResponse(type,"UTF-8",c.getAssets().open(path.substring(8)));
+        } catch(java.io.IOException ignored) { }
+      }
+    }
+    return new WebResourceResponse("text/plain","UTF-8",new java.io.ByteArrayInputStream(new byte[0]));
+  }
   @Override public void onCreate(Bundle state) {
     super.onCreate(state);
-    getWindow().setStatusBarColor(0xfff6f7f2);
-    getWindow().setNavigationBarColor(0xfff6f7f2);
-    getWindow().getDecorView().setSystemUiVisibility(0x00002000 | 0x00000010);
+    // Bars and WebView ground follow the phone's light/dark setting (Kaal Chakra: bone paper or OLED black).
+    boolean night=(getResources().getConfiguration().uiMode&android.content.res.Configuration.UI_MODE_NIGHT_MASK)==android.content.res.Configuration.UI_MODE_NIGHT_YES;
+    int ground=night?0xff050505:0xfff3efe7;
+    getWindow().setStatusBarColor(ground);
+    getWindow().setNavigationBarColor(ground);
+    int ui=0;
+    if(!night){ui|=android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;if(Build.VERSION.SDK_INT>=26)ui|=android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;}
+    getWindow().getDecorView().setSystemUiVisibility(ui);
     web=new WebView(this);
-    web.setBackgroundColor(0xfff6f7f2);
+    web.setBackgroundColor(ground);
     WebSettings s=web.getSettings();
     s.setJavaScriptEnabled(true);
     s.setDomStorageEnabled(true);
@@ -48,10 +61,11 @@ public final class MainActivity extends Activity {
     s.setAllowFileAccessFromFileURLs(false);
     s.setAllowUniversalAccessFromFileURLs(false);
     s.setJavaScriptCanOpenWindowsAutomatically(false);
+    // The page scales its own rem type from fontScale() (so it can cap the dial core and reflow tight rows);
+    // keep WebView's own text zoom at 100 so the phone's text size is not applied twice.
+    s.setTextZoom(100);
     web.addJavascriptInterface(new Bridge(),"SomaNative");
-    final WebViewAssetLoader loader = new WebViewAssetLoader.Builder()
-      .addPathHandler("/assets/", new WebViewAssetLoader.AssetsPathHandler(this))
-      .build();
+
     web.setWebChromeClient(new WebChromeClient() {
       @Override public boolean onConsoleMessage(ConsoleMessage message) {
         if(message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
@@ -62,17 +76,27 @@ public final class MainActivity extends Activity {
     });
     web.setWebViewClient(new WebViewClient() {
       @Override public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest request) {
-        return loader.shouldInterceptRequest(request.getUrl());
+        return asset(MainActivity.this,request.getUrl());
       }
       @Override public void onPageFinished(WebView v, String url) {
         Log.i("SomaJS", "WebView document loaded: " + url);
       }
       @Override public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
-        return !r.getUrl().toString().startsWith(ASSET_ORIGIN);
+        if(r.getUrl().toString().startsWith(ASSET_ORIGIN)) return false;
+        if ("https".equals(r.getUrl().getScheme())) {
+          try { startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,r.getUrl())); }
+          catch (android.content.ActivityNotFoundException ignored) { }
+        }
+        return true;
       }
+    });
+    web.setOnApplyWindowInsetsListener((v,insets)->{
+      if(Build.VERSION.SDK_INT>=30){android.graphics.Insets i=insets.getInsets(android.view.WindowInsets.Type.systemBars());v.setPadding(i.left,i.top,i.right,i.bottom);}
+      return insets;
     });
     setContentView(web);
     web.loadUrl(ASSET_ORIGIN + "index.html");
+    RefreshJob.schedule(getApplicationContext());
   }
   private void send(String function, String payload) {
     runOnUiThread(() -> {
@@ -126,7 +150,38 @@ public final class MainActivity extends Activity {
       send("somaReceiveLocation",j.toString());
     }catch(Exception e){sendError("somaReceiveLocation","Invalid device location data.");}
   }
+  /** Back closes the open sheet, then the pushed page, then returns to Today; only on Today does it leave the app. */
+  @Override public void onBackPressed() {
+    if(web==null){super.onBackPressed();return;}
+    web.evaluateJavascript("(window.somaBack&&somaBack())?'1':'0'",v->{ if(v==null||!v.contains("1")) MainActivity.super.onBackPressed(); });
+  }
   public final class Bridge {
+    @JavascriptInterface public void addCalendarEvent(String title,String start,String end,String place,String description) {
+      runOnUiThread(() -> {
+        try {
+          android.content.Intent intent=new android.content.Intent(android.content.Intent.ACTION_INSERT)
+            .setData(android.provider.CalendarContract.Events.CONTENT_URI)
+            .putExtra(android.provider.CalendarContract.Events.TITLE,title)
+            .putExtra(android.provider.CalendarContract.Events.EVENT_LOCATION,place)
+            .putExtra(android.provider.CalendarContract.Events.DESCRIPTION,description)
+            .putExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME,java.time.Instant.parse(start).toEpochMilli())
+            .putExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME,java.time.Instant.parse(end).toEpochMilli());
+          startActivity(intent);
+        } catch(Exception e) { android.widget.Toast.makeText(MainActivity.this,"No calendar app available. Your plan is still saved in Soma.",android.widget.Toast.LENGTH_LONG).show(); }
+      });
+    }
+    /** The phone's text size (Settings › Display › Font size), 1.0 = default. */
+    @JavascriptInterface public float fontScale(){return getResources().getConfiguration().fontScale;}
+    /** A light tap under the finger: select on a pick, confirm on a save, reject on a warning. Respects the system setting. */
+    @JavascriptInterface public void haptic(String kind){
+      runOnUiThread(()->{
+        if(web==null)return;
+        int c=android.view.HapticFeedbackConstants.CLOCK_TICK;
+        if("success".equals(kind))c=Build.VERSION.SDK_INT>=30?android.view.HapticFeedbackConstants.CONFIRM:android.view.HapticFeedbackConstants.VIRTUAL_KEY;
+        else if("warn".equals(kind))c=Build.VERSION.SDK_INT>=30?android.view.HapticFeedbackConstants.REJECT:android.view.HapticFeedbackConstants.LONG_PRESS;
+        web.performHapticFeedback(c);
+      });
+    }
     @JavascriptInterface public void appReady(){
       Log.i("SomaJS","Astronomical app initialized");
       runOnUiThread(()->{
@@ -135,65 +190,24 @@ public final class MainActivity extends Activity {
       });
     }
     @JavascriptInterface public void appFailure(String detail){Log.e("SomaJS","App initialization error: "+detail);}
-    @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("date",safe(date)).putString("phase",safe(phase))
-        .putString("tithi",safe(tithi)).putString("city",safe(city)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
+    /** A week of precomputed Panchang intervals for the home-screen widget (built by widget.js). */
+    @JavascriptInterface public void updateWidgetFeed(String json) {
+      if(json==null||json.length()>300000)return;
+      try{new JSONObject(json);}catch(Exception e){Log.w("SomaJS","Rejected widget feed");return;}
+      getSharedPreferences(SomaWidget.PREFS,MODE_PRIVATE).edit().putString(SomaWidget.FEED,json).apply();
+      runOnUiThread(() -> { SomaWidget.refreshAll(MainActivity.this); PanchangWidgets.refreshAll(MainActivity.this); });
     }
-    @JavascriptInterface public void updateAtmosphere(String temp,String cloud,String status) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("temp",safe(temp)).putString("cloud",safe(cloud))
-        .putString("weatherStatus",safe(status)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
+    /** Reminders computed by the web layer: JSON [{id, at, title, body}]. Scheduled locally with AlarmManager. */
+    @JavascriptInterface public void scheduleReminders(String json){
+      ReminderReceiver.schedule(getApplicationContext(),json);
     }
-    /** Only the text typed into birthplace search leaves the device; birth date/time are never transmitted. */
-    @JavascriptInterface public void searchBirthplaces(String query){
-      final String term=query==null?"":query.trim();
-      if(term.length()<3||term.length()>100){placeError("Search for a place using at least three letters.");return;}
-      new Thread(()->{
-        HttpURLConnection conn=null;
-        try{
-          String encoded=URLEncoder.encode(term,"UTF-8");
-          URL url=new URL("https://geocoding-api.open-meteo.com/v1/search?name="+encoded+"&count=8&language=en");
-          conn=(HttpURLConnection)url.openConnection();
-          conn.setRequestMethod("GET");
-          conn.setConnectTimeout(10000);conn.setReadTimeout(12000);
-          conn.setInstanceFollowRedirects(false);
-          if(conn.getResponseCode()!=200){placeError("Place lookup unavailable (HTTP "+conn.getResponseCode()+"). Manual coordinates still work.");return;}
-          StringBuilder response=new StringBuilder();
-          try(BufferedReader reader=new BufferedReader(new InputStreamReader(conn.getInputStream(),"UTF-8"))){
-            String line;while((line=reader.readLine())!=null){
-              if(response.length()+line.length()>60000)throw new IllegalStateException("Place search response too large");
-              response.append(line);
-            }
-          }
-          JSONObject data=new JSONObject(response.toString());
-          JSONArray result=new JSONArray();
-          JSONArray rows=data.optJSONArray("results");
-          if(rows!=null)for(int i=0;i<Math.min(rows.length(),8);i++){
-            JSONObject row=rows.optJSONObject(i);
-            if(row==null||!row.has("latitude")||!row.has("longitude")||!row.has("timezone"))continue;
-            JSONObject option=new JSONObject();
-            String name=row.optString("name","Place");
-            String region=row.optString("admin1","");
-            String country=row.optString("country","");
-            option.put("name",name+(region.isEmpty()?"":", "+region)+(country.isEmpty()?"":", "+country));
-            option.put("lat",row.getDouble("latitude"));
-            option.put("lon",row.getDouble("longitude"));
-            option.put("zone",row.getString("timezone"));
-            if(row.has("elevation")&&!row.isNull("elevation"))option.put("elevation",row.getDouble("elevation"));
-            result.put(option);
-          }
-          JSONObject output=new JSONObject();output.put("results",result);
-          send("somaReceiveBirthplaces",output.toString());
-        }catch(Exception e){placeError("Online place search failed. Use manual coordinates or try again.");}
-        finally{if(conn!=null)conn.disconnect();}
-      },"SomaBirthPlaceSearch").start();
-    }
-    private void placeError(String message){
-      try{JSONObject j=new JSONObject();j.put("error",message);send("somaReceiveBirthplaces",j.toString());}
-      catch(Exception ignored){send("somaReceiveBirthplaces","{\"error\":\"Place search unavailable\"}");}
+    /** Asks for notification permission (Android 13+) when the person turns a reminder on. */
+    @JavascriptInterface public void requestNotifications(){
+      runOnUiThread(()->{
+        ReminderReceiver.ensureChannel(MainActivity.this);
+        if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED)
+          requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},NOTIFICATION_PERMISSION_REQUEST);
+      });
     }
     @JavascriptInterface public void requestLocation(){
       runOnUiThread(()->{
@@ -201,36 +215,59 @@ public final class MainActivity extends Activity {
         else requestPermissions(new String[]{Manifest.permission.ACCESS_COARSE_LOCATION,Manifest.permission.ACCESS_FINE_LOCATION},LOCATION_PERMISSION_REQUEST);
       });
     }
-    /** Opt-in weather query: coordinates go only to api.open-meteo.com, over HTTPS. */
-    @JavascriptInterface public void fetchWeather(double lat,double lon){
-      if(!Double.isFinite(lat)||!Double.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180){
-        sendError("somaReceiveWeather","Coordinates out of range.");return;
-      }
-      new Thread(()->{
-        HttpURLConnection conn=null;
-        try {
-          String params="temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,cloud_cover,wind_speed_10m,wind_direction_10m,wind_gusts_10m,surface_pressure,uv_index,dew_point_2m,weather_code,is_day";
-          String endpoint=String.format(Locale.US,"https://api.open-meteo.com/v1/forecast?latitude=%.5f&longitude=%.5f&current=%s&timezone=auto",lat,lon,params);
-          conn=(HttpURLConnection)new URL(endpoint).openConnection();
-          conn.setRequestMethod("GET");conn.setConnectTimeout(10000);conn.setReadTimeout(10000);
-          conn.setInstanceFollowRedirects(false);
-          conn.setRequestProperty("User-Agent","SomaCalendar/0.2 (Android; Open-Meteo attribution in app)");
-          if(conn.getResponseCode()!=200){sendError("somaReceiveWeather","Provider HTTP "+conn.getResponseCode());return;}
-          StringBuilder text=new StringBuilder();
-          try(BufferedReader reader=new BufferedReader(new InputStreamReader(conn.getInputStream(),"UTF-8"))){
-            String line;while((line=reader.readLine())!=null){
-              if(text.length()+line.length()>40000)throw new IllegalStateException("Weather response too large");
-              text.append(line);
-            }
-          }
-          JSONObject response=new JSONObject(text.toString());
-          if(!response.has("current"))throw new IllegalStateException("Weather fields missing");
-          send("somaReceiveWeather",response.toString());
-        }catch(Exception e){sendError("somaReceiveWeather","Weather unavailable. Try again later.");}
-        finally{if(conn!=null)conn.disconnect();}
-      }).start();
+    /**
+     * Live weather (opt-in). The app turns it on or off and says which place; only that place, rounded to about 1 km,
+     * goes to MET Norway (api.met.no) over HTTPS. Answers through window.somaReceiveWeather with the stored forecast.
+     */
+    @JavascriptInterface public void weatherConfigure(boolean on,String units,double lat,double lon){
+      Weather.configure(getApplicationContext(),on,units);
+      if(!on){runOnUiThread(() -> PanchangWidgets.refreshSky(MainActivity.this));send("somaReceiveWeather","");return;}
+      weatherRefresh(lat,lon);
     }
+    /** Fetch if due (new place, or MET's expiry passed and 30 minutes since the last try); always answers. */
+    @JavascriptInterface public void weatherRefresh(double lat,double lon){
+      final Context app=getApplicationContext();
+      Weather.refresh(app,lat,lon,false,changed -> {
+        JSONObject w=Weather.stored(app);
+        send("somaReceiveWeather",w==null?"":w.toString());
+        if(changed)runOnUiThread(() -> PanchangWidgets.refreshSky(app));
+      });
+    }
+    /** The stored forecast right now, or "" when weather is off or nothing is stored yet. */
+    @JavascriptInterface public String weatherNow(){JSONObject w=Weather.stored(getApplicationContext());return w==null?"":w.toString();}
+    /** Preview builds only: {enabled, versionCode, versionName}. Store builds report enabled:false. */
+    @JavascriptInterface public String updateInfo(){return Updater.info(MainActivity.this);}
+    /** Reads the preview feed; answers through window.somaReceiveUpdate. */
+    @JavascriptInterface public void checkForUpdate(){Updater.check(getApplicationContext(),json->send("somaReceiveUpdate",json));}
+    /** Downloads the newer preview build and opens Android's install prompt. */
+    @JavascriptInterface public void installUpdate(){runOnUiThread(()->Updater.install(MainActivity.this,json->send("somaReceiveUpdate",json)));}
     private String safe(String v){if(v==null)return "";return v.length()>100?v.substring(0,100):v;}
+  }
+  /* The web layer keeps one shared clock (clock.js). Tell it when time may have moved under it: coming back to the
+     front (timers are throttled in the background), and the phone's clock, date or time zone changing while open. */
+  private final android.content.BroadcastReceiver clockReceiver=new android.content.BroadcastReceiver(){
+    @Override public void onReceive(Context c,android.content.Intent i){clockChanged("clock");}
+  };
+  private boolean clockRegistered=false;
+  private void clockChanged(String why){
+    if(web!=null)web.evaluateJavascript("window.somaClockChanged && window.somaClockChanged("+JSONObject.quote(why)+")",null);
+  }
+  @Override protected void onResume() {
+    super.onResume();
+    if(!clockRegistered){
+      android.content.IntentFilter f=new android.content.IntentFilter();
+      f.addAction(android.content.Intent.ACTION_TIME_CHANGED);
+      f.addAction(android.content.Intent.ACTION_TIMEZONE_CHANGED);
+      f.addAction(android.content.Intent.ACTION_DATE_CHANGED);
+      if(Build.VERSION.SDK_INT>=33)registerReceiver(clockReceiver,f,Context.RECEIVER_NOT_EXPORTED);else registerReceiver(clockReceiver,f);
+      clockRegistered=true;
+    }
+    if(web!=null){web.onResume();clockChanged("resume");}
+  }
+  @Override protected void onPause() {
+    if(clockRegistered){try{unregisterReceiver(clockReceiver);}catch(IllegalArgumentException ignored){}clockRegistered=false;}
+    if(web!=null)web.onPause();
+    super.onPause();
   }
   @Override protected void onDestroy() {
     if(web!=null){web.removeJavascriptInterface("SomaNative");web.destroy();web=null;}

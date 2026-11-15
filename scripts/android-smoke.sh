@@ -2,7 +2,7 @@
 set -euo pipefail
 adb install android/app/build/outputs/apk/debug/app-debug.apk
 adb logcat -c
-adb shell am start -n com.soma.calendar/.MainActivity
+adb shell am start -n com.soma.calendar.preview/com.soma.calendar.MainActivity
 sleep 18
 adb logcat -d -v time -s SomaJS:I > soma-js-log.txt
 adb exec-out screencap -p > soma-runtime.png || true

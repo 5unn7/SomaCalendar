@@ -1,19 +1,22 @@
 {
   "name": "soma-cosmic-calendar",
-  "version": "0.1.0",
+  "version": "0.8.0",
   "private": true,
   "description": "Offline-first minimal lunar calendar and Vedic Panchang Android app",
   "license": "MIT",
   "scripts": {
-    "bundle": "esbuild src/app.js --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=android/app/src/main/assets/app.js",
+    "bundle": "node scripts/build-redesign.mjs",
     "test:fixtures": "node tests/grahan-fixtures.mjs",
-    "test:dom": "node tests/dom-ids.mjs"
+    "test": "node tests/grahan-fixtures.mjs && node tests/redesign.mjs && node tests/panchang.mjs && node tests/widget.mjs && npm run bundle && node tests/redesign-ui.mjs && node tests/clock.mjs && node tests/festival-verdict.mjs && node tests/daymap.mjs && node tests/i18n-coverage.mjs && node tests/weather.mjs && node tests/rashi.mjs && node tests/edge-cases.mjs && node tests/now-state.mjs && node tests/a11y.mjs"
   },
   "dependencies": {
     "@grahan/core": "1.0.1",
-    "@grahan/vedic": "1.0.1"
+    "@grahan/vedic": "1.0.1",
+    "astronomy-engine": "2.1.19"
   },
   "devDependencies": {
-    "esbuild": "0.25.10"
+    "axe-core": "^4.10.3",
+    "esbuild": "0.25.10",
+    "jsdom": "26.1.0"
   }
 }

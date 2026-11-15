@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="widget_art">Soma</string>
+  <string name="widget_label_sun">Soma · Sunrise and sunset</string>
+  <string name="widget_label_moon">Soma · Moon</string>
+  <string name="widget_label_festival">Soma · Festival countdown</string>
+  <string name="widget_label_now">Soma · Choghadiya now</string>
+  <string name="widget_label_day">Soma · Today\'s Panchang</string>
+  <string name="widget_label_sky">Soma · Sky and weather</string>
+  <string name="widget_desc_sky">Temperature, the sky as it is now with moving rain, snow, wind and clouds, sunrise, sunset and the moon.</string>
+  <string name="widget_desc_sun">Sunrise, sunset, the sun\'s path today and Brahma muhurat.</string>
+  <string name="widget_desc_moon">Tonight\'s moon, how much is lit, and the next Purnima or Amavasya.</string>
+  <string name="widget_desc_festival">Days to your next festival or vrat, with what to do.</string>
+  <string name="widget_desc_now">The Choghadiya you are in, a bar of the whole day, and Rahu Kaal.</string>
+  <string name="widget_desc_day">The full day: tithi, nakshatra, all 16 Choghadiya, Rahu Kaal and what is coming. Made for tablets.</string>
+</resources>

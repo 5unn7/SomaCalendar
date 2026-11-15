@@ -1,19 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Medium (4x2): moon, NOW, the current window, what comes next, and the next vrat. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
   android:id="@+id/widgetRoot" android:layout_width="match_parent" android:layout_height="match_parent"
-  android:padding="16dp" android:orientation="vertical" android:background="@drawable/widget_bg">
-  <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:text="SOMA / EARTH × SKY" android:textColor="#B5D2BF" android:textSize="11sp" android:letterSpacing=".12"/>
-  <TextView android:id="@+id/widgetDate" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="8dp" android:textColor="#FFFFFF" android:textSize="23sp" android:textStyle="bold"/>
-  <TextView android:id="@+id/widgetPhase" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="4dp" android:textColor="#EDF4ED" android:textSize="14sp"/>
-  <TextView android:id="@+id/widgetTithi" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="3dp" android:textColor="#EDF4ED" android:textSize="12sp"/>
-  <TextView android:id="@+id/widgetWeather" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="7dp" android:textColor="#F2DCA9" android:textSize="14sp"/>
-  <TextView android:id="@+id/widgetWeatherLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:textColor="#B5D2BF" android:textSize="10sp"/>
-  <TextView android:id="@+id/widgetCity" android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginTop="7dp" android:textColor="#B5D2BF" android:textSize="10sp"/>
+  android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:background="@drawable/widget_bg">
+  <ImageView android:id="@+id/wMoon" android:layout_width="56dp" android:layout_height="56dp"
+    android:layout_marginEnd="16dp" android:contentDescription="Moon phase"/>
+  <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+    <TextView android:id="@+id/wLabel" android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:text="NOW" android:textColor="@color/widget_muted" android:textSize="10sp" android:letterSpacing="0.14"
+      android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end"/>
+    <TextView android:id="@+id/wNow" android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:text="Soma" android:textColor="@color/widget_ink" android:textSize="22sp" android:fontFamily="serif"
+      android:maxLines="1" android:ellipsize="end"/>
+    <TextView android:id="@+id/wThen" android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:text="Open Soma once to begin" android:textColor="@color/widget_muted" android:textSize="12sp"
+      android:maxLines="1" android:ellipsize="end"/>
+    <TextView android:id="@+id/wVrat" android:layout_width="match_parent" android:layout_height="wrap_content"
+      android:layout_marginTop="6dp" android:textColor="@color/widget_gold" android:textSize="11sp"
+      android:maxLines="1" android:ellipsize="end"/>
+  </LinearLayout>
 </LinearLayout>

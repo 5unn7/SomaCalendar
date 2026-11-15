@@ -1,8 +1,9 @@
 name: Build Soma debug APK
 on:
   workflow_dispatch:
+  pull_request:
   push:
-    branches: [main]
+    branches: [main, redesign/gujarati-time]
 permissions:
   contents: read
 jobs:
@@ -16,10 +17,12 @@ jobs:
           node-version: '22'
       - name: Install JS transpiler
         run: npm install --no-audit --no-fund
-      - name: Validate bundled Horizon
-        run: node tests/horizon-contract.mjs
-      - name: Transpile bundled scripts for older Android WebViews
-        run: node scripts/transpile-horizon.mjs
+      - name: Browser for the accessibility gate
+        run: npm install --no-save --no-audit --no-fund playwright@1.49.1 && npx playwright install --with-deps chromium
+      - name: Test calendar calculations, translations and accessibility
+        run: npm test
+      - name: Bundle redesigned Soma
+        run: npm run bundle
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -35,9 +38,49 @@ jobs:
           gradle-version: '8.9'
       - name: Compile Android debug APK
         working-directory: android
+        env:
+          SOMA_BUILD: ${{ github.run_number }}
         run: gradle --no-daemon assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: soma-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+  # Every build of the redesign branch replaces the rolling "preview" release. Soma Preview reads its
+  # version.json (You > Updates) and installs the newer APK in place, so nothing is downloaded by hand.
+  publish-preview:
+    needs: apk
+    if: github.event_name == 'push' && github.ref == 'refs/heads/redesign/gujarati-time'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-preview
+      cancel-in-progress: false
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: soma-debug-apk
+      - name: Publish preview release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN: ${{ github.run_number }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mv app-debug.apk soma-preview.apk
+          base="https://github.com/$GH_REPO/releases/download/preview"
+          jq -n --argjson code "$((1000 + RUN))" --arg name "0.8.0-b$RUN" --arg sha "${GITHUB_SHA::7}" \
+            --arg notes "$(printf '%s' "$MESSAGE" | head -n 1)" --arg apk "$base/soma-preview.apk" \
+            --arg sum "$(sha256sum soma-preview.apk | cut -d' ' -f1)" --argjson size "$(stat -c%s soma-preview.apk)" \
+            --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{versionCode:$code,versionName:$name,commit:$sha,notes:$notes,apk:$apk,sha256:$sum,size:$size,published:$at}' > version.json
+          cat version.json
+          gh release delete preview --cleanup-tag --yes 2>/dev/null || true
+          gh release create preview soma-preview.apk version.json --prerelease --target "$GITHUB_SHA" \
+            --title "Soma Preview (latest build)" \
+            --notes "Build $RUN from ${GITHUB_SHA::7}. Soma Preview updates itself from here: You > Updates. To install by hand, download soma-preview.apk."
