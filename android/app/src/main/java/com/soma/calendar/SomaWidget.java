@@ -286,7 +286,11 @@ public final class SomaWidget extends AppWidgetProvider {
 
     void fill(JSONObject f, long now) throws Exception {
       TimeZone tz = TimeZone.getTimeZone(f.optString("zone", "Asia/Kolkata"));
-      SimpleDateFormat time = fmt("h:mm", tz), key = fmt("yyyy-MM-dd", tz), day = fmt("EEE d MMM", tz);
+      String lang = f.optString("lang", "en");
+      JSONObject tx = f.optJSONObject("t");
+      words = tx == null ? new JSONObject() : tx;
+      Locale loc = "gu".equals(lang) ? new Locale("gu", "IN") : "hi".equals(lang) ? new Locale("hi", "IN") : Locale.US;
+      SimpleDateFormat time = fmt("h:mm", tz), key = fmt("yyyy-MM-dd", tz), day = fmt("EEE d MMM", tz, loc);
       long midnight = startOfNextDay(now, tz);
       String today = key.format(new Date(now)), tomorrow = key.format(new Date(midnight + 60_000L));
       long soonest = midnight;
@@ -294,10 +298,10 @@ public final class SomaWidget extends AppWidgetProvider {
       JSONObject t = at(f.optJSONArray("tithi"), now);
       JSONArray chogs = f.optJSONArray("chog");
       int ci = index(chogs, now);
-      if (t == null || ci < 0) { thenLine = "Open Soma to refresh this week"; nextChange = now + 60 * 60_000L; return; }
+      if (t == null || ci < 0) { thenLine = w("wRefresh", "Open Soma to refresh this week"); nextChange = now + 60 * 60_000L; return; }
       hasData = true;
       tithiIndex = tithiIndex(t.optString("n"));
-      tithiName = tithiEnglish(tithiIndex);
+      tithiName = t.optString("l").isEmpty() ? tithiEnglish(tithiIndex) : t.optString("l");
       soonest = Math.min(soonest, t.getLong("e"));
       nowHours = hours(now, tz);
 
@@ -318,7 +322,7 @@ public final class SomaWidget extends AppWidgetProvider {
       JSONObject ch = chogs.getJSONObject(ci);
       long chEnd = ch.getLong("e");
       quality = ch.optString("q");
-      String name = ch.optString("en");
+      String name = PanchangWidgets.local(ch);
       soonest = Math.min(soonest, chEnd);
 
       // Rahu Kaal for today's daylight.
@@ -328,17 +332,17 @@ public final class SomaWidget extends AppWidgetProvider {
       inRahu = rs <= now && now < re;
       if (inRahu) {
         soonest = Math.min(soonest, re);
-        caption = "RAHU · " + time.format(new Date(re));
-        nowLine = "Rahu Kaal until " + time.format(new Date(re));
-        thenLine = "Hold new starts. Then " + nextName(chogs, re) + ".";
+        caption = ("en".equals(lang) ? "RAHU" : w("rahu", "Rahu")) + " · " + time.format(new Date(re));
+        nowLine = w("rahu", "Rahu Kaal") + " " + w("until", "until {x}").replace("{x}", time.format(new Date(re)));
+        thenLine = w("wHold", "Hold new starts") + ". " + w("wThen", "Then {x}").replace("{x}", nextName(chogs, re)) + ".";
       } else {
         if (now < rs) soonest = Math.min(soonest, rs);
         caption = name.toUpperCase(Locale.ROOT) + " · " + time.format(new Date(chEnd));
-        nowLine = name + " until " + time.format(new Date(chEnd));
-        if (rs > now && rs - chEnd < 3 * 3_600_000L) thenLine = "Then Rahu Kaal " + time.format(new Date(rs)) + " – " + time.format(new Date(re));
+        nowLine = name + " " + w("until", "until {x}").replace("{x}", time.format(new Date(chEnd)));
+        if (rs > now && rs - chEnd < 3 * 3_600_000L) thenLine = w("wThen", "Then {x}").replace("{x}", w("rahu", "Rahu Kaal") + " " + time.format(new Date(rs)) + " – " + time.format(new Date(re)));
         else if (ci + 1 < chogs.length()) {
           JSONObject nx = chogs.getJSONObject(ci + 1);
-          thenLine = "Then " + nx.optString("en") + " until " + time.format(new Date(nx.getLong("e")));
+          thenLine = w("wThen", "Then {x}").replace("{x}", PanchangWidgets.local(nx) + " " + w("until", "until {x}").replace("{x}", time.format(new Date(nx.getLong("e")))));
         } else thenLine = "";
       }
 
@@ -347,8 +351,8 @@ public final class SomaWidget extends AppWidgetProvider {
         JSONObject x = vr.getJSONObject(i);
         String on = x.optString("date");
         if (on.compareTo(today) < 0) continue;
-        String when = on.equals(today) ? "Today" : on.equals(tomorrow) ? "Tomorrow" : day.format(key.parse(on));
-        String vname = x.optString("en").isEmpty() ? x.optString("n") : x.optString("en");
+        String when = on.equals(today) ? w("today2", "Today") : on.equals(tomorrow) ? PanchangWidgets.Feed.cap(w("tomorrow", "Tomorrow")) : day.format(key.parse(on));
+        String vname = PanchangWidgets.local(x);
         vratLine = when + " · " + vname;
         break;
       }
@@ -358,7 +362,7 @@ public final class SomaWidget extends AppWidgetProvider {
     private static String nextName(JSONArray chogs, long at) throws Exception {
       for (int i = 0; i < chogs.length(); i++) {
         JSONObject x = chogs.getJSONObject(i);
-        if (x.getLong("s") <= at && at < x.getLong("e")) return x.optString("en");
+        if (x.getLong("s") <= at && at < x.getLong("e")) return PanchangWidgets.local(x);
       }
       return "the next window";
     }
@@ -367,7 +371,11 @@ public final class SomaWidget extends AppWidgetProvider {
       cal.setTimeInMillis(t);
       return cal.get(Calendar.HOUR_OF_DAY) + cal.get(Calendar.MINUTE) / 60.0 + cal.get(Calendar.SECOND) / 3600.0;
     }
-    private static SimpleDateFormat fmt(String pattern, TimeZone tz) { SimpleDateFormat f = new SimpleDateFormat(pattern, Locale.US); f.setTimeZone(tz); return f; }
+    private static SimpleDateFormat fmt(String pattern, TimeZone tz) { return fmt(pattern, tz, Locale.US); }
+    private static SimpleDateFormat fmt(String pattern, TimeZone tz, Locale loc) { SimpleDateFormat f = new SimpleDateFormat(pattern, loc); f.setTimeZone(tz); return f; }
+    private JSONObject words = new JSONObject();
+    /** A word in the app language from the feed, English for older feeds. */
+    private String w(String key, String fallback) { String s = words.optString(key, ""); return s.isEmpty() ? fallback : s; }
     private static long startOfNextDay(long now, TimeZone tz) {
       Calendar cal = Calendar.getInstance(tz);
       cal.setTimeInMillis(now); cal.add(Calendar.DAY_OF_MONTH, 1);

@@ -1189,6 +1189,17 @@ window.SomaPrototype = { health: () => ({ ready: true, version: '0.8.0', tithi: 
 wxLoad();
 try { render(); if (!prefs.onboarded) onboard(1); if (window.SomaNative) SomaNative.appReady(); }
 catch (e) { $('app').textContent = 'Unable to load: ' + e.message; if (window.SomaNative) SomaNative.appFailure(e.message); }
+/* Background refresh: twice a day the shell opens the app off-screen (index.html?bg=1) so reminders keep
+   their 30 days and the widgets their week even when Soma itself is not opened. */
+if (/[?&]bg=1/.test(location.search) && window.SomaNative && SomaNative.bgDone) {
+  try {
+    if (saved.loc && prefs.onboarded) {
+      pushWidgetFeed();
+      if (SomaNative.scheduleReminders) SomaNative.scheduleReminders(JSON.stringify(reminderPlan()));
+    }
+  } catch (e) { if (SomaNative.appFailure) SomaNative.appFailure('background: ' + e.message); }
+  SomaNative.bgDone();
+}
 /* The shared clock ticks just after every minute and whenever time may have moved under us (resume, focus,
    clock or time-zone change). Each screen repaints only as often as what it shows can change. */
 let lastHourKey = '';

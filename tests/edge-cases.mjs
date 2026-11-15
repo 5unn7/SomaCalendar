@@ -22,8 +22,9 @@ assert.equal(Fe.defaultMonthSystem({lat:28.61,lon:77.21,zone:'Asia/Calcutta'}),'
 
 // Nishita kaal is the 8th of 15 night muhurtas, and a midnight festival always gets its own night's nishita.
 const base='android/app/src/main/assets/';
-function boot(loc,prefs){
-  const dom=new JSDOM(readFileSync(base+'index.html','utf8'),{runScripts:'dangerously',url:'https://soma.local'}),w=dom.window;
+function boot(loc,prefs,opt={}){
+  const dom=new JSDOM(readFileSync(base+'index.html','utf8'),{runScripts:'dangerously',url:opt.url||'https://soma.local'}),w=dom.window;
+  if(opt.native)w.SomaNative=opt.native;
   w.localStorage.setItem('soma-redesign-v1',JSON.stringify({loc,prefs:prefs||{onboarded:true,lang:'en',custom:true,sets:['gujarati','india','international','vrat']}}));
   w.HTMLCanvasElement.prototype.getContext=()=>({clearRect(){},createImageData:(x,y)=>({data:new Uint8ClampedArray(x*y*4)}),putImageData(){}});
   w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.scrollTo=()=>{};
@@ -65,5 +66,14 @@ function boot(loc,prefs){
   const h=w.eval("Fe.list('2026-02-25',15,loc).find(x=>x.key==='dhuleti')");assert.equal(h.day,'2026-03-03');
   w.SomaClock.set(new Date('2026-03-03T18:00:00Z'));w.SomaClock.tick('clock');
   assert.match(w.document.querySelector('#app .festival').textContent,/In India: Wed, 4 Mar|In India: Wed 4 Mar/);dom.window.close();}
-console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad');
+// Background refresh (app closed): the off-screen run hands over a widget week in the app language and 30 days of reminders, then says it is done.
+{const got={};const native={fontScale:()=>1,appReady(){},appFailure(m){got.fail=m},updateWidgetFeed(j){got.feed=JSON.parse(j)},scheduleReminders(j){got.rem=JSON.parse(j)},bgDone(){got.done=(got.done||0)+1}};
+  const dom=boot({name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'},{onboarded:true,lang:'gu',custom:true,sets:['gujarati','india','vrat'],reminders:{vrat:true}},{url:'https://soma.local/index.html?bg=1',native}),w=dom.window;
+  assert.equal(got.done,1,'background run finishes once');assert.ok(!got.fail,got.fail);
+  assert.equal(got.feed.lang,'gu');assert.equal(got.feed.t.wOpenOnce,'સોમ એક વાર ખોલો');assert.ok(got.feed.t.until.includes('{x}'));
+  assert.ok(got.feed.chog.every(c=>c.l&&!/^[A-Za-z]/.test(c.l)),'Choghadiya names in Gujarati');assert.ok(got.feed.tithi[0].l);
+  assert.ok((got.feed.vrat||[]).length&&got.feed.vrat.every(x=>x.l),'festival names in Gujarati');assert.ok(Array.isArray(got.rem));dom.window.close();}
+{const got={};const dom=boot({name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'},{lang:'en'},{url:'https://soma.local/index.html?bg=1',native:{fontScale:()=>1,appReady(){},appFailure(){},updateWidgetFeed(){got.feed=1},scheduleReminders(){},bgDone(){got.done=1}}});
+  assert.ok(got.done,'before setup the background run still finishes');dom.window.close();}
+console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language');
 console.log('PASS: sunset after midnight far north, La Ronge winter day, Asia/Calcutta defaults, nishita kaal width, Janmashtami nishita');
