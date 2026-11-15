@@ -1110,3 +1110,35 @@ header.atitle{position:static;z-index:auto;margin:0;max-width:none;background:no
 .dialbox .angas{margin-top:8px;padding-top:6px}
 @media (max-width:699px){.dialbox .dialwrap{width:min(100%,222px)}}
 @media (max-width:699px){.dialbox .dialwrap{width:min(100%,206px)}.dialbox{padding-top:8px}}
+
+/* ---- Chandra rashi card (Aakash/Deepa) and the full-size Moon photo ---------------------------------------------- */
+/* The photo fills its own frame, so it is clipped by the SVG disc only; the old 40% clip left a black ring round it. */
+.moonsvg image{clip-path:none}
+.rashisec{margin-top:14px}
+.card.rashicard{padding:16px 16px 14px;box-shadow:var(--card-shadow);border-color:transparent}
+.rashicard .rtop{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:14px;width:100%;cursor:pointer;min-height:44px}
+.rashicard .rtop:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:12px}
+.rashicard .rorb{flex:none;width:52px;height:52px;border-radius:50%;filter:drop-shadow(0 6px 10px rgba(0,0,0,.28))}
+.rashicard .rorb .moonsvg{width:52px;height:52px;display:block}
+.rashicard .rtext{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.rashicard .rtext .eyebrow{margin:0}
+.rashicard h2{margin:0;font:400 1.5rem/1.15 var(--display);letter-spacing:-.01em}
+.rashicard .runtil{color:var(--muted);font:500 .8125rem/1.35 var(--body)}
+.rashicard .rchev{color:var(--muted);font-size:1.5rem;line-height:1}
+.zrail{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin:14px 0 10px}
+.zrail i{position:relative;height:6px;border-radius:3px;background:var(--surface2);overflow:hidden}
+.zrail i.past{background:var(--accent-soft)}
+.zrail i.on{background:var(--surface2)}
+.zrail i.on::before{content:"";position:absolute;inset:0 auto 0 0;width:var(--p);background:var(--accent);border-radius:3px}
+.zrail i.mine{box-shadow:0 0 0 1.5px var(--ink);overflow:visible}
+.rashicard .rgood{margin:0;color:var(--muted);font-size:.875rem;line-height:1.45}
+.rashicard .rgood strong{color:var(--ink);font-weight:600}
+.rashicard + .personalDay,.rashicard + .lesson{margin-top:10px}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]) .rashicard h2{font-style:italic;color:#f4dcb2}
+  :root:not([data-theme=light]) .zrail i.on::before{background:linear-gradient(90deg,#f0b45a,#ffe7c2)}
+}
+:root[data-theme=dark] .rashicard h2{font-style:italic;color:#f4dcb2}
+:root[data-theme=dark] .zrail i.on::before{background:linear-gradient(90deg,#f0b45a,#ffe7c2)}
+html[lang=gu] .rashicard h2,html[lang=hi] .rashicard h2{font-style:normal}
+.moonbox .moonsvg .glow,.rashicard .moonsvg .glow{display:none}

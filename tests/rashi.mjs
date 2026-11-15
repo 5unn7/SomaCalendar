@@ -37,7 +37,8 @@ const keyOf=el=>el.getAttribute('onclick').match(/\d{4}-\d{2}-\d{2}/)[0];
   const r=Math.floor(P.moonSid(new Date(Date.parse('2026-11-14T06:30:00Z')))/30);
   assert.ok(card.closest('section').querySelector('h2').textContent.includes(M.RASHI[r].en),'names the rashi the Moon is in now');
   assert.ok(/until .*, then /.test(card.textContent),'says until when and which rashi is next');
-  assert.equal($$('#app .rring path').length,12);assert.equal($$('#app .rring path.on').length,1);assert.equal($$('#app .rring path.mine').length,1,'janma rashi ringed');
+  assert.equal($$('#app .rashicard .zrail i').length,12);assert.equal($$('#app .rashicard .zrail i.on').length,1);assert.equal($$('#app .rashicard .zrail i.mine').length,1,'janma rashi ringed');
+  w.show('today');assert.ok($('#app .rashicard'),'Today shows the Chandra rashi card');assert.ok(!$('#app .rashisec .personalDay'),'Today has the card alone');w.show('personal');
   assert.ok($('#app .card.me + .personalDay'),'personal line follows the birth card');
   w.show('calendar');
   const fav=$$('#app .favdays .chip.fav'),dots=$$('#app .calendar button.mine');
@@ -52,7 +53,7 @@ const keyOf=el=>el.getAttribute('onclick').match(/\d{4}-\d{2}-\d{2}/)[0];
   assert.deepEqual(errors,[]);}
 // Without birth details: CTA on Calendar and Today; saving stays on Calendar.
 {const {w,errors,$,$$}=boot({loc:{name:'Ahmedabad',...loc},prefs:{onboarded:true}});
-  w.show('personal');assert.ok($('#app .rashicard'),'rashi card needs no birth details');assert.equal($$('#app .rring path.mine').length,0);
+  w.show('personal');assert.ok($('#app .rashicard'),'rashi card needs no birth details');assert.equal($$('#app .zrail i.mine').length,0);
   assert.ok(/favourable/i.test($('#app .card.me.empty').textContent),'You CTA mentions favourable days');
   w.show('calendar');const cta=$('#app .favcta button');assert.ok(cta,'Calendar CTA');assert.equal($$('#app .favdays').length,0);
   cta.click();assert.ok($('#modal').open,'CTA opens the birth form');
