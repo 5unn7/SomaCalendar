@@ -25,7 +25,8 @@ for(const loc of [{name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'}
       assert.ok(!/A mixed day|Take care|A day for care/i.test(hero),`${lay} hero on ${f.en} calls the day mixed or care: ${hero.slice(0,200)}`);
       assert.ok(hero.includes(w.eval('L').festName(w.eval(`verdict(vedicDay('${f.day}'))`).festival)),`${lay} hero names the festival on ${f.day}`);
     }
-    if(v.win&&typeof v.festival.tithi==='number'){const vf=v.festival,ti=w.Kaal.tithi(v.win.start).index;assert.equal(ti,vf.tithi,`${f.en} ${f.day}: puja window ${v.win.start.toISOString()} falls in tithi ${ti}, not ${vf.en}'s ${vf.tithi}`);
+    // Midnight festivals keep the nishita of their own night even when the tithi ends minutes before it (Janmashtami 2026).
+    if(v.win&&typeof v.festival.tithi==='number'){const vf=v.festival,ti=w.Kaal.tithi(v.win.start).index;if(vf.rule!=='midnight')assert.equal(ti,vf.tithi,`${f.en} ${f.day}: puja window ${v.win.start.toISOString()} falls in tithi ${ti}, not ${vf.en}'s ${vf.tithi}`);
       const fr=w.eval(`vedicDay('${f.day}').frame`);if(vf.rule==='sunset'||vf.rule==='midnight')assert.ok(v.win.start>=fr.sunset,`${vf.en} ${f.day}: ${vf.rule} festival puja window is after sunset`);else assert.ok(v.win.end<=fr.sunset,`${f.en}: daytime window`);windows++;}
     const full=w.document.querySelector('.card.verdict').textContent;assert.ok(!BAN.test(full),`Full panchang on ${f.en} ${f.day}: ${full}`);
     checked++;

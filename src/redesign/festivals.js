@@ -70,14 +70,16 @@
   /* Location defaults: Gujarat → Gujarati + pan-Indian; rest of India → pan-Indian; elsewhere → Gujarati + pan-Indian + international
      (Soma is Gujarati-first, and abroad most of its readers keep the Gujarati calendar, so Labh Pancham or Bestu Varas
      must not vanish just because the phone is in Canada). */
+  /* India's zone has two names: many browsers and some Android phones still report the old Asia/Calcutta. */
+  const indiaZone = z => z === 'Asia/Kolkata' || z === 'Asia/Calcutta';
   function defaultSets(loc) {
     const inGujarat = loc.lat >= 20 && loc.lat <= 24.8 && loc.lon >= 68 && loc.lon <= 74.6;
-    const inIndia = loc.zone === 'Asia/Kolkata';
+    const inIndia = indiaZone(loc.zone);
     return inGujarat ? ['gujarati', 'india', 'vrat'] : inIndia ? ['india', 'vrat'] : ['gujarati', 'india', 'international', 'vrat'];
   }
   /* North Indian users count months purnimanta; Gujarat, Maharashtra and the South use amanta. */
   function defaultMonthSystem(loc) {
-    const north = loc.zone === 'Asia/Kolkata' && loc.lat > 23.5 && !(loc.lon < 74.6 && loc.lat < 24.8);
+    const north = indiaZone(loc.zone) && loc.lat > 23.5 && !(loc.lon < 74.6 && loc.lat < 24.8);
     return north ? 'purnimanta' : 'amanta';
   }
 
@@ -102,7 +104,9 @@
       const day = K.addDay(fromDay, i), start = K.instant(day, '00:00', loc.zone), end = K.instant(K.addDay(day, 1), '00:00', loc.zone);
       const r = A.SearchRiseSet('Sun', obs, 1, start, 1.2), s = A.SearchRiseSet('Sun', obs, -1, start, 1.2);
       const sunrise = r && r.date < end ? r.date : K.instant(day, '06:00', loc.zone);
-      const sunset = s && s.date < end && s.date > sunrise ? s.date : K.instant(day, '18:00', loc.zone);
+      // The first sunset after sunrise, even when it falls after local midnight (far north in summer).
+      const own = r && r.date < end ? A.SearchRiseSet('Sun', obs, -1, r.date, 1) : null;
+      const sunset = own && own.date - r.date < 864e5 ? own.date : s && s.date < end && s.date > sunrise ? s.date : K.instant(day, '18:00', loc.zone);
       out.push({ day, start, end, sunrise, sunset });
     }
     for (let i = 0; i < out.length; i++) {

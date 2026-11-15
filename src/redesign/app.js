@@ -160,8 +160,11 @@ function festWindow(d, f) {
   if (rule === 'moonrise') return null;
   const inTithi = w => !f || typeof f.tithi !== 'number' || (K.tithi(w.start).index === f.tithi && K.tithi(new Date(+w.end - 6e4)).index === f.tithi);
   if (rule === 'midnight') {
-    const night = fr.nextSunrise - fr.sunset, mid = +fr.sunset + night / 2, w = { start: new Date(mid - night / 16), end: new Date(mid + night / 16), key: 'nishita' };
-    return inTithi(w) ? w : null;
+    // Nishita kaal is the 8th of the night's 15 muhurtas, centred on the night's midpoint (Shivratri 2026, New Delhi:
+    // 12:09 to 1:00 am). It is the puja time of the night the festival is kept, even when the tithi ends just before it
+    // (Janmashtami 2026 in Ahmedabad: Ashtami ends 12:14 am, nishita begins 12:15 am).
+    const night = fr.nextSunrise - fr.sunset, mid = +fr.sunset + night / 2;
+    return { start: new Date(mid - night / 30), end: new Date(mid + night / 30), key: 'nishita' };
   }
   const from = isToday() && now() > fr.sunrise ? now() : fr.sunrise;
   let wins = P.goodWindows(d, from, { accept: c => SHUBH_CHOG(c) && !c.night });
@@ -808,7 +811,7 @@ function receiveGPS(p) {
   if (p.error) { toast(t('locFailed')); return; }
   const near = Places.nearest(p.lat, p.lon);
   const name = near ? (near.km > 15 ? t('nearPlace', { p: near.name }) : near.name) : t('currentLoc');
-  setLoc({ name, lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), zone: p.zone || (near && near.zone) || 'Asia/Kolkata' });
+  setLoc({ name, lat: +(+p.lat).toFixed(4), lon: +(+p.lon).toFixed(4), zone: (p.zone === 'Asia/Calcutta' ? 'Asia/Kolkata' : p.zone) || (near && near.zone) || 'Asia/Kolkata' });
   applyLocationDefaults(); persist(); haptic('success');
   if ($('modal').open) $('modal').close();
   scheduleNative(true);
