@@ -283,7 +283,13 @@ function festWindow(d, f) {
     case 'pradosh': {
       // Pradosh belongs to the tithi too: where it has ended before sunset (Dev Diwali 2026 in Toronto) no evening time is offered.
       if (typeof f.tithi === 'number' && K.tithi(new Date(set)).index !== f.tithi && K.tithi(new Date(set + night / 5 - 6e4)).index !== f.tithi) return null;
-      return f.key === 'holika' ? clear(set, set + night / 5) : W(set, set + night / 5);
+      // And it ends with the tithi when the tithi ends inside pradosh (Pradosh vrat, Ahmedabad 2026-03-01: Trayodashi ends 7:10 pm).
+      let a = set, b = set + night / 5;
+      if (typeof f.tithi === 'number') {
+        const ts = K.tithi(new Date(set));
+        if (ts.index === f.tithi) b = Math.min(b, +ts.end); else { const te = K.tithi(new Date(b - 6e4)); a = Math.max(a, +te.start + 6e4); }
+      }
+      return f.key === 'holika' ? clear(a, b) : W(a, b);
     }
     // Nishita kaal: the 8th of the night's 15 muhurtas, centred on its midpoint (Shivratri 2026, New Delhi: 12:09 to 1:00 am).
     case 'nishita': { const mid = set + night / 2; return W(mid - night / 30, mid + night / 30); }
@@ -1184,7 +1190,10 @@ const zoneShort = () => (new Intl.DateTimeFormat('en-IN', { timeZone: loc.zone, 
 function plan(time, title) {
   if (!time) {
     const d = vedicDay(day), from = isToday() ? now() : d.frame.sunrise, w = P.goodWindows(d, from, { strict: true, accept: c => SHUBH_CHOG(c) && !c.night })[0];
-    const at = w ? w.start : isToday() ? new Date(Math.ceil(+now() / 9e5) * 9e5) : K.instant(day, '10:00', loc.zone), p = K.parts(at, loc.zone);
+    // Rounded up to the next quarter hour, but never past the chosen day (after 11:45 pm that would be tomorrow's midnight).
+    let at = w ? w.start : isToday() ? new Date(Math.ceil(+now() / 9e5) * 9e5) : K.instant(day, '10:00', loc.zone);
+    if (K.dateKey(at, loc.zone) !== day) at = K.instant(day, '23:59', loc.zone);
+    const p = K.parts(at, loc.zone);
     time = p.hour + ':' + p.minute;
   }
   sheet(t('planEvent'), `<div class="eyebrow">${esc(titleDay(day))}</div>`, `<form onsubmit="saveEvent(event)"><label>${esc(t('evTitle'))}<input id="eventTitle" required maxlength="100" value="${esc(title || '')}" placeholder="${esc(t('evPlaceholder'))}"></label><label>${esc(t('evTime'))}<input type="time" id="eventTime" value="${time}" required oninput="timingCheck()"></label><div class="card" id="timingCheck" aria-live="polite"></div><label>${esc(t('evDuration'))}<select id="duration"><option value="60">${esc(t('dur60'))}</option><option value="30">${esc(t('dur30'))}</option><option value="120">${esc(t('dur120'))}</option></select></label><p class="caption">${esc(placeName(loc.name))} · ${esc(zoneShort())}</p><button class="primary">${esc(t('savePlan'))}</button></form>`);

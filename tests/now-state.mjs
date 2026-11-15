@@ -39,6 +39,12 @@ function boot(prefs,opt={}){
   {const d=w.eval(`vedicDay('2026-11-16')`),kl=w.eval(`kaalsOf(vedicDay('2026-11-16'))`);
    const c=d.choghadiya.find(c=>!c.night&&c.nature==='good'&&!kl.some(p=>p.start<c.end&&c.start<p.end));
    if(c){w.SomaClock.set(new Date((+c.start+ +c.end)/2));w.SomaClock.tick('clock');w.setDay('2026-11-16');w.show('today');assert.ok($('#app .skyhero.today .pill').classList.contains('good'),'clean shubh Choghadiya reads Good');}}
+  // A pradosh puja ends with its tithi (Ahmedabad 2026-03-01: Trayodashi ends in the evening).
+  {const r=w.eval("(()=>{const f=observances('2026-02-25',10).find(x=>x.day==='2026-03-01'&&Fe.pujaOf(x)==='pradosh');if(!f)return null;const win=festWindow(vedicDay(f.day),f);return win&&{s:+win.start,e:+win.end,te:+K.tithi(win.start).end,ok:K.tithi(win.start).index===f.tithi}})()");
+   if(r){assert.ok(r.ok,'pradosh starts in the tithi');assert.ok(r.e<=r.te,'pradosh window ends by the tithi end');}}
+  // After 11:45 pm the Plan sheet's default time stays on the chosen day, not tomorrow's midnight.
+  {w.SomaClock.set(new Date('2026-11-15T18:20:00Z'));w.SomaClock.tick('clock');w.setDay(w.eval('todayKey()'));w.plan();
+   assert.equal($('#eventTime').value,'23:59','late default stays today');w.closeSheet();}
   // Back walks out: sheet, then page, then Today.
   w.push('panchang');w.termSheet('tithi');assert.ok($('#modal').open);assert.equal(w.somaBack(),true);assert.ok(!$('#modal').open,'Back closes the sheet');
   assert.equal(w.somaBack(),true);assert.equal(w.eval('view'),'today','Back leaves the pushed page');
