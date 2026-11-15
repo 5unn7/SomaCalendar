@@ -21,7 +21,10 @@ for(const lay of ['sky','folio','dial']){w.setLayout(lay);assert.ok(w.document.q
 // Midnight rollover: when the clock crosses into a new local day, Today follows it.
 {w.show('today');const today=w.document.querySelector('#app input[type=date]').value;w.SomaClock.advance(864e5);w.SomaClock.tick();const next=w.Kaal.addDay(today,1);assert.equal(w.document.querySelector('#app input[type=date]').value,next);w.SomaClock.reset();w.SomaClock.tick();}
 for(const view of ['today','calendar','muhurat','moon','learn','personal']){w.show(view);assert.ok(w.document.querySelector('#app h1'));}
-w.show('calendar');w.plan();w.document.querySelector('#eventTitle').value='<family & friends>';w.saveEvent({preventDefault(){}});assert.ok(w.document.querySelector('#app').textContent.includes('<family & friends>'));assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).events.length,1);assert.equal(w.document.querySelector('family'),null);
+w.show('calendar');w.plan();w.document.querySelector('#eventTitle').value='<family & friends>';w.saveEvent({preventDefault(){}});
+// When the wall clock sits in a kaal (Gulika at midday), the first Save asks once and the second saves anyway.
+if(w.document.querySelector('#modal').open)w.saveEvent({preventDefault(){}});
+assert.ok(w.document.querySelector('#app').textContent.includes('<family & friends>'));assert.equal(JSON.parse(w.localStorage.getItem('soma-redesign-v1')).events.length,1);assert.equal(w.document.querySelector('family'),null);
 w.show('personal');w.editProfile();w.document.querySelector('#birthDate').value='1993-08-18';w.document.querySelector('#birthTime').value='10:45';
 // No birthplace picked: the chart is not made from wherever the phone is now; the form asks for the place instead.
 assert.equal(w.document.querySelector('#birthTime').defaultValue,'','birth time starts empty, never a made-up 12:00');

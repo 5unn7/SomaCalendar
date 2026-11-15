@@ -628,7 +628,7 @@
   Object.assign(STR.en, {
     good: 'Good', festivalSets: 'Festivals', remVrat: 'Evening before vrats and festivals', remParana: 'When parana opens', remRahu: 'When Rahu Kaal begins',
     lvGood: 'Good time', lvNeutral: 'Neutral', lvBad: 'Avoid',
-    underKaal: '{chog} is running, but {kaal} outranks it', holdNew: 'Hold new starts until it ends', kaalFrom: '{kaal} from {time}',
+    underKaal: '{chog} is running, but this outranks it', holdNew: 'Hold new starts until it ends', kaalFrom: '{kaal} from {time}',
     thenT: 'Next good: {what} {span}', thenTomorrow: 'Next good: {what}, tomorrow {span}',
     festNight: 'Festival night', festToday: 'Today', whatIsX: 'What is {x}?', vsShort: 'VS', abhijitShort: 'Abhijit', brahmaShort: 'Brahma', kaalWord: 'Kaal',
     pujaTime: 'Puja time', pujaAt: '{name} {span}', pujaWas: '{name} was {span}', moonriseLine: 'Moonrise {time}', moonriseWas: 'Moon rose at {time}',
@@ -646,7 +646,7 @@
       hora: 'Each hour is ruled by a planet in turn. Choose the hora of the planet that suits the work.',
       amanta: 'Amanta months end on Amas (Gujarat, Maharashtra, the South). Purnimanta months end on Purnima (North India). Festivals fall on the same day either way.'
     },
-    fullPanchang: 'Full panchang', fullNew: 'Purnima, Amas', openToday: 'Open day', timings: 'Timings', findTab: 'Find a day',
+    allFestivals: 'All festivals', lunarView: 'Lunar month', shuklaPaksha: 'Shukla paksha', krishnaPaksha: 'Krishna paksha', waxingWord: 'waxing', waningWord: 'waning', kshaya: 'Kshaya', fullPanchang: 'Full panchang', fullNew: 'Purnima, Amas', openToday: 'Open day', timings: 'Timings', findTab: 'Find a day',
     thisWeek: 'This week', nextWeek: 'Next week', weekOf: 'Week of {d}',
     whyNak: '{nak} nakshatra: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'Why this day', whyClean: 'Clear of Rahu Kaal, Yamaganda, Gulika, Dur Muhurta and Bhadra',
     grihaDay: 'Kharmas and Chaturmas are skipped for griha pravesh.', nowKaal: '{kaal} until {time}', planThis: 'Plan this', phasesAhead: 'Next phases',
@@ -655,7 +655,7 @@
   Object.assign(STR.gu, {
     festivalSets: 'તહેવાર', remVrat: 'વ્રત અને તહેવારની આગલી સાંજે', remParana: 'પારણાં શરૂ થાય ત્યારે', remRahu: 'રાહુ કાળ શરૂ થાય ત્યારે',
     lvGood: 'શુભ સમય', lvNeutral: 'સામાન્ય', lvBad: 'અશુભ',
-    underKaal: '{chog} ચાલે છે, પણ {kaal} વધુ ભારે છે', holdNew: 'તે પૂરો થાય ત્યાં સુધી નવું કામ રોકો', kaalFrom: '{time} થી {kaal}',
+    underKaal: '{chog} ચાલે છે, પણ આ વધુ ભારે છે', holdNew: 'તે પૂરો થાય ત્યાં સુધી નવું કામ રોકો', kaalFrom: '{time} થી {kaal}',
     thenT: 'પછી શુભ: {what} {span}', thenTomorrow: 'પછી શુભ: {what}, આવતીકાલે {span}',
     festNight: 'તહેવારની રાત', festToday: 'આજે', whatIsX: '{x} એટલે શું?', vsShort: 'વિ.સં.', abhijitShort: 'અભિજિત', brahmaShort: 'બ્રહ્મ', kaalWord: 'કાળ',
     pujaTime: 'પૂજાનો સમય', pujaAt: '{name} {span}', pujaWas: '{name} {span} હતું', moonriseLine: 'ચંદ્રોદય {time}', moonriseWas: 'ચંદ્રોદય {time} એ થયો',
@@ -673,7 +673,7 @@
       hora: 'દરેક કલાક વારાફરતી એક ગ્રહનો હોય છે. કામને અનુકૂળ ગ્રહની હોરા પસંદ કરો.',
       amanta: 'અમાંત માસ અમાસે પૂરો થાય (ગુજરાત, મહારાષ્ટ્ર, દક્ષિણ). પૂર્ણિમાંત માસ પૂનમે પૂરો થાય (ઉત્તર ભારત). તહેવાર બંનેમાં એક જ દિવસે આવે છે.'
     },
-    fullPanchang: 'આખું પંચાંગ', fullNew: 'પૂનમ, અમાસ', openToday: 'દિવસ ખોલો', timings: 'સમય', findTab: 'દિવસ શોધો',
+    allFestivals: 'બધા તહેવાર', lunarView: 'ચાંદ્ર માસ', shuklaPaksha: 'સુદ પક્ષ', krishnaPaksha: 'વદ પક્ષ', waxingWord: 'વધતો ચંદ્ર', waningWord: 'ઘટતો ચંદ્ર', kshaya: 'ક્ષય', fullPanchang: 'આખું પંચાંગ', fullNew: 'પૂનમ, અમાસ', openToday: 'દિવસ ખોલો', timings: 'સમય', findTab: 'દિવસ શોધો',
     thisWeek: 'આ અઠવાડિયે', nextWeek: 'આવતા અઠવાડિયે', weekOf: '{d} નું અઠવાડિયું',
     whyNak: '{nak} નક્ષત્ર: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'આ દિવસ કેમ', whyClean: 'રાહુ કાળ, યમગંડ, ગુલિક, દુર્મુહૂર્ત અને ભદ્રા વગર',
     grihaDay: 'ગૃહપ્રવેશ માટે કમૂરતાં અને ચાતુર્માસ છોડી દેવાય છે.', nowKaal: '{time} સુધી {kaal}', planThis: 'આયોજન કરો', phasesAhead: 'આગળની કળા',
@@ -682,7 +682,7 @@
   Object.assign(STR.hi, {
     festivalSets: 'पर्व', remVrat: 'व्रत और पर्व की पिछली शाम', remParana: 'पारण शुरू होने पर', remRahu: 'राहु काल शुरू होने पर',
     lvGood: 'शुभ समय', lvNeutral: 'सामान्य', lvBad: 'अशुभ',
-    underKaal: '{chog} चल रहा है, पर {kaal} भारी है', holdNew: 'इसके खत्म होने तक नया काम रोकें', kaalFrom: '{time} से {kaal}',
+    underKaal: '{chog} चल रहा है, पर यह भारी है', holdNew: 'इसके खत्म होने तक नया काम रोकें', kaalFrom: '{time} से {kaal}',
     thenT: 'आगे शुभ: {what} {span}', thenTomorrow: 'आगे शुभ: {what}, कल {span}',
     festNight: 'पर्व की रात', festToday: 'आज', whatIsX: '{x} क्या है?', vsShort: 'वि.सं.', abhijitShort: 'अभिजित', brahmaShort: 'ब्रह्म', kaalWord: 'काल',
     pujaTime: 'पूजा का समय', pujaAt: '{name} {span}', pujaWas: '{name} {span} था', moonriseLine: 'चंद्रोदय {time}', moonriseWas: 'चंद्रोदय {time} पर हुआ',
@@ -700,7 +700,7 @@
       hora: 'हर घंटा बारी-बारी से एक ग्रह का होता है। काम के अनुकूल ग्रह की होरा चुनें।',
       amanta: 'अमांत मास अमावस्या पर पूरा होता है (गुजरात, महाराष्ट्र, दक्षिण)। पूर्णिमांत मास पूर्णिमा पर पूरा होता है (उत्तर भारत)। पर्व दोनों में एक ही दिन आते हैं।'
     },
-    fullPanchang: 'पूरा पंचांग', fullNew: 'पूर्णिमा, अमावस्या', openToday: 'दिन खोलें', timings: 'समय', findTab: 'दिन खोजें',
+    allFestivals: 'सभी त्योहार', lunarView: 'चांद्र मास', shuklaPaksha: 'शुक्ल पक्ष', krishnaPaksha: 'कृष्ण पक्ष', waxingWord: 'बढ़ता चंद्र', waningWord: 'घटता चंद्र', kshaya: 'क्षय', fullPanchang: 'पूरा पंचांग', fullNew: 'पूर्णिमा, अमावस्या', openToday: 'दिन खोलें', timings: 'समय', findTab: 'दिन खोजें',
     thisWeek: 'इस सप्ताह', nextWeek: 'अगले सप्ताह', weekOf: '{d} का सप्ताह',
     whyNak: '{nak} नक्षत्र: {kind}', whyTithi: '{tithi}: {kind}', whyGood: 'यह दिन क्यों', whyClean: 'राहु काल, यमगंड, गुलिक, दुर्मुहूर्त और भद्रा से मुक्त',
     grihaDay: 'गृह प्रवेश के लिए खरमास और चातुर्मास छोड़े जाते हैं।', nowKaal: '{time} तक {kaal}', planThis: 'योजना बनाएँ', phasesAhead: 'आगे की कलाएँ',
