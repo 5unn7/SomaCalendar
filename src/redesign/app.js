@@ -882,12 +882,12 @@ function miniPanchang(d, v) {
 function todayView() {
   const d = vedicDay(day), v = todayVerdict(d), cx = heroContext(d);
   const polar = d.frame.polar ? `<p class="notice card">${esc(t('polarNote'))}</p>` : '';
-  // Phone: the Sky card and the dial fill one screen. Tablet and open foldables: the day's verdict, the day board
-  // and what is coming up sit beside them, so the wide screen is used rather than scrolled.
+  // Phone: the Sky card and the dial fill one screen. Tablet and open foldables: the day's verdict and what is
+  // coming up sit beside them, so the wide screen is used rather than scrolled.
   const dayCard = `<section class="card dayline"><div class="row"><span class="eyebrow">${esc(t('ovPanchang'))}</span><button class="quiet more" onclick="push('panchang')">${esc(t('fullPanchang'))} ›</button></div><p>${esc(daySentence(v))}</p></section>`;
   $('app').innerHTML = `<div class="split today"><div class="lead">${todayHero(d, v, cx)}</div><div class="rest">`
     + polar + paranaToday(day)
-    + `<div class="wideonly">${dayCard}${dayBoard(d)}${upcomingSection(todayKey().slice(0, 7), todayKey(), 3)}</div></div></div>`;
+    + `<div class="wideonly">${dayCard}${upcomingSection(todayKey().slice(0, 7), todayKey(), 3)}</div></div></div>`;
   scheduleNative();
   wxRequest();
 }

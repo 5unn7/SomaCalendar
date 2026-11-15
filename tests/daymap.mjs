@@ -50,6 +50,10 @@ $$(B+'.ctile')[0].click();assert.ok(/Choghadiya/.test(w.document.querySelector('
 w.setDay('2026-11-24');w.show('muhurat');assert.ok($$(B+'.bcol.bad .brow').some(b=>/Bhadra/.test(b.textContent)),'Bhadra on Kartik Purnima');assert.ok(w.document.querySelector(B+'.ribbon .m.bh'),'Bhadra on the ribbon');
 w.setDay('2026-11-14');
 w.show('today');assert.ok(w.document.querySelector('#app .dialbox .dial-hand'),'Today dial shows now');
+assert.ok(!w.document.querySelector('#app .boardsec'),'Today has one day at a glance: the dial, not the Muhurat board');
+// The redesign drops the "At a glance" heading so Today fits one phone screen; the dial card is the one day at a glance.
+assert.equal(w.document.querySelectorAll('#app .dialbox').length,1,'one day at a glance on Today: the dial card');
+assert.ok((w.document.querySelector('#app').textContent.match(/At a glance/g)||[]).length<=1,'at most one "At a glance" heading on Today');
 // Before sunrise the night still running is yesterday's: the board and strip show it, with the now marker.
 w.SomaClock.set(Date.parse('2026-11-13T20:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');   // 2:00 am in Ahmedabad
 w.show('muhurat');assert.ok(w.document.querySelector(B+'.ribbon .now'),'pre-dawn: now marker on last night');assert.ok($$(B+'.ctile.current').length===1,'pre-dawn: running Choghadiya marked');

@@ -1106,6 +1106,7 @@ header.atitle{position:static;z-index:auto;margin:0;max-width:none;background:no
 .dialbox .nx{min-height:44px;padding:6px 10px;border-radius:14px;background:var(--surface2);color:var(--ink)}
 .dialbox .nx.bad small{color:var(--bad-text)}.dialbox .nx.good small{color:var(--good-text)}
 .dialbox .nx b{font-size:.8125rem}
+.dialbox .nx.past{opacity:1}.dialbox .nx.past small,.dialbox .nx.past b{color:var(--muted)}
 .dialbox .angas{margin-top:8px;padding-top:6px}
 @media (max-width:699px){.dialbox .dialwrap{width:min(100%,222px)}}
 @media (max-width:699px){.dialbox .dialwrap{width:min(100%,206px)}.dialbox{padding-top:8px}}
