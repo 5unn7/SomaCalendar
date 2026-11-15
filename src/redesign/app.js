@@ -842,23 +842,25 @@ function personalLine(d, ref) {
     + `<p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[p.tara.key]))}</p>`
     + (next ? `<div class="row nextfav"><button class="quiet" onclick="setDay('${next}');show('today')">${esc(t('nextFav', { d: dayLabel(next) }))}</button><button class="quiet" onclick="show('calendar')">${esc(t('seeMonth'))} ›</button></div>` : '') + `</div>`;
 }
-/* A ring of the twelve rashis, Mesha at the top going clockwise: the Moon's rashi lit, the janma rashi ringed. */
-function rashiRing(r, mine) {
-  const seg = i => { const a0 = (i * 30 - 90 + 2) * Math.PI / 180, a1 = ((i + 1) * 30 - 90 - 2) * Math.PI / 180, R = 26, q = 17;
-    const pt = (a, rr) => (30 + rr * Math.cos(a)).toFixed(2) + ' ' + (30 + rr * Math.sin(a)).toFixed(2);
-    return `<path d="M${pt(a0, R)} A${R} ${R} 0 0 1 ${pt(a1, R)} L${pt(a1, q)} A${q} ${q} 0 0 0 ${pt(a0, q)}Z" class="${i === r ? 'on' : ''}${i === mine ? ' mine' : ''}"/>`; };
-  return `<svg class="rring" viewBox="0 0 60 60" width="60" height="60" aria-hidden="true">${[...Array(12).keys()].map(seg).join('')}</svg>`;
+/* The Moon's path through the twelve rashis as one rail, Mesha first: rashis already passed are filled, the one the
+   Moon is in fills as far as it has gone, and the janma rashi is ringed. */
+function rashiRail(r, frac, mine) {
+  return `<div class="zrail" aria-hidden="true">${[...Array(12).keys()].map(i => `<i class="${i < r ? 'past' : ''}${i === r ? 'on' : ''}${i === mine ? ' mine' : ''}"${i === r ? ` style="--p:${Math.round(frac * 100)}%"` : ''}></i>`).join('')}</div>`;
 }
-/* Chandra rashi: which rashi the Moon is passing through now (or at sunrise on another day), until when, and what it supports. */
-function rashiCard(d, onYou) {
-  const at = onYou || isToday() ? now() : d.frame.sunrise, r = Math.floor(P.moonSid(at) / 30), R = M.RASHI[r], nx = (r + 1) % 12;
+/* Chandra rashi as a card in the Aakash/Deepa system: tonight's Moon, which rashi it is passing through (now on today,
+   at sunrise on another day), until when, its path through the twelve, and what it supports. On Today it is the card
+   alone; on You the personal line follows it. */
+function rashiCard(d, onYou, onToday) {
+  const at = onYou || isToday() ? now() : d.frame.sunrise, sid = P.moonSid(at), r = Math.floor(sid / 30), R = M.RASHI[r], nx = (r + 1) % 12;
   const end = P.crossing(P.moonSid, at, nx * 30, 72), bm = birthMoon(), p = bm != null ? P.personal(bm, at) : null;
   const endTxt = end ? (K.dateKey(end, loc.zone) === K.dateKey(at, loc.zone) ? fmt(end) : full(end)) : '';
   const label = p ? t('rashiRing', { rashi: L.rashiName(r), n: ord(p.chandraCount), mine: L.rashiName(p.janmaRashi) }) : t('rashiRingNoBirth', { rashi: L.rashiName(r) });
-  return `<section class="section">${groupHead(t('ovMoonSign'), esc(t('moonIn', { rashi: L.rashiName(r) })), `<button class="quiet more" onclick="push('moon')">${esc(t('moon'))} ›</button>`)}`
-    + `<div class="card rashicard" role="group" aria-label="${esc(label)}"><div class="rhead">${rashiRing(r, p ? p.janmaRashi : -1)}<div><div class="caption">${esc(t('rashiLord', { p: L.planetName(R.lord) }))}</div>`
-    + (end ? `<p class="runtil">${esc(t('rashiUntil', { time: endTxt, next: L.rashiName(nx) }))}</p>` : '') + `</div></div>`
-    + `<p><strong>${esc(t('goodFor'))}:</strong> ${esc(tr(R.good))}.</p></div>` + (onYou ? '' : personalLine(d)) + `</section>`;
+  return `<section class="section rashisec"><div class="card rashicard" role="group" aria-label="${esc(label)}">`
+    + `<button class="rtop" onclick="push('moon')"><span class="rorb">${SomaDial.moon(52, K.tithi(at).angle)}</span>`
+    + `<span class="rtext"><span class="eyebrow">${esc(t('ovMoonSign'))} · ${esc(t('rashiLord', { p: L.planetName(R.lord) }))}</span><h2>${esc(t('moonIn', { rashi: L.rashiName(r) }))}</h2>`
+    + (end ? `<span class="runtil">${esc(t('rashiUntil', { time: endTxt, next: L.rashiName(nx) }))}</span>` : '') + `</span><span class="rchev" aria-hidden="true">›</span></button>`
+    + rashiRail(r, (sid % 30) / 30, p ? p.janmaRashi : -1)
+    + `<p class="rgood"><strong>${esc(t('goodFor'))}:</strong> ${esc(tr(R.good))}.</p></div>` + (onYou || onToday ? '' : personalLine(d)) + `</section>`;
 }
 /* The five limbs at sunrise, each with its end time, its rating in the one scale, and a ⓘ that says what it is. */
 function limbsList(d) {
@@ -886,7 +888,7 @@ function todayView() {
   // coming up sit beside them, so the wide screen is used rather than scrolled.
   const dayCard = `<section class="card dayline"><div class="row"><span class="eyebrow">${esc(t('ovPanchang'))}</span><button class="quiet more" onclick="push('panchang')">${esc(t('fullPanchang'))} ›</button></div><p>${esc(daySentence(v))}</p></section>`;
   $('app').innerHTML = `<div class="split today"><div class="lead">${todayHero(d, v, cx)}</div><div class="rest">`
-    + polar + paranaToday(day)
+    + polar + paranaToday(day) + rashiCard(d, false, true)
     + `<div class="wideonly">${dayCard}${upcomingSection(todayKey().slice(0, 7), todayKey(), 3)}</div></div></div>`;
   scheduleNative();
   wxRequest();
@@ -1123,12 +1125,25 @@ function moonView() {
   const d = live ? now() : K.instant(day, String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0'), loc.zone), ti = K.tithi(d), data = K.dayData(day, loc), illum = A.Illumination('Moon', d);
   const nk = P.nakshatra(d), rashi = Math.floor(P.moonSid(d) / 30);
   const next = [0, 90, 180, 270].map((a, i) => ({ name: L.tithiName([29, 7, 14, 22][i]), d: A.SearchMoonPhase(a, d, 32).date })).sort((a, b) => a.d - b.d);
-  const lead = pageBar(L.tithiName(ti.index), titleDay(day)) + `<div class="moonbox" role="img" aria-label="${esc(t('moonIllum'))} ${Math.round(illum.phase_fraction * 100)}%">${SomaDial.moon(260, ti.angle, 'big')}</div>`
-    + `<div style="text-align:center"><h2>${num(Math.round(illum.phase_fraction * 100))}%</h2><p>${esc(L.nakName(nk.index))} ${num(nk.pada)} · ${esc(L.rashiName(rashi))}</p></div>`
-    + `<label>${live ? esc(t('now')) + ' · ' : ''}<span id="scrubTime">${fmt(d)}</span><input aria-label="${esc(t('timeOfDay'))}" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="$('scrubTime').textContent=String(Math.floor(this.value)).padStart(2,'0')+':'+String(Math.round(this.value%1*60)).padStart(2,'0')" onchange="hour=+this.value;moonView()"></label>${datebar()}`;
+  const lead = pageBar(L.tithiName(ti.index), titleDay(day)) + `<div class="moonbox" id="moonBox" role="img" aria-label="${esc(t('moonIllum'))} ${Math.round(illum.phase_fraction * 100)}%">${SomaDial.moon(260, ti.angle, 'big')}</div>`
+    + `<div style="text-align:center"><h2 id="moonPct">${num(Math.round(illum.phase_fraction * 100))}%</h2><p id="moonNak">${esc(L.nakName(nk.index))} ${num(nk.pada)} · ${esc(L.rashiName(rashi))}</p></div>`
+    + `<label><span id="scrubNow">${live ? esc(t('now')) + ' · ' : ''}</span><span id="scrubTime">${fmt(d)}</span><input aria-label="${esc(t('timeOfDay'))}" type="range" min="0" max="23.75" step="0.25" value="${h}" oninput="moonScrub(+this.value)"></label>${datebar()}`;
   const rest = `<div class="grid2"><div class="card"><div class="caption">${esc(t('moonrise'))}</div><div class="value">${fmt(data.moonrise)}</div></div><div class="card"><div class="caption">${esc(t('moonset'))}</div><div class="value">${fmt(data.moonset)}</div></div></div>`
     + `<section class="section">${groupHead(t('ovSky'), esc(t('phasesAhead')))}<div class="list">${next.map(e => `<div class="timeline"><i class="dot"></i><div><strong>${esc(e.name)}</strong></div><div class="right">${full(e.d)}</div></div>`).join('')}</div></section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
+}
+/* Scrubbing the Moon page: only the Moon, its numbers and the time change in place, so the slider keeps its grip and
+   nothing else on the page redraws while the finger moves. */
+function moonScrub(h) {
+  hour = h;
+  const d = K.instant(day, String(Math.floor(h)).padStart(2, '0') + ':' + String(Math.round((h % 1) * 60)).padStart(2, '0'), loc.zone);
+  const ti = K.tithi(d), pct = Math.round(A.Illumination('Moon', d).phase_fraction * 100), nk = P.nakshatra(d), rashi = Math.floor(P.moonSid(d) / 30);
+  const box = $('moonBox'); if (!box) return;
+  box.innerHTML = SomaDial.moon(260, ti.angle, 'big'); box.setAttribute('aria-label', t('moonIllum') + ' ' + pct + '%');
+  $('moonPct').textContent = num(pct) + '%';
+  $('moonNak').textContent = L.nakName(nk.index) + ' ' + num(nk.pada) + ' · ' + L.rashiName(rashi);
+  $('scrubTime').textContent = fmt(d); $('scrubNow').textContent = '';
+  const bar = document.querySelector('#app .lead > h1'); if (bar && bar.textContent !== L.tithiName(ti.index)) bar.textContent = L.tithiName(ti.index);
 }
 
 // ---- Learn (Gyan) -----------------------------------------------------------------------------
