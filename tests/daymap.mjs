@@ -49,12 +49,12 @@ $$(B+'.bcol.bad .brow')[0].click();assert.ok(w.document.querySelector('#modal').
 $$(B+'.ctile')[0].click();assert.ok(/Choghadiya/.test(w.document.querySelector('#sheetTitle').textContent));w.document.querySelector('#modal').close();
 w.setDay('2026-11-24');w.show('muhurat');assert.ok($$(B+'.bcol.bad .brow').some(b=>/Bhadra/.test(b.textContent)),'Bhadra on Kartik Purnima');assert.ok(w.document.querySelector(B+'.ribbon .m.bh'),'Bhadra on the ribbon');
 w.setDay('2026-11-14');
-w.show('today');assert.ok(w.document.querySelector('#app .skyhero.today .dial-hand'),'Today dial shows now');
+w.show('today');assert.ok(w.document.querySelector('#app .dialbox .dial-hand'),'Today dial shows now');
 // Before sunrise the night still running is yesterday's: the board and strip show it, with the now marker.
 w.SomaClock.set(Date.parse('2026-11-13T20:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');   // 2:00 am in Ahmedabad
 w.show('muhurat');assert.ok(w.document.querySelector(B+'.ribbon .now'),'pre-dawn: now marker on last night');assert.ok($$(B+'.ctile.current').length===1,'pre-dawn: running Choghadiya marked');
 $$(B+'.ctile')[0].click();assert.ok(/13/.test(w.document.querySelector('#modal .eyebrow').textContent),'sheet names the Vedic day it belongs to');w.document.querySelector('#modal').close();
-w.show('today');assert.ok(w.document.querySelector('#app .skyhero.today .dial-hand'),'pre-dawn: Today dial shows now');
+w.show('today');assert.ok(w.document.querySelector('#app .dialbox .dial-hand'),'pre-dawn: Today dial shows now');
 w.SomaClock.set(Date.parse('2026-11-14T06:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');
 // Calendar: "Coming up" starts today; the month's earlier festivals are folded away.
 w.show('calendar');

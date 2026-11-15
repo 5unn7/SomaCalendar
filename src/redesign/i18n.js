@@ -709,6 +709,9 @@
   Object.assign(STR.en, { back: 'Back', placeGuess: 'Using {p} for now. Change it any time in Settings.', notifyTitle: 'Remind you of vrats?', notifyWhy: 'Soma can tell you the evening before each vrat and festival, and when Rahu Kaal begins. Nothing else.', notifyYes: 'Turn on reminders', notNow: 'Not now', dobDay: 'Day', dobMonth: 'Month', dobYear: 'Year' });
   Object.assign(STR.gu, { back: 'પાછા', placeGuess: 'હાલ {p} રાખ્યું છે. સેટિંગ્સમાં ગમે ત્યારે બદલો.', notifyTitle: 'વ્રતની યાદ અપાવું?', notifyWhy: 'દરેક વ્રત અને તહેવારની આગલી સાંજે, અને રાહુ કાળ શરૂ થાય ત્યારે સોમ જણાવશે. બીજું કંઈ નહીં.', notifyYes: 'યાદ ચાલુ કરો', notNow: 'હમણાં નહીં', dobDay: 'દિવસ', dobMonth: 'મહિનો', dobYear: 'વર્ષ' });
   Object.assign(STR.hi, { back: 'वापस', placeGuess: 'अभी {p} रखा है। सेटिंग्स में कभी भी बदलें।', notifyTitle: 'व्रत की याद दिलाएँ?', notifyWhy: 'हर व्रत और पर्व की पिछली शाम, और राहु काल शुरू होने पर सोम बताएगा। और कुछ नहीं।', notifyYes: 'याद चालू करें', notNow: 'अभी नहीं', dobDay: 'दिन', dobMonth: 'महीना', dobYear: 'वर्ष' });
+  Object.assign(STR.en, { dialTitle: 'The day around the clock' });
+  Object.assign(STR.gu, { dialTitle: 'ઘડિયાળ પર આજનો દિવસ' });
+  Object.assign(STR.hi, { dialTitle: 'घड़ी पर आज का दिन' });
   function make(lang) {
     const L = STR[lang] ? lang : 'en', s = STR[L];
     const t = (key, vars) => { let v = s[key] != null ? s[key] : STR.en[key]; if (vars) for (const k in vars) v = v.replace('{' + k + '}', vars[k]); return v; };

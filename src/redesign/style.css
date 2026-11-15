@@ -892,3 +892,13 @@ html.bigtext .dialcore .moonsvg{width:40px;height:40px;margin:0}
 }
 /* Times wrap inside their tile rather than spilling over the next one */
 .nx b{white-space:normal;overflow-wrap:anywhere;font-size:.8125rem}
+/* Day at a glance: the Kaal Chakra on its own card under the Sky card */
+.dialsec{margin-top:28px}
+.dialbox{padding:12px 14px 16px}
+.dialbox .dialwrap{width:min(100%,340px);margin:4px auto 0}
+.dialbox .dialwrap .dialcore{color:var(--ink)}
+.dialbox .dialcore .tithi{font-size:min(1.625rem,32px)}
+html[lang=gu] .dialbox .dialcore .tithi,html[lang=hi] .dialbox .dialcore .tithi{font-size:min(1.375rem,28px)}
+.dialbox .dialcore small{color:var(--muted);opacity:1}
+.dialbox .legend{margin-top:8px}
+.skyhero.today .nextrow{margin-top:16px}
