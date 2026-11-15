@@ -72,6 +72,8 @@ function rel(p, now) {
   return '';
 }
 const ICON = {
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
   calendar: '<rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
   muhurat: '<path d="M12 3.2l2.3 5.4 5.8.6-4.4 3.9 1.3 5.7L12 15.9l-5 2.9 1.3-5.7-4.4-3.9 5.8-.6z"/>',
@@ -542,7 +544,20 @@ function festivalStory(i) {
     + `<h2 id="sheetTitle" style="font-size:2.125rem;margin-top:10px">${esc(L.festName(f))}</h2>${f.note ? `<p style="color:var(--ink)">${esc(festNote(f))}</p>` : ''}${indiaLine(f)}`
     + (f.parana ? `<div class="list"><div class="timeline"><i class="dot vrat"></i><div><strong>${esc(t('parana'))}</strong><p>${dayLabel(f.parana.day)}</p></div><div class="right">${span(f.parana)}</div></div></div>` : '')
     + (f.sutak ? `<p>${esc(t('sutakLine', { a: full(f.sutak), b: full(f.at) }))}</p>` : '')
+    + remindButton(f, i)
     + `<button class="primary" onclick="document.querySelector('dialog').close();setDay('${f.day}')">${esc(t('goToDay'))}</button>`);
+}
+/* "Remind me" on one festival: the evening before (even with festival reminders off) and again as its puja time begins. */
+const remindSet = () => prefs.remind || (prefs.remind = {});
+function remindButton(f, i) {
+  const on = !!remindSet()[f.key];
+  return `<button class="remind${on ? ' on' : ''}" aria-pressed="${on}" onclick="toggleRemind('${f.key}',${i})">${icon(on ? 'check' : 'bell')} ${esc(on ? t('remindOn') : t('remindMe'))}<small>${esc(t('remindWhat'))}</small></button>`;
+}
+function toggleRemind(key, i) {
+  const r = remindSet();
+  if (r[key]) delete r[key]; else { r[key] = true; askNotifications(true); }
+  persist(); haptic('select'); scheduleNative(true);
+  festivalStory(i);
 }
 function nowNext(d, cx) {
   // Running Choghadiya and Hora come from the Vedic day in force (yesterday's before sunrise); Rahu Kaal, Abhijit and the rest belong to the selected day.
@@ -1020,7 +1035,14 @@ function reminderPlan() {
   const from = todayKey(), list = observances(from, 31), r = prefs.reminders, out = [], nowMs = Clock.ms();
   const add = (at, title, body, id) => { if (+at > nowMs) out.push({ id, at: +at, title, body }); };
   for (const f of list) {
-    if (r.vrat && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), t('remTomorrow', { f: L.festName(f) }), f.key === 'ekadashi' ? t('remFast') + (f.parana ? t('remParanaAt', { d: dayLabel(f.parana.day), span: span(f.parana) }) : '') : (festNote(f) || t('remAt', { f: L.festName(f), p: loc.name })), 'eve-' + f.key + '-' + f.day);
+    const mine = !!(prefs.remind || {})[f.key];
+    if (mine) {
+      // The puja time, or half an hour before moonrise for the fasts broken at moonrise (Karwa Chauth, Sankashti).
+      const vd = vedicDay(f.day), mr = f.rule === 'moonrise' ? vd.frame.data.moonrise : null, w = f.rule === 'moonrise' ? null : festWindow(vd, f);
+      const at = w ? w.start : mr ? new Date(+mr - 30 * 6e4) : K.instant(f.day, '07:00', loc.zone);
+      add(at, L.festName(f), w ? t('remPuja', { span: span(w) }) : mr ? t('moonrise') + ' ' + fmt(mr) : (festNote(f) || L.festName(f)), 'mine-' + f.key + '-' + f.day);
+    }
+    if ((r.vrat || mine) && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), t('remTomorrow', { f: L.festName(f) }), f.key === 'ekadashi' ? t('remFast') + (f.parana ? t('remParanaAt', { d: dayLabel(f.parana.day), span: span(f.parana) }) : '') : (festNote(f) || t('remAt', { f: L.festName(f), p: loc.name })), 'eve-' + f.key + '-' + f.day);
     if (r.parana && f.parana) add(f.parana.start, t('parana') + ': ' + L.festName(f), t('remBreak', { time: fmt(f.parana.end) }), 'parana-' + f.day);
   }
   if (r.daily || r.rahu) {

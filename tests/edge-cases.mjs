@@ -75,5 +75,15 @@ function boot(loc,prefs,opt={}){
   assert.ok((got.feed.vrat||[]).length&&got.feed.vrat.every(x=>x.l),'festival names in Gujarati');assert.ok(Array.isArray(got.rem));dom.window.close();}
 {const got={};const dom=boot({name:'Ahmedabad',lat:23.0225,lon:72.5714,zone:'Asia/Kolkata'},{lang:'en'},{url:'https://soma.local/index.html?bg=1',native:{fontScale:()=>1,appReady(){},appFailure(){},updateWidgetFeed(){got.feed=1},scheduleReminders(){},bgDone(){got.done=1}}});
   assert.ok(got.done,'before setup the background run still finishes');dom.window.close();}
-console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language');
+// "Remind me" on one festival works with festival reminders off: the evening before, and half an hour before moonrise for Karwa Chauth.
+{const dom=boot({name:'Toronto',lat:43.65,lon:-79.38,zone:'America/Toronto'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],reminders:{vrat:false,parana:false}}),w=dom.window;
+  w.SomaClock.set(new Date('2026-10-20T14:00:00Z'));w.SomaClock.tick('clock');w.show('today');
+  const i=w.eval("upList.findIndex(x=>x.key==='karwa')");assert.ok(i>=0);w.festivalStory(i);
+  assert.match(w.document.querySelector('dialog .remind').textContent,/Remind me/);w.toggleRemind('karwa',i);
+  assert.equal(w.document.querySelector('dialog .remind').getAttribute('aria-pressed'),'true');
+  const plan=w.eval('reminderPlan()'),mine=plan.find(r=>r.id.startsWith('mine-karwa')),eve=plan.find(r=>r.id.startsWith('eve-karwa'));
+  assert.ok(mine&&eve,'two Karwa Chauth reminders');assert.match(mine.body,/^Moonrise /);
+  const mr=w.eval("vedicDay(upList["+i+"].day).frame.data.moonrise");assert.equal(+mr-mine.at,30*6e4);
+  w.toggleRemind('karwa',i);assert.ok(!w.eval('reminderPlan()').some(r=>r.id.includes('karwa')),'turned off again');dom.window.close();}
+console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival');
 console.log('PASS: sunset after midnight far north, La Ronge winter day, Asia/Calcutta defaults, nishita kaal width, Janmashtami nishita');
