@@ -678,3 +678,28 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 .favdays .chip.on{outline:2px solid var(--ink);outline-offset:1px}
 .favdays .caption{margin-top:10px}
 .favcta .primary{margin-top:12px}
+/* You: identity card, grouped setting rows with icons, About sheet. */
+.card.me .profile{align-items:flex-start}
+.card.me h3{margin-top:2px}
+.card.me .edit{margin-left:auto;align-self:flex-start;padding:6px 10px;min-height:36px}
+.facts2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.facts2>div{background:var(--surface2);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.facts2 small{color:var(--muted);font-size:.75rem}
+.facts2 b{font-size:1.125rem;font-weight:700}
+.card .lock{margin-top:12px}
+.card.me + .personalDay,.card.me + .lesson{margin-top:10px}
+.group.rows>button{justify-content:flex-start}
+.group.rows>button>b{flex:1;min-width:0;font-weight:600}
+.group.rows .ri{width:22px;height:22px;flex:none;color:var(--accent-text)}
+.group.rows>button>span{display:flex;align-items:center;gap:6px;max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group.rows>button>span i{font-style:normal;color:var(--faint)}
+.group.rows>button.danger b,.group.rows>button.danger .ri{color:var(--bad-text)}
+.chipRow.care .chip{border-color:var(--bad);color:var(--bad-text)}
+ul.gets{margin:0;padding-left:20px;display:grid;gap:8px}
+.about .abouthead{display:flex;align-items:center;gap:14px}
+.about .abouthead h2{margin:0}
+.about h3.section{margin-top:22px}
+.credit2{display:grid;grid-template-columns:1fr auto;column-gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.credit2 span{grid-column:1;color:var(--muted);font-size:.875rem}
+.credit2 small{grid-column:2;grid-row:1 / span 2;align-self:center;color:var(--muted);font-size:.75rem;text-align:right}
+pre.notices{white-space:pre-wrap;font-size:.75rem;line-height:1.5;max-height:50vh;overflow:auto;background:var(--surface2);padding:12px;border-radius:12px}

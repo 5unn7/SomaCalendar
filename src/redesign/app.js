@@ -72,6 +72,11 @@ function rel(p, now) {
   return '';
 }
 const ICON = {
+  cloud: '<path d="M7 18.5a4 4 0 0 1-.6-7.95A6 6 0 0 1 17.6 9.4a4.6 4.6 0 0 1 .4 9.1z"/>',
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.6-4.5M4 4v3.5h3.5M4 13a8 8 0 0 0 14.6 4.5M20 20v-3.5h-3.5"/>',
+  trash: '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/>',
   bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   today: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/>',
@@ -1036,34 +1041,80 @@ function exportEvent(id) {
 }
 
 // ---- You: birth sky and settings ---------------------------------------------------------------
+/* You: who you are in the sky first (birth, rashi, nakshatra, today for you), then settings as short grouped rows,
+   with About Soma (privacy, credits, licences, version) at the end. Birth-only readings sit in the second column. */
 function personalView() {
-  const has = !!profile.date;
-  let natal = '';
+  const has = !!profile.date, bm = birthMoon();
+  const row = (ic, label, value, go, cls) => `<button class="${cls || ''}" onclick="${go}">${icon(ic, 'ri')}<b>${esc(label)}</b><span>${value ? esc(value) + ' ' : ''}<i aria-hidden="true">›</i></span></button>`;
+  let id = '';
   if (has) {
     const instant = K.instant(profile.date, profile.time || '12:00', profile.zone || 'Asia/Kolkata'), n = K.sidereal(instant), nak = Math.floor(n / (360 / 27));
-    const today = P.personal(n, now()), first = day.slice(0, 7) + '-01', count = new Date(+day.slice(0, 4), +day.slice(5, 7), 0).getDate(), good = [];
-    for (let i = 0; i < count; i++) { const key = K.addDay(first, i), r = K.dayData(key, loc).sunrise; if (r && P.personal(n, r).verdict === 'good') good.push(key); }
-    natal = `<div class="grid2 section"><div class="card"><div class="caption">${esc(t('janmaRashi'))}</div><h2>${esc(L.rashiName(Math.floor(n / 30)))}</h2></div><div class="card"><div class="caption">${esc(t('janmaNak'))}</div><h2>${esc(L.nakName(nak))}</h2><p class="caption">${esc(t('pada', { n: num(Math.floor((n % (360 / 27)) / (360 / 108)) + 1) }))} · ${esc(tr(M.nakshatra(nak).deity))}</p></div></div>`
-      + `<div class="card personalDay ${today.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(today.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(today.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${num(today.chandraCount)} · ${esc(t(today.chandraGood ? 'strong' : 'weak'))}</p><p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[today.tara.key]))}</p></div>`
-      + `<div class="card"><div class="eyebrow">${esc(t('personalDays'))}</div><div class="chipRow" style="flex-wrap:wrap">${good.length ? good.map(k => `<button class="chip" onclick="setDay('${k}');show('today')">${dayLabel(k, { weekday: undefined })}</button>`).join('') : esc(t('none'))}</div></div>`;
+    const born = new Intl.DateTimeFormat(locale(), { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(profile.date + 'T12:00Z'))
+      + (profile.timeUnknown ? '' : ', ' + fmtIn(instant, profile.zone || loc.zone));
+    id = `<div class="facts2"><div><small>${esc(t('janmaRashi'))}</small><b>${esc(L.rashiName(Math.floor(n / 30)))}</b></div><div><small>${esc(t('janmaNak'))}</small><b>${esc(L.nakName(nak))}</b><small>${esc(t('pada', { n: num(Math.floor((n % (360 / 27)) / (360 / 108)) + 1) }))}</small></div></div>`;
+    id = `<div class="card me"><div class="profile"><div class="avatar">${SomaDial.moon(34, 120)}</div><div style="flex:1;min-width:0"><div class="eyebrow">${esc(t('bornOn'))}</div><h3>${esc(born)}</h3>${profile.place ? `<p class="caption">${esc(profile.place.split(',')[0])}</p>` : ''}</div><button class="quiet edit" onclick="editProfile()" aria-label="${esc(t('editBirth'))}">${esc(t('edit'))}</button></div>${id}<p class="caption lock">${esc(t('birthStays'))}</p></div>`
+      + personalLine(vedicDay(todayKey()));
+  } else {
+    id = `<div class="card me empty"><div class="profile"><div class="avatar">${SomaDial.moon(34, 60)}</div><div style="flex:1;min-width:0"><h3>${esc(t('favCtaShort'))}</h3><p class="caption">${esc(t('youWhy'))}</p></div></div><button class="primary" onclick="editProfile()">${esc(t('addBirth'))}</button><p class="caption lock">${esc(t('birthStays'))}</p></div>`;
+  }
+  const head = `<div class="eyebrow">${esc(t('yourSky'))}</div><h1>${esc(t('you'))}</h1>` + id;
+  const sets = (prefs.sets || []).map(k => t('sets')[k]).filter(Boolean), remOn = Object.values(prefs.reminders).filter(Boolean).length + Object.keys(prefs.remind || {}).length;
+  const groups = `<section class="section">${groupHead(t('ovApp'), esc(t('settings')))}<div class="group rows">`
+      + row('pin', t('location'), loc.name, 'locationSheet()')
+      + row('calendar', t('festivalSets'), sets.length > 2 ? t('nSets', { n: sets.length }) : sets.join(', '), 'settings()')
+      + row('bell', t('reminders'), remOn ? t('nOn', { n: remOn }) : t('off'), 'settings()')
+      + row('moon', t('monthSystem'), (prefs.month === 'purnimanta' ? t('purnimanta') : t('amanta')).split(' (')[0], 'settings()')
+      + (wxNative() ? row('cloud', t('wxTitle'), prefs.weather ? t('on') : t('off'), 'weatherSheet()') : '')
+      + `</div></section>`
+    + `<section class="section">${groupHead(t('ovStyle'), esc(t('appearance')))}<div class="card"><label style="margin-top:0">${esc(t('language'))}${seg(t('language'), prefs.lang, LANGS, 'setLang')}</label>`
+      + `<label>${esc(t('theme'))}${seg(t('theme'), prefs.theme, [['auto', t('themeAuto')], ['light', t('themeLight')], ['dark', t('themeDark')]], 'setTheme')}</label>`
+      + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label>`
+      + (L.lang !== 'en' ? `<label>${esc(t('digits'))}${seg(t('digits'), prefs.digits === 'native' ? 'native' : 'latin', [['latin', t('digitsLatin')], ['native', L.lang === 'gu' ? '૧ ૨ ૩' : '१ २ ३']], 'setDigits')}</label>` : '')
+      + `<p class="caption" style="margin-top:12px">${esc(t('textSize'))}</p></div></section>`
+    + `<section class="section">${groupHead(t('ovMore'), esc(t('aboutSoma')))}<div class="group rows">`
+      + row('book', t('learnMore'), '', "show('learn')")
+      + row('muhurat', t('method'), '', 'lesson(8)')
+      + (updatesOn() ? `<button onclick="updateSheet()">${icon('refresh', 'ri')}<b>${esc(t('updTitle'))}</b><span>${pendingUpdate() ? `<b class="newdot">${esc(t('updNew'))}</b> ` : ''}${esc((updateInfo() || {}).versionName || '')} <i aria-hidden="true">›</i></span></button>` : '')
+      + row('info', t('aboutSoma'), t('versionShort', { v: appVersion() }), 'aboutSheet()')
+      + `</div>` + (has ? `<div class="group rows"><button class="danger" onclick="eraseProfile()">${icon('trash', 'ri')}<b>${esc(t('deleteBirth'))}</b><span></span></button></div>` : '') + `</section>`;
+  let natal = '';
+  if (has) {
+    const instant = K.instant(profile.date, profile.time || '12:00', profile.zone || 'Asia/Kolkata');
+    const from = todayKey(), m0 = monthPersonal(from.slice(0, 7)) || { good: [], care: [] }, m = { good: m0.good.filter(x => x.key >= from), care: m0.care.filter(x => x.key >= from) };
+    const chips = list => list.map(x => `<button class="chip${x.key === from ? ' on' : ''}" onclick="setDay('${x.key}');show('today')">${dayLabel(x.key, { weekday: undefined })}</button>`).join('');
+    natal = `<section class="section">${groupHead(t('forYou'), esc(t('personalDays')), `<button class="quiet" onclick="show('calendar')">${esc(t('seeMonth'))} ›</button>`)}<div class="card">`
+      + (m.good.length ? `<div class="chipRow" style="flex-wrap:wrap">${chips(m.good)}</div>` : `<p>${esc(t('favNone'))}</p>`)
+      + (m.care.length ? `<div class="eyebrow" style="margin-top:14px">${esc(t('chandrashtama'))}</div><div class="chipRow care" style="flex-wrap:wrap">${chips(m.care)}</div>` : '') + `</div></section>`;
     // The kundali's houses hang on the lagna, which needs the birth time; without it, show only what the Moon gives.
-    if (profile.timeUnknown) natal += `<div class="card"><span class="tag">${esc(t('kundali'))}</span><p class="notice">${esc(t('timeUnknownNote'))}</p></div>`;
+    if (profile.timeUnknown) natal += `<section class="section"><div class="card"><span class="tag">${esc(t('kundali'))}</span><p class="notice">${esc(t('timeUnknownNote'))}</p></div></section>`;
     else if (window.SomaNatal) {
-      try { natal += `<div class="card"><span class="tag">${esc(t('kundaliNorth'))}</span><div class="natal">${SomaNatal.chart(instant, profile.lat, profile.lon, L.lang, t('lagnaMark'))}</div><p class="caption">${esc(t('chartFor', { date: dayLabel(profile.date, { weekday: undefined, year: 'numeric' }), time: fmtIn(instant, profile.zone || loc.zone), place: (profile.place || profile.zone).split(',')[0] }))}</p></div>`; }
+      try { natal += `<section class="section"><div class="card"><span class="tag">${esc(t('kundaliNorth'))}</span><div class="natal">${SomaNatal.chart(instant, profile.lat, profile.lon, L.lang, t('lagnaMark'))}</div><p class="caption">${esc(t('chartFor', { date: dayLabel(profile.date, { weekday: undefined, year: 'numeric' }), time: fmtIn(instant, profile.zone || loc.zone), place: (profile.place || profile.zone).split(',')[0] }))}</p></div></section>`; }
       catch (e) { natal += `<p class="notice">${esc(t('chartFail'))}</p>`; }
     }
     natal += `<section class="section">${groupHead(t('ovNumbers'), esc(t('numerology')))}<div class="grid2"><div class="card"><div class="caption">${esc(t('mulank'))}</div><div class="number">${num(K.reduce(profile.date.slice(-2)))}</div></div><div class="card"><div class="caption">${esc(t('bhagyank'))}</div><div class="number">${num(K.reduce(profile.date))}</div></div></div><button class="lesson" onclick="lesson(7)"><h3>${esc(t('howCounted'))} <span aria-hidden="true">›</span></h3></button></section>`;
+  } else {
+    natal = `<section class="section">${groupHead(t('forYou'), esc(t('youGet')))}<div class="card"><ul class="gets">${['youGet1', 'youGet2', 'youGet3', 'youGet4'].map(k => `<li>${esc(t(k))}</li>`).join('')}</ul></div>`
+      + `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>${esc(t('birthLessonSub'))}</span></button></section>`;
   }
-  const head = `<div class="eyebrow">${esc(t('yourSky'))}</div><h1>${esc(t('you'))}</h1>`
-    + `<div class="card"><div class="profile"><div class="avatar">${SomaDial.moon(34, birthMoon() != null ? 120 : 60)}</div><div style="flex:1;min-width:0"><span class="tag">${esc(t('birthStays'))}</span><h3 style="margin-top:6px">${has ? esc(dayLabel(profile.date, { year: 'numeric' }).replace(/,? \d{1,2}:.*/, '')) + (profile.place ? ' · ' + esc(profile.place.split(',')[0]) : '') : esc(t('addBirth'))}</h3></div></div><button class="primary" onclick="editProfile()">${has ? esc(t('editBirth')) : esc(t('addBirth'))}</button></div>`;
-  const options = `<section class="section">${groupHead(t('ovStyle'), esc(t('appearance')))}<div class="card"><label style="margin-top:0">${esc(t('language'))}${seg(t('language'), prefs.lang, LANGS, 'setLang')}</label>`
-    + `<label>${esc(t('theme'))}${seg(t('theme'), prefs.theme, [['auto', t('themeAuto')], ['light', t('themeLight')], ['dark', t('themeDark')]], 'setTheme')}</label>`
-    + `<label>${esc(t('layout'))}${seg(t('layout'), prefs.layout, [['dial', t('layoutDial')], ['sky', t('layoutSky')], ['folio', t('layoutFolio')]], 'setLayout')}</label>`
-    + (L.lang !== 'en' ? `<label>${esc(t('digits'))}${seg(t('digits'), prefs.digits === 'native' ? 'native' : 'latin', [['latin', t('digitsLatin')], ['native', L.lang === 'gu' ? '૧ ૨ ૩' : '१ २ ३']], 'setDigits')}</label>` : '')
-    + `<p class="caption" style="margin-top:12px">${esc(t('textSize'))}</p></div></section>`
-    + `<section class="section">${groupHead(t('ovApp'), esc(t('settings')))}<div class="group"><button onclick="locationSheet()">${esc(t('location'))}<span>${esc(loc.name)} ›</span></button><button onclick="settings()">${esc(t('festivalSets'))} · ${esc(t('reminders'))}<span>›</span></button><button onclick="show('learn')">${esc(t('learnMore'))}<span>›</span></button><button onclick="lesson(8)">${esc(t('method'))}<span>›</span></button>${updatesOn() ? `<button onclick="updateSheet()">${esc(t('updTitle'))}<span>${pendingUpdate() ? `<b class="newdot">${esc(t('updNew'))}</b> ` : ''}${esc((updateInfo() || {}).versionName || '')} ›</span></button>` : ''}</div>`
-    + (has ? `<button class="quiet section" onclick="eraseProfile()">${esc(t('deleteBirth'))}</button>` : '') + `</section>`;
-  $('app').innerHTML = `<div class="split"><div class="lead">${head}${options}</div><div class="rest">${natal || `<button class="lesson" onclick="lesson(6)"><h3>${esc(lessonTitle(lessons[6]))} <span>›</span></h3><span>${esc(t('birthLessonSub'))}</span></button>`}</div></div>`;
+  void bm;
+  $('app').innerHTML = `<div class="split"><div class="lead">${head}${groups}</div><div class="rest">${natal}</div></div>`;
+}
+const appVersion = () => (updateInfo() || {}).versionName || (window.SomaPrototype && SomaPrototype.health ? SomaPrototype.health().version : '');
+/* About Soma: what it is, what stays on the phone, whose data and code it stands on, and the full licence text. */
+function aboutSheet() {
+  const credit = (name, what, lic) => `<div class="credit2"><b>${esc(name)}</b><span>${esc(what)}</span><small>${esc(lic)}</small></div>`;
+  modal(`<div class="about"><div class="abouthead">${SomaDial.moon(56, 120)}<div><h2 id="sheetTitle">Soma</h2><p class="caption">${esc(t('versionShort', { v: appVersion() }))}</p></div></div><p>${esc(t('aboutLine'))}</p>`
+    + `<h3 class="section">${esc(t('privacyTitle'))}</h3><ul class="gets"><li>${esc(t('privacy1'))}</li><li>${esc(t('privacy2'))}</li><li>${esc(t('privacy3'))}</li>${updatesOn() ? `<li>${esc(t('privacy4'))}</li>` : ''}</ul>`
+    + `<h3 class="section">${esc(t('creditsTitle'))}</h3>`
+    + credit('Astronomy Engine', t('creditAstro'), 'MIT') + credit('MET Norway', t('creditMet'), 'CC BY 4.0 · NLOD 2.0') + credit('GeoNames', t('creditGeo'), 'CC BY 4.0')
+    + credit('Instrument Serif · Manrope · Noto', t('creditFonts'), 'SIL OFL 1.1')
+    + `<details class="section" ontoggle="if(this.open)loadNotices()"><summary>${esc(t('licences'))}</summary><pre id="notices" class="notices">…</pre></details>`
+    + `<button class="lesson" onclick="lesson(8)"><h3>${esc(t('method'))} <span aria-hidden="true">›</span></h3></button></div>`);
+}
+function loadNotices() {
+  const el = $('notices'); if (!el || el.dataset.ok) return;
+  if (!window.fetch) { el.textContent = t('licencesFile'); return; }
+  fetch('THIRD_PARTY_NOTICES.txt').then(r => r.text()).then(x => { el.textContent = x; el.dataset.ok = '1'; }).catch(() => { el.textContent = t('licencesFile'); });
 }
 /* Birth details. The birthplace must be picked (or typed under Advanced): it is never borrowed from where the phone is now,
    and the time starts empty so a guess never looks like an answer. A line under the form reads the details back before saving. */

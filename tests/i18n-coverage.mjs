@@ -6,7 +6,7 @@ import {createRequire} from 'node:module';
    and fail on any run of 3+ Latin letters that is not a name on the allow-list (brand, sources, city names). */
 const require=createRequire(import.meta.url),M=require('../src/redesign/meanings.js');
 const base='android/app/src/main/assets/';
-const ALLOW=new Set(['Soma','Preview','Drik','Lahiri','Astronomy','Engine','GeoNames','Asia','Kolkata','Jamnagar','Rajkot','Gujarat','India','IST','Install','unknown','apps','Update','Android','GitHub','English','MET','Norway']);
+const ALLOW=new Set(['Soma','Preview','Drik','Lahiri','Astronomy','Engine','GeoNames','Asia','Kolkata','Jamnagar','Rajkot','Gujarat','India','IST','Install','unknown','apps','Update','Android','GitHub','English','MET','Norway','MIT','NLOD','Instrument','Serif','Manrope','Noto','SIL','OFL']);
 function boot(lang){
   const errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));
   const store={loc:{name:'Jamnagar',lat:22.4707,lon:70.0577,zone:'Asia/Kolkata'},profile:{date:'1990-05-15',time:'08:30',timeUnknown:false,zone:'Asia/Kolkata',lat:22.3039,lon:70.8022,place:'Rajkot, Gujarat, India'},events:[{id:'x',title:'ગૃહપ્રવેશ',day:'2026-11-20',time:'10:00',start:'2026-11-20T04:30:00.000Z',end:'2026-11-20T05:30:00.000Z',zone:'Asia/Kolkata',place:'Jamnagar',tithi:'—',muhurat:''}],prefs:{lang,onboarded:true}};
@@ -31,7 +31,7 @@ for(const lang of ['gu','hi']){
   }
   for(const v of ['learn','personal']){w.show(v);check(v,w.document.querySelector('#app'));}
   check('nav',w.document.querySelector('#nav'));check('header',w.document.querySelector('header'));
-  const sheets={settings:()=>w.settings(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');w.festivalStory(0);},erase:()=>w.eraseProfile(),chogInfo:()=>{w.setDay('2026-11-24');w.boardInfo(0);},nightChogInfo:()=>w.boardInfo(10),info16:()=>w.boardInfo(16),info17:()=>w.boardInfo(17),info18:()=>w.boardInfo(18),info19:()=>w.boardInfo(19),info20:()=>w.boardInfo(20),info21:()=>w.boardInfo(21),info22:()=>w.boardInfo(22),info23:()=>w.boardInfo(23),info24:()=>w.boardInfo(24),info25:()=>w.boardInfo(25)};
+  const sheets={settings:()=>w.settings(),about:()=>w.aboutSheet(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');w.festivalStory(0);},erase:()=>w.eraseProfile(),chogInfo:()=>{w.setDay('2026-11-24');w.boardInfo(0);},nightChogInfo:()=>w.boardInfo(10),info16:()=>w.boardInfo(16),info17:()=>w.boardInfo(17),info18:()=>w.boardInfo(18),info19:()=>w.boardInfo(19),info20:()=>w.boardInfo(20),info21:()=>w.boardInfo(21),info22:()=>w.boardInfo(22),info23:()=>w.boardInfo(23),info24:()=>w.boardInfo(24),info25:()=>w.boardInfo(25)};
   for(let i=0;i<9;i++)sheets['lesson'+i]=()=>w.lesson(i);
   for(const [k,open] of Object.entries(sheets)){open();check('sheet '+k,w.document.querySelector('#modal'));w.document.querySelector('#modal').close();}
   // Onboarding steps too.
