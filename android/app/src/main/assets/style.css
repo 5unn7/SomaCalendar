@@ -703,3 +703,14 @@ ul.gets{margin:0;padding-left:20px;display:grid;gap:8px}
 .credit2 span{grid-column:1;color:var(--muted);font-size:.875rem}
 .credit2 small{grid-column:2;grid-row:1 / span 2;align-self:center;color:var(--muted);font-size:.75rem;text-align:right}
 pre.notices{white-space:pre-wrap;font-size:.75rem;line-height:1.5;max-height:50vh;overflow:auto;background:var(--surface2);padding:12px;border-radius:12px}
+.youtabs{margin:12px 0 4px}
+details.fold{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+details.fold>summary{display:flex;align-items:center;gap:12px;padding:14px 18px;min-height:52px;cursor:pointer;list-style:none;font-weight:600}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary b{flex:1}
+details.fold>summary span{color:var(--muted);font-weight:500}
+details.fold>summary::after{content:'›';color:var(--faint);transition:transform .2s}
+details.fold[open]>summary::after{transform:rotate(90deg)}
+details.fold .ri{width:22px;height:22px;color:var(--accent-text);flex:none}
+details.fold>.card,details.fold>.grid2,details.fold>.lesson{margin:0 12px 12px}
+details.fold>.card{border:0;box-shadow:none}

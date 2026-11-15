@@ -104,5 +104,13 @@ function boot(loc,prefs,opt={}){
   // You always speaks for today, whatever day Calendar had open.
   w.eval("profile={date:'1990-03-12',time:'06:40',zone:'Asia/Kolkata',lat:22.47,lon:70.06,place:'Jamnagar'}");w.setDay('2026-09-01');w.show('personal');
   const nf=w.document.querySelector('#app .nextfav button');if(nf)assert.ok(!/Sep/.test(nf.textContent),'next favourable day counts from today: '+nf.textContent);dom.window.close();}
+// You is two short pages: Your sky (birth, today for you, favourable days, kundali and numerology folded) and Settings.
+{const dom=boot({name:'La Ronge',lat:55.1,lon:-105.28,zone:'America/Regina'},{onboarded:true,lang:'en'}),w=dom.window;
+  w.eval("profile={date:'1990-03-12',time:'06:40',zone:'Asia/Kolkata',lat:22.47,lon:70.06,place:'Jamnagar'}");w.show('personal');
+  const app=()=>w.document.querySelector('#app');assert.ok(app().querySelector('.card.me'));assert.ok(!app().querySelector('.group.rows'),'settings not on Your sky');
+  assert.equal(app().querySelectorAll('details.fold').length,2);assert.ok([...app().querySelectorAll('details.fold')].every(d=>!d.open),'kundali and numerology start folded');
+  w.setYouTab('settings');assert.ok(!app().querySelector('.card.me'));assert.ok(app().querySelector('.group.rows'));assert.ok(!app().querySelector('[role=radiogroup][aria-label=Theme]'),'appearance is a sheet');
+  w.appearanceSheet();w.setTheme('dark');assert.ok(w.document.querySelector('#modal').open&&w.document.querySelector('#dialogBody .appearance'),'sheet stays open after a change');
+  w.setLang('gu');assert.match(w.document.querySelector('#dialogBody .appearance h2').textContent,/[\u0A80-\u0AFF]/,'sheet follows the new language');dom.window.close();}
 console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival, moonrise cloud and travel storm flag');
 console.log('PASS: sunset after midnight far north, La Ronge winter day, Asia/Calcutta defaults, nishita kaal width, Janmashtami nishita');
