@@ -660,3 +660,21 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 /* The running Choghadiya row sits on the accent tint, which took "Shubh" green to 4.41:1; a touch deeper clears AA in light. */
 :root:not([data-theme=dark]) .timeline.current .nature.good{color:#235f3f}
 @media (prefers-color-scheme:dark){:root:not([data-theme=light]) .timeline.current .nature.good{color:var(--good-text)}}
+/* Chandra rashi card and personal favourable days */
+.rashicard .rhead{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+.rashicard .runtil{margin:2px 0 0;color:var(--ink);font-weight:600}
+.rring path{fill:var(--neutral-soft);stroke:none}
+.rring path.on{fill:var(--accent)}
+.rring path.mine{stroke:var(--ink);stroke-width:1.6}
+.rashicard + .personalDay,.rashicard + .lesson{margin-top:10px}
+.personalDay .care{color:var(--bad-text)}
+.personalDay .nextfav{margin-top:6px;flex-direction:column;align-items:flex-start;gap:0}
+.personalDay .nextfav .quiet{min-height:44px;padding-left:0}
+.chipRow.wrap{flex-wrap:wrap;overflow:visible}
+.favdays .chip{min-height:44px;min-width:44px}
+.favdays .chip.fav{background:var(--good-soft);color:var(--good-text);border-color:transparent}
+.favdays .chip.care{background:var(--bad-soft);color:var(--bad-text);border-color:transparent}
+.favdays .chip.gone{background:transparent;color:var(--muted);border-color:var(--line)}
+.favdays .chip.on{outline:2px solid var(--ink);outline-offset:1px}
+.favdays .caption{margin-top:10px}
+.favcta .primary{margin-top:12px}

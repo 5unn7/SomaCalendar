@@ -46,7 +46,7 @@ const strings=new Set();const walk=o=>{if(typeof o==='string')strings.add(o);els
 for(let i=0;i<30;i++){const t=M.tithi(i);['deity','note','good','avoid','group'].forEach(k=>strings.add(t[k]));}
 for(let i=0;i<27;i++){const n=M.nakshatra(i);['deity','good','avoid','group'].forEach(k=>strings.add(n[k]));}
 for(const v of M.VAAR)['deity','good','avoid'].forEach(k=>strings.add(v[k]));
-for(const c of Object.values(M.CHOG))strings.add(c.good);for(const p of Object.values(M.PLANET))strings.add(p.good);for(const t of Object.values(M.TARA))strings.add(t);for(const e of M.EVENTS)strings.add(e.en);
+for(const c of Object.values(M.CHOG))strings.add(c.good);for(const p of Object.values(M.PLANET))strings.add(p.good);for(const t of Object.values(M.TARA))strings.add(t);for(const e of M.EVENTS)strings.add(e.en);for(const r of M.RASHI)strings.add(r.good);
 for(const s of strings)for(const l of ['gu','hi'])if(M.tr(s,l)===s)problems.push(`missing ${l} for meaning: ${s}`);
 if(problems.length){console.error(problems.slice(0,60).join('\n'));console.error(problems.length+' untranslated spots');process.exit(1);}
 console.log('PASS: every screen, sheet, lesson, onboarding step and reminder in ગુજરાતી and हिन्दी has no stray English; every meaning has both translations');

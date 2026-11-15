@@ -580,6 +580,34 @@
     infoBrahma: "रात के पंद्रह मुहूर्तों में चौदहवाँ, सूर्योदय से लगभग डेढ़ घंटा पहले।",
     doBrahma: "ध्यान, जप, अध्ययन और जल्दी उठने के लिए श्रेष्ठ।"
   });
+  // Chandra rashi on Today and personal favourable days on Calendar.
+  Object.assign(STR.en, {
+    ovForYou: 'For you', ovMoonSign: 'Chandra rashi', moonIn: 'Moon in {rashi}', rashiUntil: 'until {time}, then {next}', rashiLord: 'Lord {p}',
+    chandrashtama: 'Chandrashtama', chandrashtamaLine: 'The Moon is 8th from your {rashi}: go gently, and keep big starts and arguments for another day.',
+    nextFav: 'Next favourable day: {d}', seeMonth: 'See this month', favIn: 'Your favourable days in {m}',
+    favWhy: 'Chandrabalam and Tarabalam are both strong at sunrise.', careDays: 'Go gently (Chandrashtama)',
+    favCtaTitle: 'See your favourable days', favCtaBody: 'Add your birth date, time and place. Soma will mark the days this month when your Moon and nakshatra are strong, and the days to go gently.',
+    favCtaShort: 'Your favourable days and Chandrabalam', favNone: 'No fully favourable day this month. On Mixed days, use the Shubh Choghadiya.',
+    rashiRing: 'Moon in {rashi}, {n} from your {mine}', rashiRingNoBirth: 'Moon in {rashi}'
+  });
+  Object.assign(STR.gu, {
+    ovForYou: 'તમારા માટે', ovMoonSign: 'ચંદ્ર રાશિ', moonIn: 'ચંદ્ર {rashi} રાશિમાં', rashiUntil: '{time} સુધી, પછી {next}', rashiLord: 'સ્વામી {p}',
+    chandrashtama: 'ચંદ્રાષ્ટમ', chandrashtamaLine: 'ચંદ્ર તમારી {rashi} રાશિથી આઠમે છે: શાંતિથી ચાલો, મોટી શરૂઆત અને વિવાદ બીજા દિવસ પર રાખો.',
+    nextFav: 'હવે પછીનો શુભ દિવસ: {d}', seeMonth: 'આ મહિનો જુઓ', favIn: '{m}માં તમારા શુભ દિવસ',
+    favWhy: 'સૂર્યોદયે ચંદ્રબળ અને તારાબળ બંને બળવાન.', careDays: 'સંભાળીને (ચંદ્રાષ્ટમ)',
+    favCtaTitle: 'તમારા શુભ દિવસ જુઓ', favCtaBody: 'તમારી જન્મ તારીખ, સમય અને સ્થળ ઉમેરો. સોમ આ મહિનાના એ દિવસો બતાવશે જ્યારે તમારો ચંદ્ર અને નક્ષત્ર બળવાન હોય, અને જે દિવસે સંભાળીને ચાલવું.',
+    favCtaShort: 'તમારા શુભ દિવસ અને ચંદ્રબળ', favNone: 'આ મહિને પૂરો શુભ દિવસ નથી. મિશ્ર દિવસે શુભ ચોઘડિયું વાપરો.',
+    rashiRing: 'ચંદ્ર {rashi} રાશિમાં, તમારી {mine} રાશિથી {n} સ્થાને', rashiRingNoBirth: 'ચંદ્ર {rashi} રાશિમાં'
+  });
+  Object.assign(STR.hi, {
+    ovForYou: 'आपके लिए', ovMoonSign: 'चंद्र राशि', moonIn: 'चंद्र {rashi} राशि में', rashiUntil: '{time} तक, फिर {next}', rashiLord: 'स्वामी {p}',
+    chandrashtama: 'चंद्राष्टम', chandrashtamaLine: 'चंद्र आपकी {rashi} राशि से आठवें है: शांति से चलें, बड़े आरंभ और विवाद किसी और दिन पर रखें।',
+    nextFav: 'अगला शुभ दिन: {d}', seeMonth: 'यह महीना देखें', favIn: '{m} में आपके शुभ दिन',
+    favWhy: 'सूर्योदय पर चंद्रबल और ताराबल दोनों बलवान।', careDays: 'संभलकर (चंद्राष्टम)',
+    favCtaTitle: 'अपने शुभ दिन देखें', favCtaBody: 'अपनी जन्म तिथि, समय और स्थान जोड़ें। सोम इस महीने के वे दिन दिखाएगा जब आपका चंद्र और नक्षत्र बलवान हों, और जिन दिनों संभलकर चलना है।',
+    favCtaShort: 'आपके शुभ दिन और चंद्रबल', favNone: 'इस महीने कोई पूर्ण शुभ दिन नहीं। मिश्र दिनों में शुभ चौघड़िया का उपयोग करें।',
+    rashiRing: 'चंद्र {rashi} राशि में, आपकी {mine} राशि से {n} स्थान पर', rashiRingNoBirth: 'चंद्र {rashi} राशि में'
+  });
   const MONTHS = {
     en: ['Chaitra', 'Vaishakh', 'Jyeshtha', 'Ashadh', 'Shravan', 'Bhadrapad', 'Ashvin', 'Kartik', 'Margashirsha', 'Paush', 'Magh', 'Phalgun'],
     gu: ['ચૈત્ર', 'વૈશાખ', 'જેઠ', 'અષાઢ', 'શ્રાવણ', 'ભાદરવો', 'આસો', 'કારતક', 'માગશર', 'પોષ', 'મહા', 'ફાગણ'],
