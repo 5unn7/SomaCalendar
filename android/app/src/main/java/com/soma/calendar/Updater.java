@@ -20,7 +20,7 @@ import java.security.MessageDigest;
 import org.json.JSONObject;
 
 /**
- * Self-update for sideloaded preview builds. CI publishes every build of the redesign branch to the
+ * Self-update for sideloaded preview builds. CI publishes every build of main to the
  * rolling "preview" GitHub release (soma-preview.apk + version.json). This class reads version.json,
  * downloads the APK, checks its SHA-256 and hands it to Android's own installer, which asks the person
  * to confirm. Android only accepts it because every preview build is signed with the same key.
