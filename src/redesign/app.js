@@ -559,8 +559,16 @@ function practiceCard(d) {
 const ord = n => L.lang === 'en' ? n + ['th', 'st', 'nd', 'rd'][n % 10 > 3 || [11, 12, 13].indexOf(n) >= 0 ? 0 : n % 10] : num(n);
 /* The user's month at sunrise each day: favourable days (Chandrabalam and Tarabalam both strong) and Chandrashtama
    days (Moon 8th from the janma rashi). Same sunrise rule as the Calendar dots, so the list and the dots agree. */
+const personalCache = new Map();
 function monthPersonal(ym) {
   const bm = birthMoon(); if (bm == null) return null;
+  // Today repaints every minute and asks for the next favourable day; a month of sunrises only changes with place or birth.
+  const ck = [ym, bm, loc.lat, loc.lon, loc.zone].join('|');
+  if (personalCache.has(ck)) return personalCache.get(ck);
+  if (personalCache.size > 24) personalCache.clear();
+  const out = monthPersonalCalc(ym, bm); personalCache.set(ck, out); return out;
+}
+function monthPersonalCalc(ym, bm) {
   const first = ym + '-01', count = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), good = [], care = [];
   for (let i = 0; i < count; i++) {
     const key = K.addDay(first, i), r = K.dayData(key, loc).sunrise; if (!r) continue;
