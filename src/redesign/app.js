@@ -531,8 +531,9 @@ function todayHero(d, v, cx) {
     + `<div class="herotop">${dateNav(d)}${chip}</div>${fest}`
     + `<div class="status"><span class="pill ${lv}"><i aria-hidden="true"></i>${esc(word)}</span>${info ? `<button class="tip" onclick="${info}" aria-label="${esc(t('whatIsX', { x: big }))}">${icon('info')}</button>` : ''}</div>`
     + `<h1 class="big">${esc(big)}</h1>${l1 ? `<p class="lineone">${esc(l1)}</p>` : ''}${l2 ? `<p class="linetwo">${esc(l2)}</p>` : ''}${then ? `<p class="then"><i aria-hidden="true"></i>${esc(then)}</p>` : ''}`
-    + `<div class="dialwrap">${dial.svg}<button class="dialcore" onclick="push('moon')" aria-label="${esc(t('moonPage') + ': ' + tithi)}">${SomaDial.moon(52, cx.ti.angle)}<span class="tithi">${esc(tithi)}</span><small>${esc(L.nakName(Math.floor(P.moonSid(cx.at) / (360 / 27)) % 27))}</small></button></div>`
-    + dialLegend() + nextRow(d, cx, ns) + sunStrip(d, cx) + `</section>`;
+    + nextRow(d, cx, ns) + sunStrip(d, cx) + `</section>`
+    // The day at a glance under the Sky card: the Kaal Chakra on its own card, the Moon and tithi at its centre.
+    + `<section class="section dialsec">${groupHead(t('ovGlance'), esc(t('dialTitle')))}<div class="card dialbox">` + `<div class="dialwrap">${dial.svg}<button class="dialcore" onclick="push('moon')" aria-label="${esc(t('moonPage') + ': ' + tithi)}">${SomaDial.moon(52, cx.ti.angle)}<span class="tithi">${esc(tithi)}</span><small>${esc(L.nakName(Math.floor(P.moonSid(cx.at) / (360 / 27)) % 27))}</small></button></div>` + dialLegend() + `</div></section>`;
 }
 /* Date line inside the hero: weekday, date, lunar month and samvat, with the day before and after one tap away. */
 function dateNav(d) {
