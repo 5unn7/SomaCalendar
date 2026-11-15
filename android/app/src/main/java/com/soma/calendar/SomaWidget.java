@@ -325,15 +325,25 @@ public final class SomaWidget extends AppWidgetProvider {
       String name = PanchangWidgets.local(ch);
       soonest = Math.min(soonest, chEnd);
 
-      // Rahu Kaal for today's daylight.
-      long rs = 0, re = 0;
+      // Rahu Kaal for today's daylight, and Yamaganda and Gulika with it: the app's hero says Avoid in any of the three,
+      // so the widget must too (one answer to "is now good?" everywhere).
+      long rs = 0, re = 0, ks = 0, ke = 0; String kaalKey = "rahu";
       JSONObject d = byDate(f.optJSONArray("days"), today);
-      if (d != null) { JSONArray r = d.getJSONArray("rahu"); rs = r.getLong(0); re = r.getLong(1); }
-      inRahu = rs <= now && now < re;
+      if (d != null) {
+        JSONArray r = d.getJSONArray("rahu"); rs = r.getLong(0); re = r.getLong(1);
+        for (String k : new String[]{"rahu", "yama", "gulika"}) {
+          JSONArray p = d.optJSONArray(k);
+          if (p != null && p.optLong(0) <= now && now < p.optLong(1)) { ks = p.optLong(0); ke = p.optLong(1); kaalKey = k; break; }
+          if (p != null && p.optLong(0) > now) soonest = Math.min(soonest, p.optLong(0));
+        }
+      }
+      inRahu = ks <= now && now < ke;
       if (inRahu) {
+        re = ke;
+        String kaal = "rahu".equals(kaalKey) ? w("rahu", "Rahu Kaal") : "yama".equals(kaalKey) ? w("yamaganda", "Yamaganda") : w("gulika", "Gulika");
         soonest = Math.min(soonest, re);
-        caption = ("en".equals(lang) ? "RAHU" : w("rahu", "Rahu")) + " · " + time.format(new Date(re));
-        nowLine = w("rahu", "Rahu Kaal") + " " + w("until", "until {x}").replace("{x}", time.format(new Date(re)));
+        caption = ("rahu".equals(kaalKey) && "en".equals(lang) ? "RAHU" : kaal.toUpperCase(Locale.ROOT)) + " · " + time.format(new Date(re));
+        nowLine = kaal + " " + w("until", "until {x}").replace("{x}", time.format(new Date(re)));
         thenLine = w("wHold", "Hold new starts") + ". " + w("wThen", "Then {x}").replace("{x}", nextName(chogs, re)) + ".";
       } else {
         if (now < rs) soonest = Math.min(soonest, rs);

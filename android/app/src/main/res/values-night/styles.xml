@@ -4,6 +4,8 @@
   <style name="SomaTheme" parent="android:style/Theme.Material.NoActionBar">
     <item name="android:fontFamily">sans</item>
     <item name="android:colorBackground">#050505</item>
+    <!-- The window paints the app's own ground before the WebView is ready, so launch shows no white flash. -->
+    <item name="android:windowBackground">#050505</item>
     <item name="android:windowLightStatusBar">false</item>
     <item name="android:statusBarColor">#050505</item>
     <item name="android:navigationBarColor">#050505</item>

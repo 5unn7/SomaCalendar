@@ -26,16 +26,18 @@
       const k = p.nature === 'bad' ? 0.42 : p.nature === 'neutral' ? 0.72 : 1, sw = (on ? w * 1.35 : w) * k, rr = R - (w - w * k) / 2 * (on ? 1.35 : 1);
       s += `<path class="dial-seg ${p.nature}${p.night ? ' night' : ''}${on ? ' on' : ''}" d="${arc(c, rr, h0, h1)}" stroke-width="${r2(sw)}" pathLength="1"/>`;
     }
-    if (opts.rahu) s += `<path class="dial-rahu" d="${arc(c, R - w * 1.25, H(opts.rahu.start), H(opts.rahu.end))}" stroke-width="${Math.max(2, w * 0.22)}"/>`;
+    // Inner band: Rahu Kaal dotted bold; Yamaganda and Gulika dotted fainter (opts.kaal), so every kaal shows on the ring.
+    for (const p of opts.kaal || (opts.rahu ? [Object.assign({ k: 'rahu' }, opts.rahu)] : [])) s += `<path class="dial-rahu ${p.k}" d="${arc(c, R - w * 1.25, H(p.start), H(p.end))}" stroke-width="${Math.max(2, w * (p.k === 'rahu' ? 0.24 : 0.16))}"/>`;
     if (opts.ticks !== false) for (let h = 0; h < 24; h++) {
       const major = h % 6 === 0, [x0, y0] = point(c, R + w / 2 + 3, h), [x1, y1] = point(c, R + w / 2 + (major ? 9 : 5), h);
       s += `<line class="dial-tick${major ? ' major' : ''}" x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}"/>`;
     }
-    if (opts.labels !== false) for (const [h, txt] of [[6, '6'], [12, '12'], [18, '18'], [0, '0']]) {
-      const [x, y] = point(c, R - w * 1.25 - S * 0.05, h);
-      s += `<text class="dial-num" x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${r2(S * 0.032)}">${txt}</text>`;
+    if (opts.labels !== false) for (const [h, txt] of opts.nums || [[6, '6'], [12, '12'], [18, '18'], [0, '0']]) {
+      const [x, y] = point(c, R - w * 1.25 - S * 0.065, h);
+      s += `<text class="dial-num" x="${x}" y="${y}" dy="0.35em" text-anchor="middle" font-size="${r2(S * 0.042)}">${txt}</text>`;
     }
-    for (const [d, cls] of [[opts.sunrise, 'rise'], [opts.sunset, 'set']]) if (d) { const [x, y] = point(c, R, H(d)); s += `<circle class="dial-sun ${cls}" cx="${x}" cy="${y}" r="${r2(w * 0.32)}"/>`; }
+    // Sunrise and sunset: a sun on the ring with a short horizon bar outside it, so the dots read as what they are.
+    for (const [d, cls] of [[opts.sunrise, 'rise'], [opts.sunset, 'set']]) if (d) { const h = H(d), [x, y] = point(c, R, h), [a0, b0] = point(c, R + w / 2 + 4, h - 0.35), [a1, b1] = point(c, R + w / 2 + 4, h + 0.35); s += `<circle class="dial-sun ${cls}" cx="${x}" cy="${y}" r="${r2(w * 0.42)}"/><line class="dial-hz" x1="${a0}" y1="${b0}" x2="${a1}" y2="${b1}"/>`; }
     if (now) {
       const h = H(now), [x, y] = point(c, R, h), [hx, hy] = point(c, R * 0.5, h), deg = r2((h / 24) * 360);
       s += `<g class="dial-hand" style="--deg:${deg}deg;transform-origin:${c}px ${c}px"><line x1="${hx}" y1="${hy}" x2="${x}" y2="${y}"/><circle class="halo" cx="${x}" cy="${y}" r="${r2(w * 1.15)}"/><circle class="knob" cx="${x}" cy="${y}" r="${r2(w * 0.62)}"/></g>`;
@@ -50,11 +52,12 @@
     if (Math.abs(now - sunset) < HR) return 'dusk';
     return now > sunrise && now < sunset ? 'day' : 'night';
   }
-  /* A moon disc lit to the given elongation (0 new, 180 full), as SVG. */
+  /* The Moon as it looks tonight: the photographed full Moon (img/moon.webp), with the unlit part laid over it in shadow.
+     angle is the elongation (0 new, 180 full). The shadow is the disc minus the lit lune, so a full Moon has none. */
   function moon(size, angle, cls) {
     const k = Math.cos((angle * Math.PI) / 180), r = 40, rx = r2(Math.abs(k) * r), waxing = angle < 180;
-    const lit = waxing ? `M50 10A40 40 0 0 1 50 90A${rx} 40 0 0 ${k > 0 ? 0 : 1} 50 10Z` : `M50 10A40 40 0 0 0 50 90A${rx} 40 0 0 ${k > 0 ? 1 : 0} 50 10Z`;
-    return `<svg class="moonsvg ${cls || ''}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true"><circle class="glow" cx="50" cy="50" r="44"/><circle class="dark" cx="50" cy="50" r="${r}"/><path class="lit" d="${lit}"/></svg>`;
+    const shade = waxing ? `M50 10A40 40 0 0 0 50 90A${rx} 40 0 0 ${k > 0 ? 0 : 1} 50 10Z` : `M50 10A40 40 0 0 1 50 90A${rx} 40 0 0 ${k > 0 ? 1 : 0} 50 10Z`;
+    return `<svg class="moonsvg ${cls || ''}" viewBox="0 0 100 100" width="${size}" height="${size}" aria-hidden="true"><circle class="glow" cx="50" cy="50" r="46"/><circle class="dark" cx="50" cy="50" r="${r}"/><image href="img/moon.webp" x="10" y="10" width="80" height="80"/><path class="shade" d="${shade}"/></svg>`;
   }
   const api = { svg, skyPhase, moon, point };
   if (typeof module !== 'undefined') module.exports = api;

@@ -36,7 +36,7 @@ w.SomaNative={updateWidgetFeed(){},scheduleReminders(){},requestNotifications(){
 for(const f of ['astronomy.js','clock.js','core.js','panchang.js','meanings.js','festivals.js','widget.js','i18n.js','natal.js','places.js','dial.js','app.js']){const s=w.document.createElement('script');s.textContent=readFileSync(base+f,'utf8');w.document.body.appendChild(s);}
 const $$=s=>[...w.document.querySelectorAll(s)];
 w.SomaClock.set(Date.parse('2026-11-14T06:30:00Z'));w.SomaClock.tick();   // noon in Ahmedabad
-w.setDay('2026-11-14');w.show('muhurat');
+w.setDay('2026-11-14');w.show('muhurat');w.setMuhuratTab('times');
 const B='#app .boardsec ';
 assert.equal($$(B+'.ctile').length,16,'all 16 Choghadiya on the board');
 assert.ok($$(B+'.bcol.bad .brow').some(b=>/Rahu/.test(b.textContent)),'Rahu Kaal in the Avoid column');
@@ -49,20 +49,20 @@ $$(B+'.bcol.bad .brow')[0].click();assert.ok(w.document.querySelector('#modal').
 $$(B+'.ctile')[0].click();assert.ok(/Choghadiya/.test(w.document.querySelector('#sheetTitle').textContent));w.document.querySelector('#modal').close();
 w.setDay('2026-11-24');w.show('muhurat');assert.ok($$(B+'.bcol.bad .brow').some(b=>/Bhadra/.test(b.textContent)),'Bhadra on Kartik Purnima');assert.ok(w.document.querySelector(B+'.ribbon .m.bh'),'Bhadra on the ribbon');
 w.setDay('2026-11-14');
-w.show('today');assert.ok(w.document.querySelector('#app .daystrip .segs .now'),'Today strip shows now');
+w.show('today');assert.ok(w.document.querySelector('#app .skyhero.today .dial-hand'),'Today dial shows now');
 // Before sunrise the night still running is yesterday's: the board and strip show it, with the now marker.
 w.SomaClock.set(Date.parse('2026-11-13T20:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');   // 2:00 am in Ahmedabad
 w.show('muhurat');assert.ok(w.document.querySelector(B+'.ribbon .now'),'pre-dawn: now marker on last night');assert.ok($$(B+'.ctile.current').length===1,'pre-dawn: running Choghadiya marked');
 $$(B+'.ctile')[0].click();assert.ok(/13/.test(w.document.querySelector('#modal .eyebrow').textContent),'sheet names the Vedic day it belongs to');w.document.querySelector('#modal').close();
-w.show('today');assert.ok(w.document.querySelector('#app .daystrip .segs .now'),'pre-dawn: Today strip shows now');
+w.show('today');assert.ok(w.document.querySelector('#app .skyhero.today .dial-hand'),'pre-dawn: Today dial shows now');
 w.SomaClock.set(Date.parse('2026-11-14T06:30:00Z'));w.SomaClock.tick();w.setDay('2026-11-14');
 // Calendar: "Coming up" starts today; the month's earlier festivals are folded away.
 w.show('calendar');
 const rows=$$('#app .section .list > .rowbtn').filter(r=>!r.closest('details'));
 assert.ok(rows.length>0);
-for(const r of rows){const d=/setDay\('([\d-]+)'\)/.exec(r.getAttribute('onclick'))[1];assert.ok(d>='2026-11-14','coming up never lists a past day: '+d);}
-assert.ok($$('#app details .rowbtn.gone').length>0,'earlier festivals folded under Earlier this month');
-w.changeMonth(-1);assert.equal($$('#app .rowbtn').filter(r=>!r.classList.contains('gone')).length,0,'a past month lists its festivals as gone');
+for(const r of rows){const d=/(?:setDay|festivalSheet)\([^)]*'(\d{4}-\d\d-\d\d)'\)/.exec(r.getAttribute('onclick'))[1];assert.ok(d>='2026-11-14','coming up never lists a past day: '+d);}
+assert.ok($$('#app .weekhead').length>0,'coming up is grouped by week');
+w.changeMonth(-1);assert.equal($$('#app .weekhead + .list > .rowbtn').filter(r=>!r.classList.contains('gone')).length,0,'a past month lists its festivals as gone');
 w.changeMonth(2);assert.equal($$('#app .rowbtn.gone').length,0,'a future month lists nothing as gone');
 assert.deepEqual(errors,[]);dom.window.close();
 console.log('PASS: Dur Muhurta and Bhadra, strict good windows, Muhurat day board (columns, ribbon, Choghadiya grid, pre-dawn night, sheets), Today strip, Calendar coming up starts today');

@@ -11,5 +11,7 @@ await build({entryPoints:['src/redesign/app.js'],outfile:dest+'/app.js',target:'
 // Bundled fonts (OFL) so Gujarati and Devanagari render the same offline on every phone.
 await mkdir(dest+'/fonts',{recursive:true});
 for(const f of await readdir('src/redesign/fonts')) await copyFile('src/redesign/fonts/'+f,dest+'/fonts/'+f);
+await mkdir(dest+'/img',{recursive:true});
+for(const f of await readdir('src/redesign/img')) await copyFile('src/redesign/img/'+f,dest+'/img/'+f);
 await copyFile('node_modules/astronomy-engine/astronomy.browser.min.js',dest+'/astronomy.js');
 await build({entryPoints:['src/natal.js'],outfile:dest+'/natal.js',bundle:true,minify:true,target:'es2017',format:'iife'});

@@ -35,27 +35,27 @@ assert.match(txt('.sunstrip .sunrise small'),/in 10 min/);
 step(6e4);assert.match(txt('.sunstrip .sunrise small'),/in 9 min/,'countdown moves with the minute tick');
 
 // The hour before sunrise is dawn, not night (the Vedic day in force is still yesterday's).
-assert.equal($('.sky').dataset.sky,'dawn');
-go(new Date(+f.sunrise-3*36e5));assert.equal($('.sky').dataset.sky,'night');
-go(new Date(+f.sunrise+3*36e5));assert.equal($('.sky').dataset.sky,'day');
+assert.equal($('.skyhero.today').dataset.sky,'dawn');
+go(new Date(+f.sunrise-3*36e5));assert.equal($('.skyhero.today').dataset.sky,'night');
+go(new Date(+f.sunrise+3*36e5));assert.equal($('.skyhero.today').dataset.sky,'day');
 
 // The running Choghadiya on the dial and in its headline changes when a boundary passes.
 {const day=P.choghadiya(f).filter(c=>!c.night);go(new Date(+day[2].end-30e3));
- const before=txt('.dialcore');assert.match(before,new RegExp('until '+fmt(day[2].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
- step(6e4);const after=txt('.dialcore');assert.notEqual(after,before,'Choghadiya headline moves on at the boundary');assert.match(after,new RegExp('until '+fmt(day[3].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ const before=txt('.skyhero.today .lineone');assert.match(before,new RegExp('until '+fmt(day[2].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
+ step(6e4);const after=txt('.skyhero.today .lineone');assert.notEqual(after,before,'Choghadiya headline moves on at the boundary');assert.match(after,new RegExp('until '+fmt(day[3].end).replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  // The dial hand is redrawn for the new minute.
  assert.ok($('.dial .dial-hand'));}
 
 // Now and next: Rahu Kaal greys out once it has passed.
-{const r=P.periods(f).rahu;go(new Date(+r.start-5*6e4));const row=()=>[...doc.querySelectorAll('.nn')].find(x=>/Rahu Kaal/.test(x.textContent));
- assert.match(row().textContent,/in 5 min/);assert.ok(!row().classList.contains('past'));
+{const r=P.periods(f).rahu;go(new Date(+r.start-5*6e4));const row=()=>[...doc.querySelectorAll('.nx')].find(x=>/Rahu Kaal/.test(x.textContent));
+ assert.ok(row(),'Rahu Kaal in the hero');assert.ok(!row().classList.contains('past'));
  go(new Date(+r.end+6e4));assert.ok(row().classList.contains('past'),'Rahu Kaal marked past after it ends');}
 
 // After sunset the sunrise slot looks ahead to tomorrow's sunrise.
 go(new Date(+f.sunset+30*6e4));assert.match($('.sunstrip .sunrise').getAttribute('aria-label'),/Sunrise tomorrow/,'after sunset the sunrise slot names tomorrow');assert.match(txt('.sunstrip .sunrise b'),new RegExp(fmt(fNext.sunrise)));
 
 // A "More times" panel the reader opened stays open across the minute tick.
-{const d=$('#app details');d.open=true;step(6e4);assert.ok($('#app details').open,'open details survive a repaint');}
+{w.show('muhurat');w.setMuhuratTab('times');const d=$('#app details');d.open=true;step(6e4);assert.ok($('#app details').open,'open details survive a repaint');w.show('today');}
 
 // Midnight in the chosen place, with the device in another zone: Today rolls over at the place's midnight.
 go(new Date('2026-11-14T18:29:30Z'));assert.equal(dateShown(),'2026-11-14');
@@ -76,8 +76,8 @@ w.setDay('2026-12-01');step(864e5);assert.equal(dateShown(),'2026-12-01');w.setD
  C.advance(864e5);w.somaClockChanged('resume');assert.notEqual(todayCell(),was,'calendar moves its Today ring on resume');}
 
 // Muhurat: the running Choghadiya is highlighted for now, earlier ones are past; today drops out of the good-day list once its windows have gone.
-{go(new Date('2026-11-16T06:30:00Z'));w.show('muhurat');const cur=()=>txt('.chog .timeline.current');const a=cur();assert.ok(a.length>0);
- assert.ok(doc.querySelectorAll('.chog .timeline.past').length>0);
+{go(new Date('2026-11-16T06:30:00Z'));w.show('muhurat');w.setMuhuratTab('times');const cur=()=>txt('.chogboard .ctile.current');const a=cur();assert.ok(a.length>0);
+ assert.ok(doc.querySelectorAll('.chogboard .ctile.past').length>0);
  const g=P.choghadiya(P.frame('2026-11-16',JAM)).filter(c=>!c.night);const i=g.findIndex(c=>c.start<=C.now()&&C.now()<c.end);
  C.set(new Date(+g[i].end+6e4));C.tick();assert.notEqual(cur(),a,'current Choghadiya row follows the clock');
  for(const ev of ['griha','vehicle','business','travel']){const late=w.muhuratDays(ev,'2026-11-16',30),fs=P.frame('2026-11-16',JAM);

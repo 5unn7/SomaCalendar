@@ -26,13 +26,14 @@ for(const lang of ['gu','hi']){
   // Days that stress the copy: a festival day, an Ekadashi, an ordinary day and an eclipse season day.
   for(const d of ['2026-11-14','2026-11-20','2026-12-01','2026-08-28','2026-03-03']){
     w.setDay(d);
-    for(const lay of ['dial','sky','folio']){w.setLayout(lay);w.show('today');check('today/'+lay+'/'+d,w.document.querySelector('#app'));}
-    for(const v of ['calendar','muhurat','moon']){w.show(v);check(v+'/'+d,w.document.querySelector('#app'));}
+    w.show('today');check('today/'+d,w.document.querySelector('#app'));w.push('panchang');check('panchang/'+d,w.document.querySelector('#app'));w.back();
+    for(const v of ['calendar','muhurat','moon']){w.show(v);check(v+'/'+d,w.document.querySelector('#app'));}w.show('muhurat');w.setMuhuratTab('times');check('muhurat times/'+d,w.document.querySelector('#app'));w.setMuhuratTab('find');
   }
-  for(const v of ['learn','personal']){w.show(v);check(v,w.document.querySelector('#app'));}
+  for(const v of ['learn','personal','settings']){w.show('personal');if(v!=='personal')w.push(v);check(v,w.document.querySelector('#app'));}w.show('today');
   check('nav',w.document.querySelector('#nav'));check('header',w.document.querySelector('header'));
-  const sheets={settings:()=>w.settings(),about:()=>w.aboutSheet(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');w.festivalStory(0);},erase:()=>w.eraseProfile(),chogInfo:()=>{w.setDay('2026-11-24');w.boardInfo(0);},nightChogInfo:()=>w.boardInfo(10),info16:()=>w.boardInfo(16),info17:()=>w.boardInfo(17),info18:()=>w.boardInfo(18),info19:()=>w.boardInfo(19),info20:()=>w.boardInfo(20),info21:()=>w.boardInfo(21),info22:()=>w.boardInfo(22),info23:()=>w.boardInfo(23),info24:()=>w.boardInfo(24),info25:()=>w.boardInfo(25)};
+  const sheets={appearance:()=>w.appearanceSheet(),notify:()=>w.notifyPrimer(),chog:()=>w.chogSheet('amrit'),day:()=>w.daySheet('2026-11-08'),about:()=>w.aboutSheet(),plan:()=>{w.show('today');w.plan();},birth:()=>w.editProfile(),location:()=>w.locationSheet(),story:()=>{w.show('today');const f=w.eval("observances('2026-11-01',30)").find(x=>x.kind==='festival');w.festivalSheet(f.key,f.day);},diwali:()=>w.festivalSheet('diwali','2026-11-08'),erase:()=>w.eraseProfile(),chogInfo:()=>{w.setDay('2026-11-24');w.boardInfo(0);},nightChogInfo:()=>w.boardInfo(10),info16:()=>w.boardInfo(16),info17:()=>w.boardInfo(17),info18:()=>w.boardInfo(18),info19:()=>w.boardInfo(19),info20:()=>w.boardInfo(20),info21:()=>w.boardInfo(21),info22:()=>w.boardInfo(22),info23:()=>w.boardInfo(23),info24:()=>w.boardInfo(24),info25:()=>w.boardInfo(25)};
   for(let i=0;i<9;i++)sheets['lesson'+i]=()=>w.lesson(i);
+  for(const k of ['tithi','nakshatra','yoga','karana','vaar','amanta','rahu','yamaganda','gulika','dur','bhadra','abhijit','brahma'])sheets['term '+k]=()=>w.termSheet(k);
   for(const [k,open] of Object.entries(sheets)){open();check('sheet '+k,w.document.querySelector('#modal'));w.document.querySelector('#modal').close();}
   // Onboarding steps too.
   for(const step of [1,2,3,4]){w.onboard(step);check('onboard '+step,w.document.querySelector('#onboard'));}

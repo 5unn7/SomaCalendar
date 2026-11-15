@@ -34,7 +34,7 @@ public final class MainActivity extends Activity {
       String path=uri.getPath();
       if(path!=null && path.startsWith("/assets/") && !path.contains("..")) {
         try {
-          String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":"application/octet-stream";
+          String type=path.endsWith(".html")?"text/html":path.endsWith(".css")?"text/css":path.endsWith(".js")?"application/javascript":path.endsWith(".webp")?"image/webp":path.endsWith(".woff2")?"font/woff2":"application/octet-stream";
           return new WebResourceResponse(type,"UTF-8",c.getAssets().open(path.substring(8)));
         } catch(java.io.IOException ignored) { }
       }
@@ -150,6 +150,11 @@ public final class MainActivity extends Activity {
       send("somaReceiveLocation",j.toString());
     }catch(Exception e){sendError("somaReceiveLocation","Invalid device location data.");}
   }
+  /** Back closes the open sheet, then the pushed page, then returns to Today; only on Today does it leave the app. */
+  @Override public void onBackPressed() {
+    if(web==null){super.onBackPressed();return;}
+    web.evaluateJavascript("(window.somaBack&&somaBack())?'1':'0'",v->{ if(v==null||!v.contains("1")) MainActivity.super.onBackPressed(); });
+  }
   public final class Bridge {
     @JavascriptInterface public void addCalendarEvent(String title,String start,String end,String place,String description) {
       runOnUiThread(() -> {
@@ -167,6 +172,16 @@ public final class MainActivity extends Activity {
     }
     /** The phone's text size (Settings › Display › Font size), 1.0 = default. */
     @JavascriptInterface public float fontScale(){return getResources().getConfiguration().fontScale;}
+    /** A light tap under the finger: select on a pick, confirm on a save, reject on a warning. Respects the system setting. */
+    @JavascriptInterface public void haptic(String kind){
+      runOnUiThread(()->{
+        if(web==null)return;
+        int c=android.view.HapticFeedbackConstants.CLOCK_TICK;
+        if("success".equals(kind))c=Build.VERSION.SDK_INT>=30?android.view.HapticFeedbackConstants.CONFIRM:android.view.HapticFeedbackConstants.VIRTUAL_KEY;
+        else if("warn".equals(kind))c=Build.VERSION.SDK_INT>=30?android.view.HapticFeedbackConstants.REJECT:android.view.HapticFeedbackConstants.LONG_PRESS;
+        web.performHapticFeedback(c);
+      });
+    }
     @JavascriptInterface public void appReady(){
       Log.i("SomaJS","Astronomical app initialized");
       runOnUiThread(()->{

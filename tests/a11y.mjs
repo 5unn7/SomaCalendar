@@ -16,7 +16,7 @@ for(const theme of ['light','dark'])for(const lang of ['en','gu']){
   const ctx=await browser.newContext({viewport:{width:390,height:844},colorScheme:theme});const page=await ctx.newPage();
   await page.addInitScript(s=>{try{localStorage.setItem('soma-redesign-v1',s)}catch(e){}},store(lang,theme,'dial'));
   await page.goto(url);await page.waitForSelector('#app h1');
-  const screens=[['today-dial',"setLayout('dial');show('today')"],['today-sky',"setLayout('sky');show('today')"],['today-folio',"setLayout('folio');show('today')"],['calendar',"show('calendar')"],['muhurat',"show('muhurat')"],['moon',"show('moon')"],['learn',"show('learn')"],['you',"show('personal')"],['settings',"settings()"],['birth',"editProfile()"]];
+  const screens=[['today',"show('today')"],['panchang',"show('today');push('panchang')"],['calendar',"show('calendar')"],['muhurat',"show('muhurat')"],['muhurat-times',"show('muhurat');setMuhuratTab('times')"],['festival',"festivalSheet('diwali','2026-11-08')"],['term',"termSheet('tithi')"],['moon',"show('moon')"],['learn',"show('learn')"],['you',"show('personal')"],['settings',"show('personal');push('settings')"],['birth',"editProfile()"]];
   for(const [name,js] of screens){
     await page.evaluate(`(()=>{const m=document.querySelector('#modal');if(m.open)m.close();${js}})()`);
     // Let entrance animations finish so axe measures the settled colours.
@@ -29,4 +29,4 @@ for(const theme of ['light','dark'])for(const lang of ['en','gu']){
 }
 await browser.close();server.close();
 if(fails.length){console.error(fails.join('\n'));console.error(fails.length+' serious accessibility problems');process.exit(1);}
-console.log('PASS: axe-core finds no serious or critical WCAG 2.1 AA problems on 10 screens × light/dark × English/Gujarati');
+console.log('PASS: axe-core finds no serious or critical WCAG 2.1 AA problems on 14 screens × light/dark × English/Gujarati');
