@@ -280,6 +280,50 @@ function wxLayer(d, cx) {
   const n = wxCurrent(d, cx);
   return n ? { fx: Wx.fx(n.kind, n.day, n.windy), tint: Wx.tint(n.kind, n.day), n } : { fx: '', tint: '', n: null };
 }
+/* The forecast for any moment of the next ~10 days at the place on screen: the hourly point for the first two days,
+   then MET's 6-hour blocks. Null when weather is off, stale, for another place, or beyond the forecast. */
+function wxFor(at) {
+  if (!Wx || !wxData || !prefs.weather || at == null) return null;
+  if (Math.abs(wxData.lat - loc.lat) > 0.02 || Math.abs(wxData.lon - loc.lon) > 0.02 || +now() - wxData.at > 12 * 36e5) return null;
+  const x = +at;
+  return (wxData.hours || []).find(h => h.t <= x && x < h.t + 36e5) || (wxData.six || []).find(h => h.t <= x && x < h.t + 6 * 36e5) || null;
+}
+const WET = /drizzle|rain|showers|sleet|snow|thunder/;
+const wxKmh = ms => wxFahr() ? Math.round(ms * 2.237) + ' ' + t('mph') : Math.round(ms * 3.6) + ' ' + t('kmh');
+const wxBrief = h => (t('wx')[h.k] || h.k) + ', ' + wxDeg(h.c);
+/* What the sky will do at the moment a festival turns on: clouds at moonrise for the fasts broken by the Moon,
+   kite wind for Uttarayan, wind at the Holika fire, cloud at an eclipse's peak, and the sky at the puja time. */
+function festSky(f) {
+  if (!wxFor(now())) return '';
+  const d = vedicDay(f.day);
+  let line = '';
+  if (f.rule === 'moonrise') {
+    const mr = d.frame.data.moonrise, h = wxFor(mr);
+    if (h) line = (h.cl >= 70 || WET.test(h.k)) ? t('skyMoonHidden', { time: fmt(mr), cl: h.cl }) : t('skyMoonClear', { time: fmt(mr), sky: wxBrief(h) });
+  } else if (f.key === 'uttarayan') {
+    const hs = [11, 12, 13, 14, 15].map(hr => wxFor(K.instant(f.day, String(hr).padStart(2, '0') + ':00', loc.zone))).filter(Boolean);
+    if (hs.length) { const w = hs.reduce((a, h) => a + h.w, 0) / hs.length, v = wxKmh(w);
+      line = w < 2.5 ? t('kiteCalm', { v }) : w > 11 ? t('kiteStrong', { v }) : t('kiteGood', { v }); }
+  } else if (f.key === 'holika') {
+    const at = new Date(+d.frame.sunset + 36e5), h = wxFor(at);
+    if (h) line = h.w >= 8 ? t('holikaWind', { v: wxKmh(h.w) }) : WET.test(h.k) ? t('skyWet', { sky: wxBrief(h) }) : t('holikaCalm', { sky: wxBrief(h) });
+  } else if (f.key === 'chandragrahan' || f.key === 'suryagrahan') {
+    const h = wxFor(f.at);
+    if (h) line = (h.cl >= 70 || WET.test(h.k)) ? t('eclipseCloud', { cl: h.cl }) : t('eclipseClear', { sky: wxBrief(h) });
+  } else {
+    const w = f.kind === 'festival' ? festWindow(d, f) : null, h = w && !w.passed ? wxFor(w.start) : null;
+    if (h) line = WET.test(h.k) ? t('skyWet', { sky: wxBrief(h) }) : t('skyPuja', { sky: wxBrief(h) });
+  }
+  return line ? `<p class="caption skyline">${esc(line)}</p>` : '';
+}
+/* A storm, heavy rain or snow, or a gale on a day: for the long-journey muhurat list. */
+function wxStorm(key) {
+  const a = +K.instant(key, '06:00', loc.zone), z = +K.instant(key, '22:00', loc.zone);
+  const pts = [];
+  for (let x = a; x <= z; x += 36e5) { const h = wxFor(x); if (h && pts[pts.length - 1] !== h) pts.push(h); }
+  const bad = pts.find(h => /thunder|heavyrain|heavysnow/.test(h.k)) || pts.find(h => h.w >= 15) || pts.find(h => h.k === 'snow');
+  return bad ? t('stormDay', { sky: (t('wx')[bad.k] || bad.k) + (bad.w >= 15 ? ', ' + wxKmh(bad.w) : '') }) : '';
+}
 function weatherSheet() {
   if (!wxNative()) return;
   if (!prefs.weather) {
@@ -524,7 +568,7 @@ function festivalToday(key) {
   const list = observances(K.addDay(key, -1), 50), todays = list.filter(x => x.day === key), yesterdayEkadashi = list.find(x => x.key === 'ekadashi' && x.parana && x.parana.day === key);
   let html = '';
   for (const f of todays) {
-    html += `<div class="card festival ${f.kind}"><div class="eyebrow">${esc(t('festivalsToday'))}</div><h2>${esc(L.festName(f))}</h2>${f.note ? `<p>${esc(festNote(f))}</p>` : ''}${f.kind === 'festival' ? `<p>${esc(t('festDayNote'))}</p>` : ''}${indiaLine(f)}`
+    html += `<div class="card festival ${f.kind}"><div class="eyebrow">${esc(t('festivalsToday'))}</div><h2>${esc(L.festName(f))}</h2>${f.note ? `<p>${esc(festNote(f))}</p>` : ''}${f.kind === 'festival' ? `<p>${esc(t('festDayNote'))}</p>` : ''}${indiaLine(f)}${festSky(f)}`
       + (f.key === 'ekadashi' ? `<p>${esc(t('fastBegins'))} · ${fmt(vedicDay(key).frame.sunrise)}</p>${f.parana ? `<p><strong>${esc(t('parana'))}:</strong> ${dayLabel(f.parana.day)} · ${span(f.parana)}</p>` : ''}` : '')
       + (f.sutak ? `<p>${esc(t('sutakLine', { a: full(f.sutak), b: full(f.at) }))}</p>` : '') + '</div>';
   }
@@ -541,7 +585,7 @@ function festivalStory(i) {
   const f = upList[i]; if (!f) return;
   const date = K.instant(f.day, '12:00', loc.zone), n = new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, day: 'numeric' }).format(date);
   modal(`<div class="row" style="align-items:flex-end"><div class="number" style="font-size:6rem">${esc(n)}</div><div style="text-align:right" class="eyebrow">${esc(new Intl.DateTimeFormat(locale(), { timeZone: loc.zone, weekday: 'long', month: 'long' }).format(date))}</div></div>`
-    + `<h2 id="sheetTitle" style="font-size:2.125rem;margin-top:10px">${esc(L.festName(f))}</h2>${f.note ? `<p style="color:var(--ink)">${esc(festNote(f))}</p>` : ''}${indiaLine(f)}`
+    + `<h2 id="sheetTitle" style="font-size:2.125rem;margin-top:10px">${esc(L.festName(f))}</h2>${f.note ? `<p style="color:var(--ink)">${esc(festNote(f))}</p>` : ''}${indiaLine(f)}${festSky(f)}`
     + (f.parana ? `<div class="list"><div class="timeline"><i class="dot vrat"></i><div><strong>${esc(t('parana'))}</strong><p>${dayLabel(f.parana.day)}</p></div><div class="right">${span(f.parana)}</div></div></div>` : '')
     + (f.sutak ? `<p>${esc(t('sutakLine', { a: full(f.sutak), b: full(f.at) }))}</p>` : '')
     + remindButton(f, i)
@@ -571,7 +615,8 @@ function nowNext(d, cx) {
   row(t('rahu'), '', per.rahu, 'bad');
   if (!per.abhijit.wednesday) row(t('abhijit'), '', per.abhijit, 'good');
   const more = [['yamaganda', per.yamaganda, 'bad'], ['gulika', per.gulika, 'bad'], ['brahma', per.brahma, 'good']]
-    .map(([k, p, n]) => `<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${n}" aria-hidden="true"></i><div class="label"><b>${esc(t(k))}</b></div><div class="when">${span(p)}</div></div>`).join('');
+    .map(([k, p, n]) => { const h = k === 'brahma' && p ? wxFor(p.start) : null;
+      return `<div class="nn${p && now && p.end <= now ? ' past' : ''}"><i class="dot ${n}" aria-hidden="true"></i><div class="label"><b>${esc(t(k))}</b>${h ? `<small>${esc(t('brahmaTemp', { sky: wxBrief(h) }))}</small>` : ''}</div><div class="when">${span(p)}</div></div>`; }).join('');
   return `<section class="section">${groupHead(t('ovNow'), esc(t('nowAndNext')))}${dayStrip(d)}<div class="list">${rows.join('')}</div><details><summary>${esc(t('moreTimes'))}</summary><div class="list">${more}</div></details></section>`;
 }
 function practiceCard(d) {
@@ -728,7 +773,7 @@ function muhuratView() {
   const lead = `<div class="eyebrow">${esc(L.vaarName(d.frame.weekday))} · ${esc(L.tithiName(d.sunriseLimbs.tithi.index))}</div><h1>${esc(t('muhurat'))}</h1>${datebar()}`
     + muhuratSummary(d);
   const finder = `<section class="section">${groupHead(t('ovPlan'), esc(t('findMuhurat')))}<label>${esc(t('eventType'))}<select onchange="muhuratEvent=this.value;muhuratView()">${M.EVENTS.map(e => `<option value="${e.key}" ${e.key === muhuratEvent ? 'selected' : ''}>${esc(tr(e.en))}</option>`).join('')}</select></label>`
-    + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('goodDays'))}</div></div></div>${ev.length ? ev.map(x => `<button type="button" class="timeline rowbtn" onclick="setDay('${x.key}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(x.key), what: L.chogName(x.win.key) + ' ' + span(x.win) }))}"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)} · ${span(x.win)} · ${esc(L.chogName(x.win.key))}</strong><p>${esc(t('why'))}: ${esc(x.why)}</p></div><span class="chev" aria-hidden="true">›</span></button>`).join('') : `<p style="padding:14px 0">${esc(t('noGoodDays'))}</p>`}</div>`
+    + `<div class="list"><div class="timeline"><div><div class="eyebrow">${esc(t('goodDays'))}</div></div></div>${ev.length ? ev.map(x => `<button type="button" class="timeline rowbtn" onclick="setDay('${x.key}')" aria-label="${esc(t('openDayLabel', { d: dayLabel(x.key), what: L.chogName(x.win.key) + ' ' + span(x.win) }))}"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)} · ${span(x.win)} · ${esc(L.chogName(x.win.key))}</strong><p>${esc(t('why'))}: ${esc(x.why)}</p>${(() => { const st = muhuratEvent === 'travel' ? wxStorm(x.key) : ''; return st ? `<p class="wxwarn">${esc(st)}</p>` : ''; })()}</div><span class="chev" aria-hidden="true">›</span></button>`).join('') : `<p style="padding:14px 0">${esc(t('noGoodDays'))}</p>`}</div>`
     + `<p class="caption" style="margin-top:10px">${esc(t('vivahNote'))}</p></section>`;
   // The board keeps Shubh and Avoid in separate columns, so nobody skimming a "best times" list lands in Rahu Kaal.
   const rest = dayBoard(d)
@@ -1040,7 +1085,8 @@ function reminderPlan() {
       // The puja time, or half an hour before moonrise for the fasts broken at moonrise (Karwa Chauth, Sankashti).
       const vd = vedicDay(f.day), mr = f.rule === 'moonrise' ? vd.frame.data.moonrise : null, w = f.rule === 'moonrise' ? null : festWindow(vd, f);
       const at = w ? w.start : mr ? new Date(+mr - 30 * 6e4) : K.instant(f.day, '07:00', loc.zone);
-      add(at, L.festName(f), w ? t('remPuja', { span: span(w) }) : mr ? t('moonrise') + ' ' + fmt(mr) : (festNote(f) || L.festName(f)), 'mine-' + f.key + '-' + f.day);
+      const h = wxFor(mr || (w && w.start)), sky = h ? ' · ' + (mr && (h.cl >= 70 || WET.test(h.k)) ? t('remMoonCloud', { cl: h.cl }) : wxBrief(h)) : '';
+      add(at, L.festName(f), (w ? t('remPuja', { span: span(w) }) : mr ? t('moonrise') + ' ' + fmt(mr) : (festNote(f) || L.festName(f))) + sky, 'mine-' + f.key + '-' + f.day);
     }
     if ((r.vrat || mine) && f.day > from) add(K.instant(K.addDay(f.day, -1), '19:00', loc.zone), t('remTomorrow', { f: L.festName(f) }), f.key === 'ekadashi' ? t('remFast') + (f.parana ? t('remParanaAt', { d: dayLabel(f.parana.day), span: span(f.parana) }) : '') : (festNote(f) || t('remAt', { f: L.festName(f), p: loc.name })), 'eve-' + f.key + '-' + f.day);
     if (r.parana && f.parana) add(f.parana.start, t('parana') + ': ' + L.festName(f), t('remBreak', { time: fmt(f.parana.end) }), 'parana-' + f.day);
@@ -1051,7 +1097,7 @@ function reminderPlan() {
       const ti = Math.floor(A.MoonPhase(s.sunrise) / 12), wd = new Date(Date.parse(s.day + 'T12:00Z')).getUTCDay(), seg0 = P.RAHU[wd] - 1;
       const rahu = { start: new Date(+s.sunrise + (s.sunset - s.sunrise) * seg0 / 8), end: new Date(+s.sunrise + (s.sunset - s.sunrise) * (seg0 + 1) / 8) };
       const fest = list.filter(x => x.day === s.day).map(x => L.festName(x)).join(', ');
-      if (r.daily) add(s.sunrise, L.vaarName(wd) + ' · ' + L.tithiName(ti), (fest ? fest + '. ' : '') + t('rahu') + ' ' + span(rahu), 'daily-' + s.day);
+      if (r.daily) add(s.sunrise, L.vaarName(wd) + ' · ' + L.tithiName(ti), (fest ? fest + '. ' : '') + t('rahu') + ' ' + span(rahu) + (wxFor(s.sunrise) ? ' · ' + wxBrief(wxFor(s.sunrise)) : ''), 'daily-' + s.day);
       if (r.rahu) add(rahu.start, t('rahu') + ' ' + span(rahu), t('remRahuBody', { time: fmt(rahu.end) }), 'rahu-' + s.day);
     }
   }

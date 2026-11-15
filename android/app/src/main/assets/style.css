@@ -361,6 +361,8 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
 #onboard .langs.months button{flex-wrap:wrap;text-align:left}
 #onboard .langs.months small{flex:1 0 100%;order:3;font:500 0.8125rem var(--body);color:var(--muted);margin-top:2px}
 .caption.india{margin-top:6px}
+.skyline{margin-top:8px;color:var(--ink)}
+.wxwarn{color:var(--bad-text);font-weight:600;margin-top:4px}
 #onboard .foot{margin-top:auto;padding-top:24px}
 #onboard .foot .quiet{display:block;margin:6px auto 0;color:var(--muted)}
 .or{text-align:center;font-size:0.8125rem;color:var(--muted);margin:16px 0 4px}

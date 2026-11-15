@@ -85,5 +85,17 @@ function boot(loc,prefs,opt={}){
   assert.ok(mine&&eve,'two Karwa Chauth reminders');assert.match(mine.body,/^Moonrise /);
   const mr=w.eval("vedicDay(upList["+i+"].day).frame.data.moonrise");assert.equal(+mr-mine.at,30*6e4);
   w.toggleRemind('karwa',i);assert.ok(!w.eval('reminderPlan()').some(r=>r.id.includes('karwa')),'turned off again');dom.window.close();}
-console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival');
+// Weather on the days that matter: cloud at Karwa Chauth moonrise in the sheet and its reminder, and a storm flag on a travel day.
+{const at=Date.parse('2026-10-27T12:00:00Z'),hours=[],six=[];for(let i=0;i<48;i++)hours.push({t:at+i*36e5,c:5,k:'cloudy',w:4,cl:90,h:70,p:0});
+  for(let i=0;i<30;i++)six.push({t:at+48*36e5+i*6*36e5,c:3,k:i>10&&i<14?'thunder':'partly',w:5,cl:40,h:60,p:0});
+  const data={v:1,at,lat:43.65,lon:-79.38,hours,six};
+  const native={fontScale:()=>1,appReady(){},appFailure(){},weatherConfigure(){},weatherNow:()=>JSON.stringify(data),scheduleReminders(){},updateWidgetFeed(){}};
+  const dom=boot({name:'Toronto',lat:43.65,lon:-79.38,zone:'America/Toronto'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],weather:true,remind:{karwa:true}},{native}),w=dom.window;
+  w.SomaClock.set(new Date(at+60e3));w.SomaClock.tick('clock');w.show('today');
+  const i=w.eval("upList.findIndex(x=>x.key==='karwa')");w.festivalStory(i);
+  assert.match(w.document.querySelector('dialog .skyline').textContent,/Clouds may hide the moon at 7:39 pm \(90% cloud\)/);
+  assert.ok(w.eval("reminderPlan()").some(r=>/clouds may hide the moon \(90%\)/.test(r.body)),'the Karwa Chauth reminder carries the cloud');
+  assert.match(w.eval("wxStorm('2026-11-01')"),/Thunderstorm/);assert.equal(w.eval("wxStorm('2026-11-02')"),'');
+  w.eval("prefs.weather=false");assert.equal(w.eval("festSky(upList["+i+"])"),'','weather off: no sky lines');dom.window.close();}
+console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival, moonrise cloud and travel storm flag');
 console.log('PASS: sunset after midnight far north, La Ronge winter day, Asia/Calcutta defaults, nishita kaal width, Janmashtami nishita');

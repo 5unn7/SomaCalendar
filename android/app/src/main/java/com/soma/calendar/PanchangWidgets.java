@@ -304,7 +304,7 @@ public final class PanchangWidgets {
     v.setTextViewText(R.id.pHeadline, rahu ? f.t("rahu", "Rahu Kaal") : local(f.chog));
     v.setTextColor(R.id.pHeadline, rahu ? p.bad : p.quality(q));
     long until = rahu ? f.rahuEnd() : f.chog.optLong("e");
-    v.setTextViewText(R.id.pSub, (rahu ? f.t("wHold", "Hold new starts") : meaning(f, q)) + " · " + f.t("until", "until {x}", f.time(until)));
+    v.setTextViewText(R.id.pSub, (rahu ? f.t("wHold", "Hold new starts") : meaning(f, q)) + " · " + f.t("until", "until {x}", f.time(until)) + temp(c, f));
     if (!small) v.setImageViewBitmap(R.id.pArt, f.art("strip", () -> strip(f, p)));
     if (tall) {
       StringBuilder b = new StringBuilder();
@@ -322,6 +322,13 @@ public final class PanchangWidgets {
       }
     }
     return v;
+  }
+
+  /** " · 12° Clear" when live weather is on and fresh for this place; empty otherwise. */
+  private static String temp(Context c, Feed f) {
+    if (!f.ok || !Weather.on(c)) return "";
+    Weather.Now wx = Weather.Now.at(Weather.storedFor(c, f.lat, f.lon), f.now, f.endOfToday());
+    return wx.ok ? " · " + Weather.deg(wx.temp, Weather.fahrenheit(c)) + " " + f.t("wx_" + wx.kind, Weather.label(wx.kind)) : "";
   }
 
   static String meaning(Feed f, String q) { return "good".equals(q) ? f.t("wGoodBegin", "Good to begin") : "bad".equals(q) ? f.t("wAvoidBegin", "Avoid new beginnings") : f.t("wGoodTravel", "Good for travel"); }
@@ -370,7 +377,7 @@ public final class PanchangWidgets {
   private static RemoteViews day(Context c, Feed f, SomaWidget.Palette p, float w, float h) {
     boolean wide = w >= 450;
     RemoteViews v = new RemoteViews(c.getPackageName(), wide ? R.layout.panchang_day_wide : R.layout.panchang_day);
-    v.setTextViewText(R.id.pSub, f.ok ? f.dateLabel() + (f.city.isEmpty() ? "" : " · " + f.city) : f.t("wSetCityOnce", "Open Soma once to set your city"));
+    v.setTextViewText(R.id.pSub, f.ok ? f.dateLabel() + (f.city.isEmpty() ? "" : " · " + f.city) + temp(c, f) : f.t("wSetCityOnce", "Open Soma once to set your city"));
     if (!f.ok) return v;
     v.setTextViewText(R.id.pHeadline, f.tithiName() + (f.nak == null ? "" : " · " + local(f.nak)));
     v.setImageViewBitmap(R.id.pArt, f.art("moon", () -> SomaWidget.moon(f.tithiIndex, p, 200)));
