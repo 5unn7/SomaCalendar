@@ -107,10 +107,27 @@
     venus: { en: 'Venus', gu: 'શુક્ર', hi: 'शुक्र', good: 'arts, shopping, relationships, celebrations' },
     saturn: { en: 'Saturn', gu: 'શનિ', hi: 'शनि', good: 'hard labour and service; avoid new ventures' }
   };
+  /* What the Moon's passage through each rashi supports: the sign's lord, and the Moon's own dignity (exalted in
+     Vrishabha, at home in Karka, debilitated in Vrishchika). */
+  const RASHI_LORD = ['mars', 'venus', 'mercury', 'moon', 'sun', 'mercury', 'venus', 'mars', 'jupiter', 'saturn', 'saturn', 'jupiter'];
+  const RASHI_GOOD = [
+    'bold starts, sport and quick decisions; keep your temper',
+    'the Moon is exalted: buying, money matters, food, music and anything meant to last',
+    'talks, writing, trade, learning and short trips',
+    'the Moon is at home: family, mother, home and caring for others; feelings run deep',
+    'leadership, government work, meeting elders and being seen; keep pride in check',
+    'detailed work, accounts, health routines and service',
+    'partnerships, agreements, beauty, art and making peace',
+    'the Moon is debilitated: sadhana, research and quiet work; avoid new ventures and arguments',
+    'dharma, study, teachers, pilgrimage and long journeys',
+    'steady effort, duty, long-term plans and hard work',
+    'seva, community work, friends and new ideas',
+    'prayer, daan, rest and pilgrimage; trust your intuition'
+  ];
   const RASHI = [
     ['Mesha', 'મેષ', 'मेष'], ['Vrishabha', 'વૃષભ', 'वृषभ'], ['Mithuna', 'મિથુન', 'मिथुन'], ['Karka', 'કર્ક', 'कर्क'], ['Simha', 'સિંહ', 'सिंह'], ['Kanya', 'કન્યા', 'कन्या'],
     ['Tula', 'તુલા', 'तुला'], ['Vrishchika', 'વૃશ્ચિક', 'वृश्चिक'], ['Dhanu', 'ધન', 'धनु'], ['Makara', 'મકર', 'मकर'], ['Kumbha', 'કુંભ', 'कुम्भ'], ['Meena', 'મીન', 'मीन']
-  ].map(r => ({ en: r[0], gu: r[1], hi: r[2] }));
+  ].map((r, i) => ({ en: r[0], gu: r[1], hi: r[2], lord: RASHI_LORD[i], good: RASHI_GOOD[i] }));
   const TARA = {
     janma: 'Janma (birth star): take care with big decisions', sampat: 'Sampat (wealth): good for gains', vipat: 'Vipat (danger): avoid risks',
     kshema: 'Kshema (well-being): good for health and comfort', pratyari: 'Pratyari (obstacles): expect resistance', sadhana: 'Sadhana (achievement): good for effort and goals',
@@ -144,6 +161,19 @@
      string that is missing here, and tests/i18n-coverage.mjs fails the build if any string is missing. */
   const TX = {};
   [
+    // Moon in each rashi
+    ['bold starts, sport and quick decisions; keep your temper', 'હિંમતભરી શરૂઆત, રમત અને ઝડપી નિર્ણય; ગુસ્સો કાબૂમાં રાખો', 'साहसिक आरंभ, खेल और त्वरित निर्णय; क्रोध पर संयम रखें'],
+    ['the Moon is exalted: buying, money matters, food, music and anything meant to last', 'ચંદ્ર ઉચ્ચનો: ખરીદી, નાણાંનાં કામ, ભોજન, સંગીત અને લાંબું ટકે એવું દરેક કામ', 'चंद्र उच्च का: खरीदारी, धन के काम, भोजन, संगीत और टिकाऊ हर काम'],
+    ['talks, writing, trade, learning and short trips', 'વાતચીત, લેખન, વેપાર, અભ્યાસ અને ટૂંકા પ્રવાસ', 'बातचीत, लेखन, व्यापार, अध्ययन और छोटी यात्राएँ'],
+    ['the Moon is at home: family, mother, home and caring for others; feelings run deep', 'ચંદ્ર સ્વગૃહી: કુટુંબ, માતા, ઘર અને બીજાની સંભાળ; લાગણી ઊંડી રહે', 'चंद्र स्वराशि में: परिवार, माता, घर और दूसरों की देखभाल; भावनाएँ गहरी रहती हैं'],
+    ['leadership, government work, meeting elders and being seen; keep pride in check', 'નેતૃત્વ, સરકારી કામ, વડીલોને મળવું અને ઓળખ; અભિમાન ટાળો', 'नेतृत्व, सरकारी काम, बड़ों से मिलना और पहचान; अभिमान से बचें'],
+    ['detailed work, accounts, health routines and service', 'ઝીણવટભર્યું કામ, હિસાબ, આરોગ્યની દિનચર્યા અને સેવા', 'बारीक काम, हिसाब-किताब, स्वास्थ्य की दिनचर्या और सेवा'],
+    ['partnerships, agreements, beauty, art and making peace', 'ભાગીદારી, કરાર, સૌંદર્ય, કલા અને સમાધાન', 'साझेदारी, समझौते, सौंदर्य, कला और मेल-मिलाप'],
+    ['the Moon is debilitated: sadhana, research and quiet work; avoid new ventures and arguments', 'ચંદ્ર નીચનો: સાધના, સંશોધન અને શાંત કામ; નવું સાહસ અને વિવાદ ટાળો', 'चंद्र नीच का: साधना, शोध और शांत काम; नए उद्यम और विवाद से बचें'],
+    ['dharma, study, teachers, pilgrimage and long journeys', 'ધર્મ, અભ્યાસ, ગુરુ, તીર્થયાત્રા અને લાંબા પ્રવાસ', 'धर्म, अध्ययन, गुरु, तीर्थयात्रा और लंबी यात्राएँ'],
+    ['steady effort, duty, long-term plans and hard work', 'સતત પ્રયત્ન, ફરજ, લાંબા ગાળાની યોજના અને મહેનત', 'लगातार प्रयास, कर्तव्य, दीर्घकालिक योजना और परिश्रम'],
+    ['seva, community work, friends and new ideas', 'સેવા, સમાજનું કામ, મિત્રો અને નવા વિચાર', 'सेवा, सामाजिक काम, मित्र और नए विचार'],
+    ['prayer, daan, rest and pilgrimage; trust your intuition', 'પ્રાર્થના, દાન, આરામ અને તીર્થયાત્રા; અંતઃસ્ફુરણા પર ભરોસો રાખો', 'प्रार्थना, दान, विश्राम और तीर्थयात्रा; अंतर्ज्ञान पर भरोसा रखें'],
     // Tithi groups
     ['Nanda (joyful)', 'નંદા (આનંદદાયી)', 'नंदा (आनंददायक)'], ['Bhadra (steady)', 'ભદ્રા (સ્થિર)', 'भद्रा (स्थिर)'], ['Jaya (victorious)', 'જયા (વિજયી)', 'जया (विजयी)'],
     ['Rikta (empty)', 'રિક્તા (ખાલી)', 'रिक्ता (रिक्त)'], ['Purna (complete)', 'પૂર્ણા (સંપૂર્ણ)', 'पूर्णा (पूर्ण)'], ['Amavasya', 'અમાસ', 'अमावस्या'],

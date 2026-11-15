@@ -556,11 +556,60 @@ function practiceCard(d) {
   }
   return `<section class="section">${groupHead(t('ovPractice'), esc(t('whatToday')))}<div class="chipRow">${chips}</div><div class="card">${body}</div></section>`;
 }
+const ord = n => L.lang === 'en' ? n + ['th', 'st', 'nd', 'rd'][n % 10 > 3 || [11, 12, 13].indexOf(n) >= 0 ? 0 : n % 10] : num(n);
+/* The user's month at sunrise each day: favourable days (Chandrabalam and Tarabalam both strong) and Chandrashtama
+   days (Moon 8th from the janma rashi). Same sunrise rule as the Calendar dots, so the list and the dots agree. */
+const personalCache = new Map();
+function monthPersonal(ym) {
+  const bm = birthMoon(); if (bm == null) return null;
+  // Today repaints every minute and asks for the next favourable day; a month of sunrises only changes with place or birth.
+  const ck = [ym, bm, loc.lat, loc.lon, loc.zone].join('|');
+  if (personalCache.has(ck)) return personalCache.get(ck);
+  if (personalCache.size > 24) personalCache.clear();
+  const out = monthPersonalCalc(ym, bm); personalCache.set(ck, out); return out;
+}
+function monthPersonalCalc(ym, bm) {
+  const first = ym + '-01', count = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), good = [], care = [];
+  for (let i = 0; i < count; i++) {
+    const key = K.addDay(first, i), r = K.dayData(key, loc).sunrise; if (!r) continue;
+    const p = P.personal(bm, r);
+    if (p.verdict === 'good') good.push({ key, p }); else if (p.chandraCount === 8) care.push({ key, p });
+  }
+  return { good, care };
+}
+function nextFavourable(from) {
+  for (const ym of [from.slice(0, 7), K.addDay(from.slice(0, 7) + '-28', 7).slice(0, 7)]) {
+    const m = monthPersonal(ym), hit = m && m.good.find(x => x.key > from);
+    if (hit) return hit.key;
+  }
+  return null;
+}
 function personalLine(d) {
   const bm = birthMoon();
-  if (bm == null) return `<button class="lesson" onclick="editProfile()"><div class="eyebrow">${esc(t('forYou'))}</div><h3>${esc(t('addBirth'))} <span>›</span></h3><span>${esc(t('chandrabalam'))} · ${esc(t('tarabalam'))}</span></button>`;
-  const p = P.personal(bm, isToday() ? now() : d.frame.sunrise);
-  return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2><p>${esc(t('chandrabalam'))}: ${esc(t('chandraLine', { n: L.lang === 'en' ? p.chandraCount + ['th', 'st', 'nd', 'rd'][p.chandraCount % 10 > 3 || [11, 12, 13].indexOf(p.chandraCount) >= 0 ? 0 : p.chandraCount % 10] : num(p.chandraCount), rashi: L.rashiName(p.janmaRashi) }))} · ${esc(t(p.chandraGood ? 'strong' : 'weak'))}</p><p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[p.tara.key]))}</p></div>`;
+  if (bm == null) return `<button class="lesson" onclick="editProfile()"><div class="eyebrow">${esc(t('forYou'))}</div><h3>${esc(t('addBirth'))} <span aria-hidden="true">›</span></h3><span>${esc(t('favCtaShort'))}</span></button>`;
+  const p = P.personal(bm, isToday() ? now() : d.frame.sunrise), next = nextFavourable(day);
+  return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2>`
+    + (p.chandraCount === 8 ? `<p class="care"><strong>${esc(t('chandrashtama'))}.</strong> ${esc(t('chandrashtamaLine', { rashi: L.rashiName(p.janmaRashi) }))}</p>` : `<p>${esc(t('chandrabalam'))}: ${esc(t('chandraLine', { n: ord(p.chandraCount), rashi: L.rashiName(p.janmaRashi) }))} · ${esc(t(p.chandraGood ? 'strong' : 'weak'))}</p>`)
+    + `<p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[p.tara.key]))}</p>`
+    + (next ? `<div class="row nextfav"><button class="quiet" onclick="setDay('${next}')">${esc(t('nextFav', { d: dayLabel(next) }))}</button><button class="quiet" onclick="show('calendar')">${esc(t('seeMonth'))} ›</button></div>` : '') + `</div>`;
+}
+/* A ring of the twelve rashis, Mesha at the top going clockwise: the Moon's rashi lit, the janma rashi ringed. */
+function rashiRing(r, mine) {
+  const seg = i => { const a0 = (i * 30 - 90 + 2) * Math.PI / 180, a1 = ((i + 1) * 30 - 90 - 2) * Math.PI / 180, R = 26, q = 17;
+    const pt = (a, rr) => (30 + rr * Math.cos(a)).toFixed(2) + ' ' + (30 + rr * Math.sin(a)).toFixed(2);
+    return `<path d="M${pt(a0, R)} A${R} ${R} 0 0 1 ${pt(a1, R)} L${pt(a1, q)} A${q} ${q} 0 0 0 ${pt(a0, q)}Z" class="${i === r ? 'on' : ''}${i === mine ? ' mine' : ''}"/>`; };
+  return `<svg class="rring" viewBox="0 0 60 60" width="60" height="60" aria-hidden="true">${[...Array(12).keys()].map(seg).join('')}</svg>`;
+}
+/* Chandra rashi: which rashi the Moon is passing through now (or at sunrise on another day), until when, and what it supports. */
+function rashiCard(d) {
+  const at = isToday() ? now() : d.frame.sunrise, r = Math.floor(P.moonSid(at) / 30), R = M.RASHI[r], nx = (r + 1) % 12;
+  const end = P.crossing(P.moonSid, at, nx * 30, 72), bm = birthMoon(), p = bm != null ? P.personal(bm, at) : null;
+  const endTxt = end ? (K.dateKey(end, loc.zone) === K.dateKey(at, loc.zone) ? fmt(end) : full(end)) : '';
+  const label = p ? t('rashiRing', { rashi: L.rashiName(r), n: ord(p.chandraCount), mine: L.rashiName(p.janmaRashi) }) : t('rashiRingNoBirth', { rashi: L.rashiName(r) });
+  return `<section class="section">${groupHead(t('ovMoonSign'), esc(t('moonIn', { rashi: L.rashiName(r) })), `<button class="quiet" onclick="show('moon')">${esc(t('moon'))} ›</button>`)}`
+    + `<div class="card rashicard" role="group" aria-label="${esc(label)}"><div class="rhead">${rashiRing(r, p ? p.janmaRashi : -1)}<div><div class="caption">${esc(t('rashiLord', { p: L.planetName(R.lord) }))}</div>`
+    + (end ? `<p class="runtil">${esc(t('rashiUntil', { time: endTxt, next: L.rashiName(nx) }))}</p>` : '') + `</div></div>`
+    + `<p><strong>${esc(t('goodFor'))}:</strong> ${esc(tr(R.good))}.</p></div>` + personalLine(d) + `</section>`;
 }
 function limbsCard(d, v) {
   const l = d.sunriseLimbs, ti = M.tithi(l.tithi.index), na = M.nakshatra(l.nakshatra.index), yo = M.YOGA[l.yoga.index], ka = M.KARANA[l.karana.index], va = M.VAAR[d.frame.weekday];
@@ -583,7 +632,7 @@ function todayView() {
   const hero = prefs.layout === 'sky' ? skyHero(d, v, cx, eyebrow) : prefs.layout === 'folio' ? folioHero(d, v, cx, eyebrow, monthName) : dialHero(d, v, cx, eyebrow);
   const fest = festivalToday(day);
   $('app').innerHTML = `<div class="split"><div class="lead">${hero}${datebar()}</div><div class="rest">`
-    + fest.html + nowNext(d, cx) + comingUp(day, fest.list) + `<section class="section">${personalLine(d)}</section>` + practiceCard(d) + limbsCard(d, v)
+    + fest.html + nowNext(d, cx) + comingUp(day, fest.list) + rashiCard(d) + practiceCard(d) + limbsCard(d, v)
     + `<div class="tiles section"><button onclick="plan()">${icon('calendar')}<b>${esc(t('planEvent'))}</b></button><button onclick="show('learn')">${icon('moon')}<b>${esc(t('learnMore'))}</b></button></div></div></div>`;
   scheduleNative();
   wxRequest();
@@ -644,9 +693,22 @@ function calendarView() {
     + `</section>`;
   const rest = `<section class="section">${groupHead(day === tk ? t('todayWord') : t('ovDay'), titleDay(day))}${panchangCard}${dayFest ? `<div class="list">${dayFest}</div>` : ''}`
     + `<div class="grid3" style="margin-top:10px"><button class="chip" onclick="show('today')">${esc(t('details'))}</button><button class="chip" onclick="show('muhurat')">${esc(t('muhurat'))}</button><button class="chip on" onclick="plan()">＋ ${esc(t('addEvent'))}</button></div></section>`
+    + favSection(monthView, tk)
     + festSec
     + `<section class="section">${groupHead(t('ovPlans'), esc(t('myPlans')) + ` <span class="caption">${events.length}</span>`)}${events.length ? `<div class="list">${events.slice().sort((a, b) => a.start.localeCompare(b.start)).map(e => `<div class="timeline"><i class="dot good"></i><div><strong>${esc(e.title)}</strong><p>${esc(e.day)} · ${esc(e.time)} · ${esc(e.place)}</p><p>${esc(e.tithi)}${e.muhurat ? ' · ' + esc(e.muhurat) : ''}</p><button class="quiet" onclick="exportEvent('${e.id}')">${esc(t('addToCal'))}</button></div><div class="right"><button class="quiet" aria-label="${esc(t('deleteEvent'))}: ${esc(e.title)}" onclick="deleteEvent('${e.id}')">×</button></div></div>`).join('')}</div>` : `<div class="card"><h3>${esc(t('emptyPlansTitle'))}</h3><p>${esc(t('emptyPlansBody'))}</p></div>`}</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
+}
+
+/* The month's favourable days for this user, and the Chandrashtama days to go gently; without birth details, the way in. */
+function favSection(ym, tk) {
+  const m = monthPersonal(ym), name = new Date(ym + '-15T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' });
+  const head = groupHead(t('ovForYou'), esc(t('favIn', { m: name })));
+  if (!m) return `<section class="section">${head}<div class="card favcta"><h3>${esc(t('favCtaTitle'))}</h3><p>${esc(t('favCtaBody'))}</p><button class="primary" onclick="editProfile()">${esc(t('addBirth'))}</button></div></section>`;
+  const chip = (x, cls) => `<button class="chip ${cls}${x.key < tk ? ' gone' : ''}${x.key === day ? ' on' : ''}" onclick="setDay('${x.key}')" aria-label="${esc(dayLabel(x.key) + ' · ' + tr(M.TARA[x.p.tara.key]))}">${dayLabel(x.key, { month: undefined })}</button>`;
+  return `<section class="section">${head}<div class="card favdays">`
+    + (m.good.length ? `<div class="chipRow wrap">${m.good.map(x => chip(x, 'fav')).join('')}</div><p class="caption">${esc(t('favWhy'))}</p>` : `<p>${esc(t('favNone'))}</p>`)
+    + (m.care.length ? `<div class="eyebrow" style="margin-top:12px">${esc(t('careDays'))}</div><div class="chipRow wrap">${m.care.map(x => chip(x, 'care')).join('')}</div>` : '')
+    + `</div></section>`;
 }
 
 // ---- Muhurat ----------------------------------------------------------------------------------
@@ -954,7 +1016,7 @@ function saveProfile(e) {
   const r = readBirth();
   if (r.err) { if ($('birthErr')) $('birthErr').textContent = r.err; toast(r.err); return; }
   profile = r.p;
-  if (persist()) { haptic('success'); if ($('modal').open) $('modal').close(); if (onboardStep) finishOnboard('personal'); else personalView(); }
+  if (persist()) { haptic('success'); if ($('modal').open) $('modal').close(); if (onboardStep) finishOnboard('personal'); else render(); }
 }
 function eraseProfile() { modal(`<h2 id="sheetTitle">${esc(t('deleteBirth'))}?</h2><p>${esc(t('eraseBody'))}</p><button class="primary danger" onclick="profile={};persist();document.querySelector('dialog').close();personalView()">${esc(t('deleteBirth'))}</button>`); }
 
