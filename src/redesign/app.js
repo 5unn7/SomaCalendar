@@ -947,16 +947,20 @@ function lunarMonth(key, tk) {
     list.forEach((ds, i) => {
       const tIndex = (idx0 + i) % 30, label = i === 14 ? L.tithiName(tIndex) : num(i + 1);
       if (!ds.length) { cells += `<div class="lt kshaya" aria-label="${esc(L.tithiName(tIndex) + ' · ' + t('kshaya'))}">${SomaDial.moon(30, ((tIndex + 0.5) * 12) % 360)}<b>${esc(label)}</b><span>${esc(t('kshaya'))}</span></div>`; return; }
+      // A tithi on two sunrises (vriddhi): the first tap opens its first date, a second tap its second.
       const k = ds[0].k, f = fest.filter(x => ds.some(d => d.k === x.day)), top = f.find(x => x.kind !== 'vrat') || f[0];
       if (ds.some(d => d.k === tk)) hasToday = true;
       const cls = (ds.some(d => d.k === day) ? ' selected' : '') + (ds.some(d => d.k === tk) ? ' today' : '') + (ds[ds.length - 1].k < tk ? ' gone' : '') + (top ? ' holy ' + top.kind : '');
-      cells += `<button class="lt${cls}" onclick="lunarAt='${k}';pickDay('${k}')" aria-label="${esc(L.tithiName(tIndex) + ' · ' + ds.map(d => dayLabel(d.k)).join(', ') + (f.length ? ' · ' + f.map(x => L.festName(x)).join(', ') : ''))}">${SomaDial.moon(30, ds[0].ti.angle)}<b>${esc(label)}</b><span>${ds.map(d => d.k === start || +d.k.slice(8) === 1 ? short(d.k) : dnum(d.k)).join(', ')}</span>${top ? `<em class="${top.kind === 'vrat' ? 'v' : 'f'}" aria-hidden="true"></em>` : ''}</button>`;
+      cells += `<button class="lt${cls}" onclick="lunarAt='${k}';pickDay('${ds.length > 1 && day === k ? ds[1].k : k}')" aria-label="${esc(L.tithiName(tIndex) + ' · ' + ds.map(d => dayLabel(d.k)).join(', ') + (f.length ? ' · ' + f.map(x => L.festName(x)).join(', ') : ''))}">${SomaDial.moon(30, ds[0].ti.angle)}<b>${esc(label)}</b><span>${ds.map(d => d.k === start || +d.k.slice(8) === 1 ? short(d.k) : dnum(d.k)).join(', ')}</span>${top ? `<em class="${top.kind === 'vrat' ? 'v' : 'f'}" aria-hidden="true"></em>` : ''}</button>`;
     });
     return `<section class="paksha"><div class="phead"><h2>${esc(t(krishna ? 'krishnaPaksha' : 'shuklaPaksha'))}</h2><span>${esc(t(krishna ? 'waningWord' : 'waxingWord'))}${a ? ' · ' + esc(short(a)) + ' – ' + esc(short(b)) : ''}</span></div><div class="lgrid">${cells}</div></section>`;
   };
   return { start, end, name, hasToday, sub: `${t('vsShort')} ${num(samvat)} · ${t(prefs.month === 'purnimanta' ? 'purnimantaShort' : 'amantaShort')}`, html: `<div class="lunar">${paksha(0)}${paksha(15)}</div>` };
 }
 function calendarView() {
+  // In the lunar view, favourable days, Coming up and the month switch follow the lunar month on screen.
+  const lm = prefs.calView === 'lunar' ? lunarMonth(lunarAt || day, todayKey()) : null;
+  if (lm) monthView = K.addDay(lm.start, 7).slice(0, 7);
   const first = monthView + '-01', start = new Date(first + 'T12:00Z').getUTCDay(), count = new Date(+monthView.slice(0, 4), +monthView.slice(5), 0).getDate();
   const fest = observances(first, count + 1), bm = birthMoon(), tk = todayKey();
   let cells = '<span></span>'.repeat(start);
@@ -977,7 +981,6 @@ function calendarView() {
   const modeSeg = `<div class="calmode">${seg(t('calendar'), lunar ? 'lunar' : 'month', [['lunar', t('lunarView')], ['month', new Date(first + 'T12:00Z').toLocaleDateString(locale(), { month: 'long', timeZone: 'UTC' })]], 'setCalView')}</div>`;
   let lead;
   if (lunar) {
-    const lm = lunarMonth(lunarAt || day, tk);
     lead = titleBar(esc(lm.name), `${esc(lm.sub)}`, `<div class="arrows">${lm.hasToday ? '' : `<button class="now" onclick="lunarAt=null;day=todayKey();monthView=day.slice(0,7);calendarView()">${esc(t('today2'))}</button>`}<button onclick="lunarAt=K.addDay('${lm.start}',-3);haptic('select');calendarView()" aria-label="${esc(t('prevMonth'))}">‹</button><button onclick="lunarAt=K.addDay('${lm.end}',3);haptic('select');calendarView()" aria-label="${esc(t('nextMonth'))}">›</button></div>`)
       + modeSeg + lm.html + `<div class="wideonly">${dayDetail(day)}</div>`;
   } else {
@@ -1009,7 +1012,7 @@ function upcomingSection(ym, tk, limit) {
   const thisMonth = ym === tk.slice(0, 7), from = thisMonth ? tk : ym + '-01', list = observances(from, thisMonth ? 35 : 31).filter(x => thisMonth || x.day.slice(0, 7) === ym);
   let byDay = []; list.forEach(f => { const g = byDay[byDay.length - 1]; if (g && g.day === f.day) g.items.push(f); else byDay.push({ day: f.day, items: [f] }); });
   // A short list where it sits beside other things (Calendar, Today on tablet); the whole run is one tap away, on its own page.
-  const more = limit && byDay.length > limit ? `<button class="quiet more" onclick="push('festivals')">${esc(t('allFestivals'))} ›</button>` : '';
+  const more = limit && byDay.length > limit ? `<button class="quiet more" onclick="festMonth='${ym}';push('festivals')">${esc(t('allFestivals'))} ›</button>` : '';
   if (limit) byDay = byDay.slice(0, limit);
   const weekOf = k => { const wd = new Date(k + 'T12:00Z').getUTCDay(); return K.addDay(k, -wd); }, w0 = weekOf(tk);
   const weekName = w => w === w0 ? t('thisWeek') : w === K.addDay(w0, 7) ? t('nextWeek') : t('weekOf', { d: dayLabel(w, { weekday: undefined }) });
@@ -1025,9 +1028,11 @@ function upcomingSection(ym, tk, limit) {
 }
 
 /* Every observance coming up, on its own page pushed over Calendar, with the festival filter at the top. */
+let festMonth = null;
 function festivalsView() {
   const tk = todayKey();
-  $('app').innerHTML = `<div class="split"><div class="lead">${pageBar(t('allFestivals'))}<label>${esc(t('festivalSets'))}</label>${setChips()}</div><div class="rest">${upcomingSection(tk.slice(0, 7), tk)}</div></div>`;
+  // The month the short list came from, so "All festivals" shows the rows that list left out.
+  $('app').innerHTML = `<div class="split"><div class="lead">${pageBar(t('allFestivals'))}<label>${esc(t('festivalSets'))}</label>${setChips()}</div><div class="rest">${upcomingSection(festMonth || tk.slice(0, 7), tk)}</div></div>`;
 }
 /* The month's favourable days for this user, and the Chandrashtama days to go gently; without birth details, the way in. */
 function favSection(ym, tk) {

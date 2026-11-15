@@ -628,7 +628,7 @@
   Object.assign(STR.en, {
     good: 'Good', festivalSets: 'Festivals', remVrat: 'Evening before vrats and festivals', remParana: 'When parana opens', remRahu: 'When Rahu Kaal begins',
     lvGood: 'Good time', lvNeutral: 'Neutral', lvBad: 'Avoid',
-    underKaal: '{chog} is running, but {kaal} outranks it', holdNew: 'Hold new starts until it ends', kaalFrom: '{kaal} from {time}',
+    underKaal: '{chog} is running, but this outranks it', holdNew: 'Hold new starts until it ends', kaalFrom: '{kaal} from {time}',
     thenT: 'Next good: {what} {span}', thenTomorrow: 'Next good: {what}, tomorrow {span}',
     festNight: 'Festival night', festToday: 'Today', whatIsX: 'What is {x}?', vsShort: 'VS', abhijitShort: 'Abhijit', brahmaShort: 'Brahma', kaalWord: 'Kaal',
     pujaTime: 'Puja time', pujaAt: '{name} {span}', pujaWas: '{name} was {span}', moonriseLine: 'Moonrise {time}', moonriseWas: 'Moon rose at {time}',
@@ -655,7 +655,7 @@
   Object.assign(STR.gu, {
     festivalSets: 'તહેવાર', remVrat: 'વ્રત અને તહેવારની આગલી સાંજે', remParana: 'પારણાં શરૂ થાય ત્યારે', remRahu: 'રાહુ કાળ શરૂ થાય ત્યારે',
     lvGood: 'શુભ સમય', lvNeutral: 'સામાન્ય', lvBad: 'અશુભ',
-    underKaal: '{chog} ચાલે છે, પણ {kaal} વધુ ભારે છે', holdNew: 'તે પૂરો થાય ત્યાં સુધી નવું કામ રોકો', kaalFrom: '{time} થી {kaal}',
+    underKaal: '{chog} ચાલે છે, પણ આ વધુ ભારે છે', holdNew: 'તે પૂરો થાય ત્યાં સુધી નવું કામ રોકો', kaalFrom: '{time} થી {kaal}',
     thenT: 'પછી શુભ: {what} {span}', thenTomorrow: 'પછી શુભ: {what}, આવતીકાલે {span}',
     festNight: 'તહેવારની રાત', festToday: 'આજે', whatIsX: '{x} એટલે શું?', vsShort: 'વિ.સં.', abhijitShort: 'અભિજિત', brahmaShort: 'બ્રહ્મ', kaalWord: 'કાળ',
     pujaTime: 'પૂજાનો સમય', pujaAt: '{name} {span}', pujaWas: '{name} {span} હતું', moonriseLine: 'ચંદ્રોદય {time}', moonriseWas: 'ચંદ્રોદય {time} એ થયો',
@@ -682,7 +682,7 @@
   Object.assign(STR.hi, {
     festivalSets: 'पर्व', remVrat: 'व्रत और पर्व की पिछली शाम', remParana: 'पारण शुरू होने पर', remRahu: 'राहु काल शुरू होने पर',
     lvGood: 'शुभ समय', lvNeutral: 'सामान्य', lvBad: 'अशुभ',
-    underKaal: '{chog} चल रहा है, पर {kaal} भारी है', holdNew: 'इसके खत्म होने तक नया काम रोकें', kaalFrom: '{time} से {kaal}',
+    underKaal: '{chog} चल रहा है, पर यह भारी है', holdNew: 'इसके खत्म होने तक नया काम रोकें', kaalFrom: '{time} से {kaal}',
     thenT: 'आगे शुभ: {what} {span}', thenTomorrow: 'आगे शुभ: {what}, कल {span}',
     festNight: 'पर्व की रात', festToday: 'आज', whatIsX: '{x} क्या है?', vsShort: 'वि.सं.', abhijitShort: 'अभिजित', brahmaShort: 'ब्रह्म', kaalWord: 'काल',
     pujaTime: 'पूजा का समय', pujaAt: '{name} {span}', pujaWas: '{name} {span} था', moonriseLine: 'चंद्रोदय {time}', moonriseWas: 'चंद्रोदय {time} पर हुआ',
