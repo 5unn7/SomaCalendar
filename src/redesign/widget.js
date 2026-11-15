@@ -114,7 +114,7 @@ function upcomingVrats(loc,obs,fromDay,limit,extra){
 }
 function merge(list,extra,fromDay,limit){
   /* Festivals from the festival module (when present) are merged in by date. */
-  (extra||[]).forEach(function(f){if(f&&f.date>=fromDay)list.push({date:f.date,n:f.n||f.name||'',en:f.en||'',d:f.d||f.note||''});});
+  (extra||[]).forEach(function(f){if(f&&f.date>=fromDay)list.push({date:f.date,n:f.n||f.name||'',en:f.en||'',l:f.l||'',d:f.d||f.note||''});});
   list.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
   var seen={};
   return list.filter(function(x){var k=x.date+x.n;if(seen[k])return false;seen[k]=1;return true;}).slice(0,limit);

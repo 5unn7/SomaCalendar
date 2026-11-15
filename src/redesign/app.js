@@ -1056,16 +1056,38 @@ function scheduleNative(force) {
 
 /* Home-screen widget: hand the native side a week of precomputed Panchang (widget.js) plus the user's festival list, so it shows what holds *now* without opening the app. Recomputed when the place, festival filter, local day or 6-hour bucket changes. */
 let widgetKey = '', widgetTimer = 0;
+/* The reader's festivals for the widget, named and explained in the app's language. */
 function widgetFestivals(today) {
-  try { return window.SomaFestivals && typeof SomaFestivals.upcoming === 'function' ? SomaFestivals.upcoming(loc, today, 60) || [] : []; }
-  catch (e) { return []; }
+  try {
+    return observances(today, 60).map(x => ({ date: x.day, n: x.gu || x.en, en: x.en, l: L.festName(x),
+      d: x.parana ? t('parana') + ': ' + dayLabel(x.parana.day) + ' ' + span(x.parana) : x.sutak ? t('sutakLine', { a: full(x.sutak), b: full(x.at) }) : festNote(x) }));
+  } catch (e) { return []; }
+}
+/* Names and phrases in the reader's language, so the widgets never fall back to English for a Gujarati or Hindi reader. */
+const CHOG_KEY = { Udveg: 'udveg', Char: 'char', Labh: 'labh', Amrit: 'amrit', Kaal: 'kaal', Shubh: 'shubh', Rog: 'rog' };
+function localizeFeed(f) {
+  f.lang = L.lang;
+  (f.chog || []).forEach(c => { if (CHOG_KEY[c.en]) c.l = L.chogName(CHOG_KEY[c.en]); });
+  (f.tithi || []).forEach(x => { x.l = L.tithiName(K.tithi(new Date((x.s + x.e) / 2)).index); });
+  (f.nak || []).forEach(x => { x.l = L.nakName(Math.floor(P.moonSid(new Date((x.s + x.e) / 2)) / (360 / 27)) % 27); });
+  (f.days || []).forEach(d => { d.vaarL = L.vaarName(new Date(d.date + 'T12:00Z').getUTCDay()); });
+  const tx = {};
+  Object.keys(I18n.STR.en).filter(k => /^w[A-Z]/.test(k)).forEach(k => { tx[k] = t(k); });
+  ['rahu', 'yamaganda', 'gulika', 'abhijit', 'brahma', 'sunrise', 'sunset', 'moonrise', 'moonset', 'today2', 'tomorrow', 'wxWindy', 'mph', 'kmh'].forEach(k => { tx[k] = t(k); });
+  tx.until = t('untilT', { time: '{x}' });
+  [29, 7, 14, 22].forEach((ti, i) => { tx['phase' + i] = L.tithiName(ti); });
+  tx.purnima = L.tithiName(14); tx.amavasya = L.tithiName(29);
+  const wx = t('wx') || {};
+  Object.keys(wx).forEach(k => { tx['wx_' + k] = wx[k]; });
+  f.t = tx;
+  return f;
 }
 function pushWidgetFeed() {
   if (!window.SomaNative || !SomaNative.updateWidgetFeed || !window.SomaWidgetFeed) return;
   const at = now(), today = K.dateKey(at, loc.zone);
-  const key = [loc.lat, loc.lon, loc.zone, loc.name, today, Math.floor(at.getTime() / 216e5), JSON.stringify(window.SomaFestivalSets || '')].join('|');
+  const key = [loc.lat, loc.lon, loc.zone, loc.name, today, L.lang, Math.floor(at.getTime() / 216e5), JSON.stringify(window.SomaFestivalSets || '')].join('|');
   if (key === widgetKey) return;
-  try { SomaNative.updateWidgetFeed(JSON.stringify(SomaWidgetFeed.build(loc, at, widgetFestivals(today)))); widgetKey = key; }
+  try { SomaNative.updateWidgetFeed(JSON.stringify(localizeFeed(SomaWidgetFeed.build(loc, at, widgetFestivals(today))))); widgetKey = key; }
   catch (e) { console.error('Widget feed failed: ' + e.message); }
 }
 function scheduleWidgetFeed() { clearTimeout(widgetTimer); widgetTimer = setTimeout(pushWidgetFeed, 400); }

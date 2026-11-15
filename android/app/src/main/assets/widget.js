@@ -125,7 +125,7 @@
   }
   function merge(list, extra, fromDay, limit) {
     (extra || []).forEach(function(f) {
-      if (f && f.date >= fromDay) list.push({ date: f.date, n: f.n || f.name || "", en: f.en || "", d: f.d || f.note || "" });
+      if (f && f.date >= fromDay) list.push({ date: f.date, n: f.n || f.name || "", en: f.en || "", l: f.l || "", d: f.d || f.note || "" });
     });
     list.sort(function(a, b) {
       return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
