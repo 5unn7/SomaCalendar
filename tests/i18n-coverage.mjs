@@ -35,7 +35,7 @@ for(const lang of ['gu','hi']){
   for(let i=0;i<9;i++)sheets['lesson'+i]=()=>w.lesson(i);
   for(const [k,open] of Object.entries(sheets)){open();check('sheet '+k,w.document.querySelector('#modal'));w.document.querySelector('#modal').close();}
   // Onboarding steps too.
-  for(const step of [1,2,3]){w.onboard(step);check('onboard '+step,w.document.querySelector('#onboard'));}
+  for(const step of [1,2,3,4]){w.onboard(step);check('onboard '+step,w.document.querySelector('#onboard'));}
   w.finishOnboard('today');
   // Reminders the phone will show.
   for(const r of w.reminderPlan()){const bad=latin(r.title+' '+r.body);if(bad.length)problems.push(`${lang} reminder: ${bad.join(', ')}`);}

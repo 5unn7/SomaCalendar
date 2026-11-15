@@ -100,7 +100,7 @@
     return rise;
   }
   function upcomingVrats(loc, obs, fromDay, limit, extra) {
-    if (extra && extra.length) return merge([], extra, fromDay, limit);
+    if (Array.isArray(extra)) return merge([], extra, fromDay, limit);
     var list = [], prev = {}, seenOn = {}, day = K.addDay(fromDay, -1);
     for (var n = 0; n <= VRAT_SCAN_DAYS && list.length < limit + 4; n++, day = K.addDay(day, 1)) {
       var start = K.instant(day, "00:00", loc.zone), noon = K.instant(day, "12:00", loc.zone);

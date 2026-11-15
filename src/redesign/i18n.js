@@ -6,7 +6,7 @@
       today: 'Today', calendar: 'Calendar', muhurat: 'Muhurat', moon: 'Moon', personal: 'Me', learn: 'Learn',
       todayTitle: 'Today’s Panchang', goodFor: 'Good for', avoid: 'Avoid', rahu: 'Rahu Kaal', yamaganda: 'Yamaganda', gulika: 'Gulika Kaal',
       abhijit: 'Abhijit Muhurat', brahma: 'Brahma Muhurat', sunrise: 'Sunrise', sunset: 'Sunset', moonrise: 'Moonrise', moonset: 'Moonset',
-      tithi: 'Tithi', nakshatra: 'Nakshatra', yoga: 'Yoga', karana: 'Karana', vaar: 'Vaar', until: 'until', from: 'from', now: 'Now',
+      tithi: 'Tithi', nakshatra: 'Nakshatra', yoga: 'Yoga', karana: 'Karana', vaar: 'Vaar', now: 'Now',
       choghadiya: 'Choghadiya', hora: 'Hora', day: 'Day', night: 'Night', nextGood: 'Next good time', festivalsToday: 'Today’s observance',
       comingUp: 'Coming up', inDays: 'in {n} days', tomorrow: 'tomorrow', todayWord: 'today', parana: 'Parana (break the fast)',
       fastBegins: 'The fast begins at sunrise', whatToday: 'What are you doing today?', bestTimes: 'Best times today', deityOfDay: 'Deity of the day',
@@ -18,14 +18,14 @@
       remVrat: 'Evening before each vrat and festival', remParana: 'When the parana window opens', remDaily: 'Daily panchang at sunrise', remRahu: 'When Rahu Kaal begins',
       location: 'Location', save: 'Save', findMuhurat: 'Find a muhurat', eventType: 'What are you planning?', goodDays: 'Good days in the next 60 days',
       noGoodDays: 'No strong muhurat in this period. Try a longer journey of days or ask your family priest.', checkTime: 'Timing check',
-      useTime: 'Use this time', loading: 'Calculating…', allYear: 'All festivals this year', personalDays: 'Your favourable days this month',
+      useTime: 'Use this time', allYear: 'All festivals this year', personalDays: 'Your favourable days this month',
       janmaRashi: 'Janma rashi', janmaNak: 'Janma nakshatra', none: 'Nothing special', learnMore: 'Learn the panchang', method: 'How Soma calculates'
     },
     gu: {
       today: 'આજ', calendar: 'પંચાંગ', muhurat: 'મુહૂર્ત', moon: 'ચંદ્ર', personal: 'મારું', learn: 'જ્ઞાન',
       todayTitle: 'આજનું પંચાંગ', goodFor: 'શુભ કાર્ય', avoid: 'ટાળો', rahu: 'રાહુ કાળ', yamaganda: 'યમઘંટ', gulika: 'ગુલિક કાળ',
       abhijit: 'અભિજિત મુહૂર્ત', brahma: 'બ્રહ્મ મુહૂર્ત', sunrise: 'સૂર્યોદય', sunset: 'સૂર્યાસ્ત', moonrise: 'ચંદ્રોદય', moonset: 'ચંદ્રાસ્ત',
-      tithi: 'તિથિ', nakshatra: 'નક્ષત્ર', yoga: 'યોગ', karana: 'કરણ', vaar: 'વાર', until: 'સુધી', from: 'થી', now: 'અત્યારે',
+      tithi: 'તિથિ', nakshatra: 'નક્ષત્ર', yoga: 'યોગ', karana: 'કરણ', vaar: 'વાર', now: 'અત્યારે',
       choghadiya: 'ચોઘડિયું', hora: 'હોરા', day: 'દિવસ', night: 'રાત', nextGood: 'આગળનો શુભ સમય', festivalsToday: 'આજનો તહેવાર',
       comingUp: 'આવનારા દિવસો', inDays: '{n} દિવસમાં', tomorrow: 'કાલે', todayWord: 'આજે', parana: 'પારણાં',
       fastBegins: 'ઉપવાસ સૂર્યોદયથી શરૂ', whatToday: 'આજે શું કરવું છે?', bestTimes: 'આજના શુભ સમય', deityOfDay: 'આજના દેવ',
@@ -37,14 +37,14 @@
       remVrat: 'દરેક વ્રત અને તહેવારની આગલી સાંજે', remParana: 'પારણાંનો સમય શરૂ થાય ત્યારે', remDaily: 'રોજ સૂર્યોદયે પંચાંગ', remRahu: 'રાહુ કાળ શરૂ થાય ત્યારે',
       location: 'સ્થાન', save: 'સાચવો', findMuhurat: 'મુહૂર્ત શોધો', eventType: 'શું આયોજન છે?', goodDays: 'આગામી 60 દિવસના શુભ દિવસ',
       noGoodDays: 'આ સમયમાં સારું મુહૂર્ત નથી. કુટુંબના ગોરમહારાજને પૂછો.', checkTime: 'સમય તપાસ',
-      useTime: 'આ સમય રાખો', loading: 'ગણતરી ચાલે છે…', allYear: 'આ વર્ષના બધા તહેવાર', personalDays: 'આ મહિને તમારા શુભ દિવસ',
+      useTime: 'આ સમય રાખો', allYear: 'આ વર્ષના બધા તહેવાર', personalDays: 'આ મહિને તમારા શુભ દિવસ',
       janmaRashi: 'જન્મ રાશિ', janmaNak: 'જન્મ નક્ષત્ર', none: 'વિશેષ કંઈ નથી', learnMore: 'પંચાંગ સમજો', method: 'સોમ કેવી રીતે ગણે છે'
     },
     hi: {
       today: 'आज', calendar: 'पंचांग', muhurat: 'मुहूर्त', moon: 'चंद्र', personal: 'मेरा', learn: 'ज्ञान',
       todayTitle: 'आज का पंचांग', goodFor: 'शुभ कार्य', avoid: 'टालें', rahu: 'राहु काल', yamaganda: 'यमगण्ड', gulika: 'गुलिक काल',
       abhijit: 'अभिजित मुहूर्त', brahma: 'ब्रह्म मुहूर्त', sunrise: 'सूर्योदय', sunset: 'सूर्यास्त', moonrise: 'चंद्रोदय', moonset: 'चंद्रास्त',
-      tithi: 'तिथि', nakshatra: 'नक्षत्र', yoga: 'योग', karana: 'करण', vaar: 'वार', until: 'तक', from: 'से', now: 'अभी',
+      tithi: 'तिथि', nakshatra: 'नक्षत्र', yoga: 'योग', karana: 'करण', vaar: 'वार', now: 'अभी',
       choghadiya: 'चौघड़िया', hora: 'होरा', day: 'दिन', night: 'रात', nextGood: 'अगला शुभ समय', festivalsToday: 'आज का पर्व',
       comingUp: 'आने वाले दिन', inDays: '{n} दिन में', tomorrow: 'कल', todayWord: 'आज', parana: 'पारण',
       fastBegins: 'व्रत सूर्योदय से आरंभ', whatToday: 'आज क्या करना है?', bestTimes: 'आज के शुभ समय', deityOfDay: 'आज के देवता',
@@ -56,10 +56,20 @@
       remVrat: 'हर व्रत और पर्व की पिछली शाम', remParana: 'पारण का समय शुरू होने पर', remDaily: 'रोज़ सूर्योदय पर पंचांग', remRahu: 'राहु काल शुरू होने पर',
       location: 'स्थान', save: 'सहेजें', findMuhurat: 'मुहूर्त खोजें', eventType: 'क्या योजना है?', goodDays: 'अगले 60 दिनों के शुभ दिन',
       noGoodDays: 'इस अवधि में अच्छा मुहूर्त नहीं है। अपने कुल पुरोहित से पूछें।', checkTime: 'समय जाँच',
-      useTime: 'यह समय रखें', loading: 'गणना हो रही है…', allYear: 'इस वर्ष के सभी पर्व', personalDays: 'इस महीने आपके शुभ दिन',
+      useTime: 'यह समय रखें', allYear: 'इस वर्ष के सभी पर्व', personalDays: 'इस महीने आपके शुभ दिन',
       janmaRashi: 'जन्म राशि', janmaNak: 'जन्म नक्षत्र', none: 'कुछ विशेष नहीं', learnMore: 'पंचांग समझें', method: 'सोम कैसे गणना करता है'
     }
   };
+  /* Audit follow-ups (Nov 2026): the festival night before sunrise, polar days, the calendar step of setup, India's date. */
+  Object.assign(STR.en, { carried: 'The festival night runs until sunrise at {time}', polarNote: 'No sunrise or sunset here today. Choghadiya, Hora and Rahu Kaal follow 6 am to 6 pm, as is the custom.',
+    calTitle: 'Your calendar', calWhy: 'Families keep different calendars. Choose yours; you can change it later in Settings.', monthQ: 'Your lunar month ends on',
+    monthAmaOpt: 'Amavasya', monthAmaSub: 'Gujarat, Maharashtra, the South', monthPurOpt: 'Purnima', monthPurSub: 'North India', festQ: 'Festivals you keep', inIndia: 'In India: {d}' });
+  Object.assign(STR.gu, { carried: 'તહેવારની રાત સૂર્યોદય {time} સુધી ચાલે છે', polarNote: 'આજે અહીં સૂર્યોદય કે સૂર્યાસ્ત નથી. ચોઘડિયાં, હોરા અને રાહુ કાળ પરંપરા મુજબ સવારે 6 થી સાંજે 6 પ્રમાણે ગણાય છે.',
+    calTitle: 'તમારું પંચાંગ', calWhy: 'દરેક કુટુંબ પોતાનું પંચાંગ પાળે છે. તમારું પસંદ કરો; પછી સેટિંગ્સમાં બદલી શકાશે.', monthQ: 'તમારો મહિનો પૂરો થાય છે',
+    monthAmaOpt: 'અમાસે', monthAmaSub: 'ગુજરાત, મહારાષ્ટ્ર, દક્ષિણ ભારત', monthPurOpt: 'પૂનમે', monthPurSub: 'ઉત્તર ભારત', festQ: 'તમે ઊજવો છો તે તહેવાર', inIndia: 'ભારતમાં: {d}' });
+  Object.assign(STR.hi, { carried: 'पर्व की रात सूर्योदय {time} तक चलती है', polarNote: 'आज यहाँ सूर्योदय या सूर्यास्त नहीं है। चौघड़िया, होरा और राहु काल परंपरा के अनुसार सुबह 6 से शाम 6 के हिसाब से गिने जाते हैं।',
+    calTitle: 'आपका पंचांग', calWhy: 'हर परिवार अपना पंचांग मानता है। अपना चुनें; बाद में सेटिंग्स में बदल सकते हैं।', monthQ: 'आपका चांद्र मास समाप्त होता है',
+    monthAmaOpt: 'अमावस्या पर', monthAmaSub: 'गुजरात, महाराष्ट्र, दक्षिण भारत', monthPurOpt: 'पूर्णिमा पर', monthPurSub: 'उत्तर भारत', festQ: 'आप कौन से पर्व मनाते हैं', inIndia: 'भारत में: {d}' });
   /* Live weather (weather.js). Condition names follow MET Norway's symbols, grouped the way the widget draws them. */
   Object.assign(STR.en, { wx: { clear: 'Clear', fair: 'Mostly clear', partly: 'Partly cloudy', cloudy: 'Cloudy', fog: 'Fog', drizzle: 'Light rain', rain: 'Rain', heavyrain: 'Heavy rain', showers: 'Showers', sleet: 'Sleet', lightsnow: 'Light snow', snow: 'Snow', heavysnow: 'Heavy snow', thunder: 'Thunderstorm' },
     wxTitle: 'Weather', wxLive: 'Live weather', wxAdd: 'Add live weather', wxOn: 'Turn on', wxOff: 'Turn off live weather', wxNotNow: 'Not now', wxLoading: 'Getting the weather…', wxWindy: 'Windy',
@@ -85,7 +95,7 @@
     updNow: 'Update', updNew: 'New', updTitle: 'Updates', updCheck: 'Check for updates', updInstall: 'Download and install', updChecking: 'Looking for a newer build…',
     updReady: 'New build ready: {v}', updLatest: 'You have the newest build.', updDownloading: 'Downloading…', updInstalling: 'Opening the installer. Tap Update to finish.',
     updPermission: 'Allow “Install unknown apps” for Soma Preview, come back, then tap Download and install again.', updCancelled: 'Install cancelled. Tap again when ready.',
-    updThisPhone: 'On this phone', updNewest: 'Newest build', updWhatsNew: 'What changed', updView: 'View', updLater: 'Not now',
+    updThisPhone: 'On this phone', updNewest: 'Newest build', updWhatsNew: 'What changed', updLater: 'Not now',
     updHow: 'Your places, plans and birth details stay. Soma downloads the build from GitHub and Android asks you to confirm.',
     you: 'You', welcome: 'Welcome to Soma', tagline: 'Your daily panchang, festivals and muhurat', chooseLanguage: 'Choose your language',
     continue: 'Continue', skip: 'Skip for now', step: 'Step {n} of {m}', whereAreYou: 'Where are you?',
@@ -97,12 +107,11 @@
     timeUnknownNote: 'Without a birth time, rashi and nakshatra are usually right but the lagna (ascendant) is not shown.',
     seeMySky: 'See my rashi and nakshatra', editBirth: 'Edit birth details', addBirth: 'Add your birth details', deleteBirth: 'Delete birth details',
     appearance: 'Appearance', theme: 'Theme', themeAuto: 'Match phone', themeLight: 'Light', themeDark: 'Dark',
-    layout: 'Today layout', layoutDial: 'Dial', layoutSky: 'Sky', layoutFolio: 'Folio', about: 'About',
-    nowAndNext: 'Now and next', inMin: 'in {n} min', inHr: 'in {h} h {m} min', endsIn: 'ends in {n} min', running: 'now',
-    goodDayTo: 'A good day for', careDay: 'A day for care', mixedDay: 'A mixed day', details: 'Full panchang', sunMoon: 'Sun and moon', ovNow: 'Right now', ovAhead: 'Ahead', ovPractice: 'Practice', ovPanchang: 'Panchang', ovSky: 'Sky', ovDay: 'This day', ovFest: 'Festivals and vrat', ovPlans: 'Yours', ovPlan: 'Plan', ovNumbers: 'Ankshastra', ovStyle: 'Make it yours', ovApp: 'App', daylight: 'Daylight', hm: '{h} h {m} min', tomorrowRise: 'Sunrise tomorrow', pickDate: 'Choose a date',
+    layout: 'Today layout', layoutDial: 'Dial', layoutSky: 'Sky', layoutFolio: 'Folio', nowAndNext: 'Now and next', inMin: 'in {n} min', inHr: 'in {h} h {m} min', endsIn: 'ends in {n} min', running: 'now',
+    careDay: 'A day for care', mixedDay: 'A mixed day', details: 'Full panchang', ovNow: 'Right now', ovAhead: 'Ahead', ovPractice: 'Practice', ovPanchang: 'Panchang', ovSky: 'Sky', ovDay: 'This day', ovFest: 'Festivals and vrat', ovPlans: 'Yours', ovPlan: 'Plan', ovNumbers: 'Ankshastra', ovStyle: 'Make it yours', ovApp: 'App', daylight: 'Daylight', hm: '{h} h {m} min', tomorrowRise: 'Sunrise tomorrow', pickDate: 'Choose a date',
     yourSky: 'Your birth sky', moonTitle: 'Chandra Darshan', learnTitle: 'Gyan', learnSub: 'The meaning behind each part of the day.',
-    birthStays: 'Stays on this phone', lessons: 'Learn', tapMoon: 'Moon', today2: 'Today', locating: 'Finding your location…',
-    nearPlace: 'Near {p}', locFailed: 'Location is unavailable. Search for your city instead.', festivalsTitle: 'Festivals', changePlace: 'Change place',
+    birthStays: 'Stays on this phone', today2: 'Today', locating: 'Finding your location…',
+    nearPlace: 'Near {p}', locFailed: 'Location is unavailable. Search for your city instead.', changePlace: 'Change place',
     numerology: 'Ankshastra', mulank: 'Mulank', bhagyank: 'Bhagyank', folioGood: 'A good day to *begin.*', folioMixed: 'A mixed day. *Choose your hour.*', folioBad: 'A day for *care.*',
     hourByHour: 'The day, hour by hour', moreTimes: 'More times', moonPage: 'Moon phase and nakshatra', goToDay: 'Open this day', remindMe: 'Remind me'
   });
@@ -110,7 +119,7 @@
     updNow: 'અપડેટ કરો', updNew: 'નવું', updTitle: 'અપડેટ', updCheck: 'અપડેટ તપાસો', updInstall: 'ડાઉનલોડ કરીને ઇન્સ્ટોલ કરો', updChecking: 'નવું બિલ્ડ શોધાય છે…',
     updReady: 'નવું બિલ્ડ તૈયાર: {v}', updLatest: 'તમારી પાસે સૌથી નવું બિલ્ડ છે.', updDownloading: 'ડાઉનલોડ થાય છે…', updInstalling: 'ઇન્સ્ટોલર ખૂલે છે. પૂરું કરવા Update દબાવો.',
     updPermission: 'Soma Preview માટે “Install unknown apps” ચાલુ કરો, પાછા આવો અને ફરી દબાવો.', updCancelled: 'ઇન્સ્ટોલ રદ થયું. તૈયાર હો ત્યારે ફરી દબાવો.',
-    updThisPhone: 'આ ફોનમાં', updNewest: 'સૌથી નવું', updWhatsNew: 'શું બદલાયું', updView: 'જુઓ', updLater: 'પછી',
+    updThisPhone: 'આ ફોનમાં', updNewest: 'સૌથી નવું', updWhatsNew: 'શું બદલાયું', updLater: 'પછી',
     updHow: 'તમારાં સ્થાન, કાર્યક્રમ અને જન્મ વિગત સચવાઈ રહે છે. Android ખાતરી માટે પૂછશે.',
     you: 'તમે', welcome: 'સોમમાં આપનું સ્વાગત છે', tagline: 'રોજનું પંચાંગ, તહેવાર અને મુહૂર્ત', chooseLanguage: 'ભાષા પસંદ કરો',
     continue: 'આગળ', skip: 'પછી કરીશ', step: 'પગલું {n} / {m}', whereAreYou: 'તમે ક્યાં છો?',
@@ -122,12 +131,11 @@
     timeUnknownNote: 'જન્મ સમય વગર રાશિ અને નક્ષત્ર મોટે ભાગે સાચાં રહે છે, પણ લગ્ન બતાવાતું નથી.',
     seeMySky: 'મારી રાશિ અને નક્ષત્ર જુઓ', editBirth: 'જન્મ વિગત બદલો', addBirth: 'જન્મ વિગત ઉમેરો', deleteBirth: 'જન્મ વિગત કાઢો',
     appearance: 'દેખાવ', theme: 'થીમ', themeAuto: 'ફોન મુજબ', themeLight: 'આછી', themeDark: 'ઘેરી',
-    layout: 'આજનું લેઆઉટ', layoutDial: 'ચક્ર', layoutSky: 'આકાશ', layoutFolio: 'પાનું', about: 'વિશે',
-    nowAndNext: 'અત્યારે અને પછી', inMin: '{n} મિનિટમાં', inHr: '{h} કલાક {m} મિનિટમાં', endsIn: '{n} મિનિટમાં પૂરું', running: 'ચાલુ',
-    goodDayTo: 'આજે શુભ છે', careDay: 'આજે સાવધાની રાખો', mixedDay: 'મિશ્ર દિવસ', details: 'સંપૂર્ણ પંચાંગ', sunMoon: 'સૂર્ય અને ચંદ્ર', ovNow: 'અત્યારે', ovAhead: 'આગળ', ovPractice: 'સાધના', ovPanchang: 'પંચાંગ', ovSky: 'આકાશ', ovDay: 'આ દિવસ', ovFest: 'તહેવાર અને વ્રત', ovPlans: 'તમારા', ovPlan: 'આયોજન', ovNumbers: 'અંકશાસ્ત્ર', ovStyle: 'તમારી રીતે', ovApp: 'એપ', daylight: 'દિવસ', hm: '{h} કલાક {m} મિનિટ', tomorrowRise: 'કાલે સૂર્યોદય', pickDate: 'તારીખ પસંદ કરો',
+    layout: 'આજનું લેઆઉટ', layoutDial: 'ચક્ર', layoutSky: 'આકાશ', layoutFolio: 'પાનું', nowAndNext: 'અત્યારે અને પછી', inMin: '{n} મિનિટમાં', inHr: '{h} કલાક {m} મિનિટમાં', endsIn: '{n} મિનિટમાં પૂરું', running: 'ચાલુ',
+    careDay: 'આજે સાવધાની રાખો', mixedDay: 'મિશ્ર દિવસ', details: 'સંપૂર્ણ પંચાંગ', ovNow: 'અત્યારે', ovAhead: 'આગળ', ovPractice: 'સાધના', ovPanchang: 'પંચાંગ', ovSky: 'આકાશ', ovDay: 'આ દિવસ', ovFest: 'તહેવાર અને વ્રત', ovPlans: 'તમારા', ovPlan: 'આયોજન', ovNumbers: 'અંકશાસ્ત્ર', ovStyle: 'તમારી રીતે', ovApp: 'એપ', daylight: 'દિવસ', hm: '{h} કલાક {m} મિનિટ', tomorrowRise: 'કાલે સૂર્યોદય', pickDate: 'તારીખ પસંદ કરો',
     yourSky: 'તમારું જન્મ આકાશ', moonTitle: 'ચંદ્ર દર્શન', learnTitle: 'જ્ઞાન', learnSub: 'દિવસના દરેક અંગનો અર્થ.',
-    birthStays: 'ફોનમાં જ રહે છે', lessons: 'જ્ઞાન', tapMoon: 'ચંદ્ર', today2: 'આજે', locating: 'સ્થાન શોધાય છે…',
-    nearPlace: '{p} પાસે', locFailed: 'સ્થાન મળ્યું નહીં. શહેર શોધો.', festivalsTitle: 'તહેવાર', changePlace: 'સ્થાન બદલો',
+    birthStays: 'ફોનમાં જ રહે છે', today2: 'આજે', locating: 'સ્થાન શોધાય છે…',
+    nearPlace: '{p} પાસે', locFailed: 'સ્થાન મળ્યું નહીં. શહેર શોધો.', changePlace: 'સ્થાન બદલો',
     numerology: 'અંકશાસ્ત્ર', mulank: 'મૂળાંક', bhagyank: 'ભાગ્યાંક', folioGood: 'આજે શુભ *શરૂઆતનો* દિવસ', folioMixed: 'મિશ્ર દિવસ. *સમય જોઈને* કામ કરો.', folioBad: 'આજે *સાવધાની* રાખો.',
     hourByHour: 'કલાકે કલાકનો દિવસ', moreTimes: 'વધુ સમય', moonPage: 'ચંદ્ર કળા અને નક્ષત્ર', goToDay: 'આ દિવસ ખોલો', remindMe: 'યાદ અપાવો'
   });
@@ -135,7 +143,7 @@
     updNow: 'अपडेट करें', updNew: 'नया', updTitle: 'अपडेट', updCheck: 'अपडेट देखें', updInstall: 'डाउनलोड करके इंस्टॉल करें', updChecking: 'नया बिल्ड खोजा जा रहा है…',
     updReady: 'नया बिल्ड तैयार: {v}', updLatest: 'आपके पास सबसे नया बिल्ड है।', updDownloading: 'डाउनलोड हो रहा है…', updInstalling: 'इंस्टॉलर खुल रहा है। पूरा करने के लिए Update दबाएँ।',
     updPermission: 'Soma Preview के लिए “Install unknown apps” चालू करें, वापस आएँ और फिर दबाएँ।', updCancelled: 'इंस्टॉल रद्द हुआ। तैयार हों तब फिर दबाएँ।',
-    updThisPhone: 'इस फ़ोन में', updNewest: 'सबसे नया', updWhatsNew: 'क्या बदला', updView: 'देखें', updLater: 'बाद में',
+    updThisPhone: 'इस फ़ोन में', updNewest: 'सबसे नया', updWhatsNew: 'क्या बदला', updLater: 'बाद में',
     updHow: 'आपके स्थान, योजनाएँ और जन्म विवरण बने रहते हैं। Android पुष्टि के लिए पूछेगा।',
     you: 'आप', welcome: 'सोम में आपका स्वागत है', tagline: 'रोज़ का पंचांग, पर्व और मुहूर्त', chooseLanguage: 'भाषा चुनें',
     continue: 'आगे', skip: 'बाद में', step: 'चरण {n} / {m}', whereAreYou: 'आप कहाँ हैं?',
@@ -147,12 +155,11 @@
     timeUnknownNote: 'जन्म समय के बिना राशि और नक्षत्र प्रायः सही रहते हैं, पर लग्न नहीं दिखाया जाता।',
     seeMySky: 'मेरी राशि और नक्षत्र देखें', editBirth: 'जन्म विवरण बदलें', addBirth: 'जन्म विवरण जोड़ें', deleteBirth: 'जन्म विवरण हटाएँ',
     appearance: 'रूप', theme: 'थीम', themeAuto: 'फ़ोन के अनुसार', themeLight: 'हल्की', themeDark: 'गहरी',
-    layout: 'आज का लेआउट', layoutDial: 'चक्र', layoutSky: 'आकाश', layoutFolio: 'पन्ना', about: 'परिचय',
-    nowAndNext: 'अभी और आगे', inMin: '{n} मिनट में', inHr: '{h} घंटे {m} मिनट में', endsIn: '{n} मिनट में समाप्त', running: 'चालू',
-    goodDayTo: 'आज शुभ है', careDay: 'आज सावधानी रखें', mixedDay: 'मिश्र दिन', details: 'पूरा पंचांग', sunMoon: 'सूर्य और चंद्र', ovNow: 'अभी', ovAhead: 'आगे', ovPractice: 'साधना', ovPanchang: 'पंचांग', ovSky: 'आकाश', ovDay: 'यह दिन', ovFest: 'त्योहार और व्रत', ovPlans: 'आपके', ovPlan: 'योजना', ovNumbers: 'अंकशास्त्र', ovStyle: 'आपके अनुसार', ovApp: 'ऐप', daylight: 'दिनमान', hm: '{h} घंटे {m} मिनट', tomorrowRise: 'कल सूर्योदय', pickDate: 'तारीख चुनें',
+    layout: 'आज का लेआउट', layoutDial: 'चक्र', layoutSky: 'आकाश', layoutFolio: 'पन्ना', nowAndNext: 'अभी और आगे', inMin: '{n} मिनट में', inHr: '{h} घंटे {m} मिनट में', endsIn: '{n} मिनट में समाप्त', running: 'चालू',
+    careDay: 'आज सावधानी रखें', mixedDay: 'मिश्र दिन', details: 'पूरा पंचांग', ovNow: 'अभी', ovAhead: 'आगे', ovPractice: 'साधना', ovPanchang: 'पंचांग', ovSky: 'आकाश', ovDay: 'यह दिन', ovFest: 'त्योहार और व्रत', ovPlans: 'आपके', ovPlan: 'योजना', ovNumbers: 'अंकशास्त्र', ovStyle: 'आपके अनुसार', ovApp: 'ऐप', daylight: 'दिनमान', hm: '{h} घंटे {m} मिनट', tomorrowRise: 'कल सूर्योदय', pickDate: 'तारीख चुनें',
     yourSky: 'आपका जन्म आकाश', moonTitle: 'चंद्र दर्शन', learnTitle: 'ज्ञान', learnSub: 'दिन के हर अंग का अर्थ।',
-    birthStays: 'फ़ोन में ही रहता है', lessons: 'ज्ञान', tapMoon: 'चंद्र', today2: 'आज', locating: 'स्थान खोजा जा रहा है…',
-    nearPlace: '{p} के पास', locFailed: 'स्थान नहीं मिला। शहर खोजें।', festivalsTitle: 'पर्व', changePlace: 'स्थान बदलें',
+    birthStays: 'फ़ोन में ही रहता है', today2: 'आज', locating: 'स्थान खोजा जा रहा है…',
+    nearPlace: '{p} के पास', locFailed: 'स्थान नहीं मिला। शहर खोजें।', changePlace: 'स्थान बदलें',
     numerology: 'अंकशास्त्र', mulank: 'मूलांक', bhagyank: 'भाग्यांक', folioGood: 'आज *शुभारंभ* का दिन है।', folioMixed: 'मिश्र दिन। *समय देखकर* काम करें।', folioBad: 'आज *सावधानी* रखें।',
     hourByHour: 'घंटे-घंटे का दिन', moreTimes: 'और समय', moonPage: 'चंद्र कला और नक्षत्र', goToDay: 'यह दिन खोलें', remindMe: 'याद दिलाएँ'
   });
@@ -162,8 +169,6 @@
     mainNav: "Main",
     untilT: "until {time}",
     fromT: "from {time}",
-    shubhToday: "Shubh today",
-    avoidToday: "Avoid today",
     notWednesday: "Not used on Wednesdays",
     openDayLabel: "{d}, {what}, open day",
     why: "Why",
@@ -255,7 +260,6 @@
     dialSummaryDay: "Choghadiya for {d}. Rahu Kaal {rahu}.",
     digits: "Digits",
     digitsLatin: "1 2 3",
-    digitsNative: "૧ ૨ ૩",
     textSize: "Text size follows your phone’s setting.",
     festDayNote: "A festival day: the day itself is the muhurat. Begin its puja in a shubh Choghadiya, outside Rahu Kaal."
   });
@@ -264,8 +268,6 @@
     mainNav: "મુખ્ય મેનૂ",
     untilT: "{time} સુધી",
     fromT: "{time} થી",
-    shubhToday: "આજના શુભ સમય",
-    avoidToday: "આજે ટાળવાના સમય",
     notWednesday: "બુધવારે લેવાતું નથી",
     openDayLabel: "{d}, {what}, દિવસ ખોલો",
     why: "કારણ",
@@ -357,7 +359,6 @@
     dialSummaryDay: "{d} નું ચોઘડિયું. રાહુ કાળ {rahu}.",
     digits: "અંક",
     digitsLatin: "1 2 3",
-    digitsNative: "૧ ૨ ૩",
     textSize: "અક્ષરનું કદ ફોનના સેટિંગ મુજબ રહે છે.",
     festDayNote: "તહેવારનો દિવસ પોતે જ મુહૂર્ત છે. તેની પૂજા રાહુ કાળ બહાર, શુભ ચોઘડિયામાં શરૂ કરો."
   });
@@ -366,8 +367,6 @@
     mainNav: "मुख्य मेनू",
     untilT: "{time} तक",
     fromT: "{time} से",
-    shubhToday: "आज के शुभ समय",
-    avoidToday: "आज टालने के समय",
     notWednesday: "बुधवार को नहीं लिया जाता",
     openDayLabel: "{d}, {what}, दिन खोलें",
     why: "कारण",
@@ -459,17 +458,14 @@
     dialSummaryDay: "{d} का चौघड़िया। राहु काल {rahu}।",
     digits: "अंक",
     digitsLatin: "1 2 3",
-    digitsNative: "१ २ ३",
     textSize: "अक्षरों का आकार फ़ोन की सेटिंग के अनुसार रहता है।",
     festDayNote: "पर्व का दिन स्वयं मुहूर्त है। इसकी पूजा राहु काल के बाहर, शुभ चौघड़िया में आरंभ करें।"
   });
   /* Day at a glance, period meanings and the Calendar's panchang card. */
   Object.assign(STR.en, {
     dayMap: "Day at a glance",
-    mapAbhijit: "Abhijit",
     bestShort: "Best",
     bestOver: "Today’s shubh windows in this half are over.",
-    mapBrahma: "Brahma",
     ovGlance: "At a glance",
     bestTimes: "Best times",
     nextBest: "Next best",
@@ -477,7 +473,6 @@
     bestRule: "Amrit, Shubh or Labh Choghadiya with Rahu Kaal, Yamaganda, Gulika, Dur Muhurta and Bhadra cut out.",
     durMuhurta: "Dur Muhurta",
     bhadra: "Bhadra",
-    kaalCol: "Kaal and muhurta",
     tapBlock: "Tap any block to see what it means and what to do.",
     whatItIs: "What it is",
     whatToDo: "What to do",
@@ -505,10 +500,8 @@
   });
   Object.assign(STR.gu, {
     dayMap: "આખો દિવસ એક નજરે",
-    mapAbhijit: "અભિજિત",
     bestShort: "શ્રેષ્ઠ",
     bestOver: "આ ભાગના આજના શુભ સમય પૂરા થયા.",
-    mapBrahma: "બ્રહ્મ",
     ovGlance: "એક નજરે",
     bestTimes: "શ્રેષ્ઠ સમય",
     nextBest: "હવે પછીનો શ્રેષ્ઠ",
@@ -516,7 +509,6 @@
     bestRule: "અમૃત, શુભ કે લાભ ચોઘડિયું, જેમાંથી રાહુ કાળ, યમગંડ, ગુલિક, દુર્મુહૂર્ત અને ભદ્રા બાદ કર્યા છે.",
     durMuhurta: "દુર્મુહૂર્ત",
     bhadra: "ભદ્રા",
-    kaalCol: "કાળ અને મુહૂર્ત",
     tapBlock: "કોઈપણ ખાના પર ટૅપ કરો: તેનો અર્થ અને શું કરવું તે જુઓ.",
     whatItIs: "આ શું છે",
     whatToDo: "શું કરવું",
@@ -544,10 +536,8 @@
   });
   Object.assign(STR.hi, {
     dayMap: "पूरा दिन एक नज़र में",
-    mapAbhijit: "अभिजित",
     bestShort: "श्रेष्ठ",
     bestOver: "इस भाग के आज के शुभ समय समाप्त हो गए।",
-    mapBrahma: "ब्रह्म",
     ovGlance: "एक नज़र में",
     bestTimes: "श्रेष्ठ समय",
     nextBest: "अगला श्रेष्ठ",
@@ -555,7 +545,6 @@
     bestRule: "अमृत, शुभ या लाभ चौघड़िया, जिसमें से राहु काल, यमगंड, गुलिक, दुर्मुहूर्त और भद्रा हटा दिए गए हैं।",
     durMuhurta: "दुर्मुहूर्त",
     bhadra: "भद्रा",
-    kaalCol: "काल और मुहूर्त",
     tapBlock: "किसी भी खाने पर टैप करें: उसका अर्थ और क्या करें, देखें।",
     whatItIs: "यह क्या है",
     whatToDo: "क्या करें",

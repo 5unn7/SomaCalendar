@@ -171,24 +171,12 @@ public final class MainActivity extends Activity {
       });
     }
     @JavascriptInterface public void appFailure(String detail){Log.e("SomaJS","App initialization error: "+detail);}
-    @JavascriptInterface public void updateWidget(String date,String phase,String tithi,String city) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("date",safe(date)).putString("phase",safe(phase))
-        .putString("tithi",safe(tithi)).putString("city",safe(city)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
-    }
     /** A week of precomputed Panchang intervals for the home-screen widget (built by widget.js). */
     @JavascriptInterface public void updateWidgetFeed(String json) {
       if(json==null||json.length()>300000)return;
       try{new JSONObject(json);}catch(Exception e){Log.w("SomaJS","Rejected widget feed");return;}
       getSharedPreferences(SomaWidget.PREFS,MODE_PRIVATE).edit().putString(SomaWidget.FEED,json).apply();
       runOnUiThread(() -> { SomaWidget.refreshAll(MainActivity.this); PanchangWidgets.refreshAll(MainActivity.this); });
-    }
-    @JavascriptInterface public void updateAtmosphere(String temp,String cloud,String status) {
-      getSharedPreferences("soma_widget",MODE_PRIVATE).edit()
-        .putString("temp",safe(temp)).putString("cloud",safe(cloud))
-        .putString("weatherStatus",safe(status)).apply();
-      runOnUiThread(() -> SomaWidget.refreshAll(MainActivity.this));
     }
     /** Reminders computed by the web layer: JSON [{id, at, title, body}]. Scheduled locally with AlarmManager. */
     @JavascriptInterface public void scheduleReminders(String json){

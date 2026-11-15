@@ -353,6 +353,9 @@ dialog>.quiet{display:block;margin:12px auto 0;color:var(--muted)}
 #onboard .langs button{display:flex;width:100%;justify-content:space-between;align-items:center;margin-top:10px;padding:16px 18px;border:1.5px solid var(--line);border-radius:18px;font:700 1.0625rem var(--body)}
 #onboard .langs button.on{border-color:var(--accent)}
 #onboard .langs span{font:500 0.8125rem var(--body);color:var(--muted)}
+#onboard .langs.months button{flex-wrap:wrap;text-align:left}
+#onboard .langs.months small{flex:1 0 100%;order:3;font:500 0.8125rem var(--body);color:var(--muted);margin-top:2px}
+.caption.india{margin-top:6px}
 #onboard .foot{margin-top:auto;padding-top:24px}
 #onboard .foot .quiet{display:block;margin:6px auto 0;color:var(--muted)}
 .or{text-align:center;font-size:0.8125rem;color:var(--muted);margin:16px 0 4px}

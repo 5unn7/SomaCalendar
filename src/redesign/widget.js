@@ -85,8 +85,10 @@ function dayWindows(day,loc,obs,out){
 }
 
 function upcomingVrats(loc,obs,fromDay,limit,extra){
-  /* The festival module already covers vrats (with parana), so its list replaces the built-in one. */
-  if(extra&&extra.length)return merge([],extra,fromDay,limit);
+  /* The festival module already covers vrats (with parana), so its list replaces the built-in one, even when empty:
+     a reader who turned every festival set off sees none on the widget either. The built-in list is only for a feed
+     built without the festival module. */
+  if(Array.isArray(extra))return merge([],extra,fromDay,limit);
   /* Start a day early so a vrat already observed yesterday (vriddhi) is not repeated today. */
   var list=[],prev={},seenOn={},day=K.addDay(fromDay,-1);
   for(var n=0;n<=VRAT_SCAN_DAYS&&list.length<limit+4;n++,day=K.addDay(day,1)){
