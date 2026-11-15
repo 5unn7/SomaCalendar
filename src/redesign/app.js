@@ -856,7 +856,6 @@ function todayView() {
   const polar = d.frame.polar ? `<p class="notice card">${esc(t('polarNote'))}</p>` : '';
   $('app').innerHTML = `<div class="split"><div class="lead">${todayHero(d, v, cx)}</div><div class="rest">`
     + polar + paranaToday(day) + miniPanchang(d, v)
-    + `<div class="wideonly">${dayBoard(d)}</div>`
     + `<div class="tiles section"><button onclick="plan()">${icon('calendar')}<b>${esc(t('planEvent'))}</b></button><button onclick="muhuratTab='find';show('muhurat')">${icon('muhurat')}<b>${esc(t('findMuhurat'))}</b></button></div></div></div>`;
   scheduleNative();
   wxRequest();
