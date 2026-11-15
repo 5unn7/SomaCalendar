@@ -672,14 +672,16 @@ function nextFavourable(from) {
   }
   return null;
 }
-function personalLine(d) {
+/* ref: the date the card speaks for (the selected day on Today, always today on You). */
+function personalLine(d, ref) {
+  ref = ref || day;
   const bm = birthMoon();
   if (bm == null) return `<button class="lesson" onclick="editProfile()"><div class="eyebrow">${esc(t('forYou'))}</div><h3>${esc(t('addBirth'))} <span aria-hidden="true">›</span></h3><span>${esc(t('favCtaShort'))}</span></button>`;
-  const p = P.personal(bm, isToday() ? now() : d.frame.sunrise), next = nextFavourable(day);
+  const p = P.personal(bm, ref === todayKey() ? now() : d.frame.sunrise), next = nextFavourable(ref);
   return `<div class="card personalDay ${p.verdict}"><div class="row"><div class="eyebrow">${esc(t('forYou'))}</div>${badge(p.verdict)}</div><h2 style="margin-top:6px">${esc(verdictWord(p.verdict))}</h2>`
     + (p.chandraCount === 8 ? `<p class="care"><strong>${esc(t('chandrashtama'))}.</strong> ${esc(t('chandrashtamaLine', { rashi: L.rashiName(p.janmaRashi) }))}</p>` : `<p>${esc(t('chandrabalam'))}: ${esc(t('chandraLine', { n: ord(p.chandraCount), rashi: L.rashiName(p.janmaRashi) }))} · ${esc(t(p.chandraGood ? 'strong' : 'weak'))}</p>`)
     + `<p>${esc(t('tarabalam'))}: ${esc(tr(M.TARA[p.tara.key]))}</p>`
-    + (next ? `<div class="row nextfav"><button class="quiet" onclick="setDay('${next}')">${esc(t('nextFav', { d: dayLabel(next) }))}</button><button class="quiet" onclick="show('calendar')">${esc(t('seeMonth'))} ›</button></div>` : '') + `</div>`;
+    + (next ? `<div class="row nextfav"><button class="quiet" onclick="setDay('${next}');show('today')">${esc(t('nextFav', { d: dayLabel(next) }))}</button><button class="quiet" onclick="show('calendar')">${esc(t('seeMonth'))} ›</button></div>` : '') + `</div>`;
 }
 /* A ring of the twelve rashis, Mesha at the top going clockwise: the Moon's rashi lit, the janma rashi ringed. */
 function rashiRing(r, mine) {
@@ -1053,7 +1055,7 @@ function personalView() {
       + (profile.timeUnknown ? '' : ', ' + fmtIn(instant, profile.zone || loc.zone));
     id = `<div class="facts2"><div><small>${esc(t('janmaRashi'))}</small><b>${esc(L.rashiName(Math.floor(n / 30)))}</b></div><div><small>${esc(t('janmaNak'))}</small><b>${esc(L.nakName(nak))}</b><small>${esc(t('pada', { n: num(Math.floor((n % (360 / 27)) / (360 / 108)) + 1) }))}</small></div></div>`;
     id = `<div class="card me"><div class="profile"><div class="avatar">${SomaDial.moon(34, 120)}</div><div style="flex:1;min-width:0"><div class="eyebrow">${esc(t('bornOn'))}</div><h3>${esc(born)}</h3>${profile.place ? `<p class="caption">${esc(profile.place.split(',')[0])}</p>` : ''}</div><button class="quiet edit" onclick="editProfile()" aria-label="${esc(t('editBirth'))}">${esc(t('edit'))}</button></div>${id}<p class="caption lock">${esc(t('birthStays'))}</p></div>`
-      + personalLine(vedicDay(todayKey()));
+      + personalLine(vedicDay(todayKey()), todayKey());
   } else {
     id = `<div class="card me empty"><div class="profile"><div class="avatar">${SomaDial.moon(34, 60)}</div><div style="flex:1;min-width:0"><h3>${esc(t('favCtaShort'))}</h3><p class="caption">${esc(t('youWhy'))}</p></div></div><button class="primary" onclick="editProfile()">${esc(t('addBirth'))}</button><p class="caption lock">${esc(t('birthStays'))}</p></div>`;
   }
@@ -1190,7 +1192,8 @@ function finishOnboard(to) {
 // ---- Reminders and widget (native) ----------------------------------------------------------
 /* Local notifications for the next 30 days, computed here and handed to the native alarm scheduler. */
 function reminderPlan() {
-  const from = todayKey(), list = observances(from, 31), r = prefs.reminders, out = [], nowMs = Clock.ms();
+  // From yesterday too: a midnight festival's puja (Shivratri, Janmashtami) falls after civil midnight.
+  const from = todayKey(), list = observances(K.addDay(from, -1), 32), r = prefs.reminders, out = [], nowMs = Clock.ms();
   const add = (at, title, body, id) => { if (+at > nowMs) out.push({ id, at: +at, title, body }); };
   for (const f of list) {
     const mine = !!(prefs.remind || {})[f.key];

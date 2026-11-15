@@ -97,5 +97,12 @@ function boot(loc,prefs,opt={}){
   assert.ok(w.eval("reminderPlan()").some(r=>/clouds may hide the moon \(90%\)/.test(r.body)),'the Karwa Chauth reminder carries the cloud');
   assert.match(w.eval("wxStorm('2026-11-01')"),/Thunderstorm/);assert.equal(w.eval("wxStorm('2026-11-02')"),'');
   w.eval("prefs.weather=false");assert.equal(w.eval("festSky(upList["+i+"])"),'','weather off: no sky lines');dom.window.close();}
+// A rebuilt plan just after midnight keeps the Shivratri nishita reminder (the festival is dated the day before).
+{const dom=boot({name:'New Delhi',lat:28.61,lon:77.21,zone:'Asia/Kolkata'},{onboarded:true,lang:'en',custom:true,sets:['india','vrat'],reminders:{vrat:false,parana:false},remind:{shivratri:true}}),w=dom.window;
+  w.SomaClock.set(new Date('2026-02-15T18:31:00Z'));w.SomaClock.tick('clock');
+  const r=w.eval('reminderPlan()').find(x=>x.id==='mine-shivratri-2026-02-15');assert.ok(r,'nishita reminder survives midnight');assert.equal(hm(new Date(r.at),'Asia/Kolkata'),'00:09');
+  // You always speaks for today, whatever day Calendar had open.
+  w.eval("profile={date:'1990-03-12',time:'06:40',zone:'Asia/Kolkata',lat:22.47,lon:70.06,place:'Jamnagar'}");w.setDay('2026-09-01');w.show('personal');
+  const nf=w.document.querySelector('#app .nextfav button');if(nf)assert.ok(!/Sep/.test(nf.textContent),'next favourable day counts from today: '+nf.textContent);dom.window.close();}
 console.log('PASS: Shivratri night kept until sunrise, Gujarati defaults by language, month system in setup, polar note, India dates abroad, background refresh in the app language, Remind me per festival, moonrise cloud and travel storm flag');
 console.log('PASS: sunset after midnight far north, La Ronge winter day, Asia/Calcutta defaults, nishita kaal width, Janmashtami nishita');
