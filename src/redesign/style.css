@@ -677,6 +677,7 @@ html.bigtext .pgrid{grid-template-columns:1fr}
 .group.rows>button.danger b,.group.rows>button.danger .ri{color:var(--bad-text)}
 .chipRow.care .chip{border-color:var(--bad);color:var(--bad-text)}
 ul.gets{margin:0;padding-left:20px;display:grid;gap:8px}
+.mtoday{margin-bottom:16px}.mtoday h3{margin:4px 0 10px}.mtoday .caption{margin-top:10px}
 .about .abouthead{display:flex;align-items:center;gap:14px}
 .about .abouthead h2{margin:0}
 .about h3.section{margin-top:22px}

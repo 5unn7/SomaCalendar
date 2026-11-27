@@ -1052,25 +1052,67 @@ function favSection(ym, tk) {
 /* Days in the next `days` that suit an event: nakshatra class, tithi group and weekday from the tradition, no bad yoga or Bhadra at sunrise. */
 function muhuratDays(evKey, from, days) {
   // On today the result depends on the clock (a morning window that has passed drops out), so it is keyed by 10 minutes.
-  return cached('mdays|' + evKey + '|' + from + '|' + days + '|' + locKey() + '|' + (from === todayKey() ? Math.floor(Clock.ms() / 6e5) : ''), () => muhuratDaysNow(evKey, from, days));
+  return cached('mdays|' + evKey + '|' + from + '|' + days + '|' + locKey() + '|' + prefs.lang + '|' + (from === todayKey() ? Math.floor(Clock.ms() / 6e5) : ''), () => muhuratDaysNow(evKey, from, days));
 }
 function muhuratDaysNow(evKey, from, days) {
   const ev = M.EVENTS.find(e => e.key === evKey), out = [];
   for (let i = 0; i < days && out.length < 8; i++) {
-    const key = K.addDay(from, i), d = vedicDay(key), l = d.sunriseLimbs, ti = M.tithi(l.tithi.index), na = M.nakshatra(l.nakshatra.index);
-    const group = M.GROUPS[l.tithi.index % 5];
-    if (l.month.adhik || l.tithi.index === 29 || ev.avoidTithi.indexOf(group) >= 0 || ev.kinds.indexOf(na.kind) < 0 || ev.weekdays.indexOf(d.frame.weekday) < 0) continue;
-    if (M.YOGA[l.yoga.index].nature === 'bad' || l.karana.index === 6) continue;
-    // Kharmas (Sun in Dhanu or Meena) pauses sanskars and new homes; Chaturmas (Devshayani to Prabodhini Ekadashi) pauses griha pravesh and mundan.
-    const sun = P.sunSid(d.frame.sunrise), m = l.month.index, ti0 = l.tithi.index;
-    if (ev.kharmas !== false && ((sun >= 240 && sun < 270) || sun >= 330)) continue;
-    if (ev.chaturmas && ((m === 3 && ti0 >= 10) || m === 4 || m === 5 || m === 6 || (m === 7 && ti0 < 10))) continue;
-    // On today only windows still ahead count; a morning that has passed is no muhurat.
-    const start = key === todayKey() ? new Date(Math.max(+d.frame.sunrise, +now())) : d.frame.sunrise;
-    const win = P.goodWindows(d, start, { accept: c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh') })[0];
-    if (win) out.push({ key, d, win, why: [t('whyNak', { nak: L.nakName(l.nakshatra.index), kind: tr(na.group) }), t('whyTithi', { tithi: L.tithiName(l.tithi.index), kind: tr(ti.group) }), L.vaarName(d.frame.weekday)] });
+    const key = K.addDay(from, i), r = muhuratDay(ev, key);
+    if (r.win) out.push(r);
   }
   return out;
+}
+/* Why the panchang rules a moment out for an event, or '' when it suits it. Tithi, nakshatra and yoga are read at the
+   moment itself, not only at sunrise, so a Rikta tithi that ends at 11 am still leaves the afternoon open. */
+const SHUBH_DAY = c => !c.night && (c.key === 'amrit' || c.key === 'shubh' || c.key === 'labh');
+function muhuratFault(ev, ti, na, yo) {
+  if (ti === 29) return t('faultAmas');
+  if (ev.avoidTithi.indexOf(M.GROUPS[ti % 5]) >= 0) return t('faultTithi', { tithi: L.tithiName(ti), kind: tr(M.tithi(ti).group) });
+  if (ev.kinds.indexOf(M.nakshatra(na).kind) < 0) return t('faultNak', { nak: L.nakName(na), kind: tr(M.nakshatra(na).group) });
+  if (M.YOGA[yo].nature === 'bad') return t('faultYoga', { yoga: L.yogaName(yo) });
+  return '';
+}
+/* One day for one event: the day-wide rules first (weekday, Adhik maas, Kharmas, Chaturmas), then the daylight cut into
+   spans at each tithi, nakshatra and yoga change, and the first clean Amrit, Shubh or Labh window (Rahu Kaal, Yamaganda,
+   Gulika, Dur Muhurta and Bhadra cut out) inside a span that suits the event. `faults` says why the rest is ruled out. */
+function muhuratDay(ev, key) {
+  const d = vedicDay(key), l = d.sunriseLimbs, res = { key, d, win: null, why: [], faults: [] };
+  if (l.month.adhik) { res.faults.push(t('faultAdhik')); return res; }
+  if (ev.weekdays.indexOf(d.frame.weekday) < 0) { res.faults.push(t('faultVaar', { vaar: L.vaarName(d.frame.weekday) })); return res; }
+  // Kharmas (Sun in Dhanu or Meena) pauses sanskars and new homes; Chaturmas (Devshayani to Prabodhini Ekadashi) pauses griha pravesh and mundan.
+  const sun = P.sunSid(d.frame.sunrise), m = l.month.index, ti0 = l.tithi.index;
+  if (ev.kharmas !== false && ((sun >= 240 && sun < 270) || sun >= 330)) { res.faults.push(t('faultKharmas')); return res; }
+  if (ev.chaturmas && ((m === 3 && ti0 >= 10) || m === 4 || m === 5 || m === 6 || (m === 7 && ti0 < 10))) { res.faults.push(t('faultChaturmas')); return res; }
+  // Only windows still ahead count; a morning that has passed is no muhurat.
+  const from = new Date(Math.max(+d.frame.sunrise, +now())), set = d.frame.sunset;
+  const wins = from < set ? P.goodWindows(d, from, { strict: true, accept: SHUBH_DAY }) : [];
+  let tt = from, okSeen = false;
+  const runs = [];
+  for (let g = 0; g < 12 && tt < set; g++) {
+    const probe = new Date(+tt + 6e4), ti = K.tithi(probe), na = P.nakshatra(probe), yo = P.yoga(probe);
+    const stop = new Date(Math.min(+set, ...[ti.end, na.end, yo.end].filter(Boolean).map(Number)));
+    if (!(stop > tt)) break;
+    const fault = muhuratFault(ev, ti.index, na.index, yo.index);
+    if (fault) { const last = runs[runs.length - 1]; if (last && last.what === fault && +last.end === +tt) last.end = stop; else runs.push({ what: fault, end: stop }); }
+    else if (!res.win) {
+      okSeen = true;
+      const w = wins.map(w => ({ start: w.start < tt ? tt : w.start, end: w.end > stop ? stop : w.end, key: w.key, night: w.night })).find(w => w.end - w.start >= 20 * 6e4);
+      if (w) {
+        res.win = w;
+        const kind = M.nakshatra(na.index).group, tg = M.tithi(ti.index).group;
+        res.why = [t('whyNak', { nak: L.nakName(na.index), kind: tr(kind) }), t('whyTithi', { tithi: L.tithiName(ti.index), kind: tr(tg) }), L.vaarName(d.frame.weekday)];
+      }
+    }
+    tt = stop;
+  }
+  // A fault that lasts past sunset reads plainly; one that ends earlier says until when.
+  res.faults = runs.map(r => r.end < set ? t('faultUntil', { what: r.what, time: fmt(r.end) }) : r.what);
+  // Daylight is over, or the panchang suits the event for a while but no clean window falls inside that time.
+  if (!res.win && (okSeen || !runs.length)) {
+    const passed = !wins.length && from > d.frame.sunrise && P.goodWindows(d, d.frame.sunrise, { strict: true, accept: SHUBH_DAY }).length > 0;
+    res.faults.push(t(passed ? 'faultLate' : 'faultNoWin'));
+  }
+  return res;
 }
 /* The day's verdict from its panchang (tithi, nakshatra, yoga, karana at sunrise), and what holds now (nowState). */
 function muhuratSummary(d) {
@@ -1099,7 +1141,11 @@ function muhuratView() {
   const evIcon = { griha: 'home', vehicle: 'car', business: 'shop', property: 'pin', learning: 'book', travel: 'plane', mundan: 'sparkle' };
   const lead = titleBar(esc(t('muhurat')), '') + tabs + `<div class="eyebrow occhead">${esc(t('eventType'))}</div><div class="chipRow occ" role="radiogroup" aria-label="${esc(t('eventType'))}">${M.EVENTS.map(e => `<button class="chip${e.key === muhuratEvent ? ' on' : ''}" role="radio" aria-checked="${e.key === muhuratEvent}" onclick="muhuratEvent='${e.key}';haptic('select');muhuratView()">${icon(evIcon[e.key] || 'muhurat')}${esc(tr(e.en).replace(/\s*[(（].*[)）]\s*$/, ''))}</button>`).join('')}</div>`
     + `<p class="caption" style="margin-top:10px">${esc(t('vivahNote'))}</p>`;
-  const rest = `<section class="section first">${groupHead(t('ovPlan'), esc(t('goodDays')))}${mHits.length ? `<div class="list">${mHits.map((x, i) => `<button type="button" class="timeline rowbtn" onclick="muhuratSheet(${i})"><i class="dot good" aria-hidden="true"></i><div><strong>${dayLabel(x.key)}</strong><p>${span(x.win)} · ${esc(L.chogName(x.win.key))}</p>${muhuratEvent === 'travel' && wxStorm(x.key) ? `<p class="wxwarn">${esc(wxStorm(x.key))}</p>` : ''}</div><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>` : `<div class="card"><p>${esc(t('noGoodDays'))}</p></div>`}</section>`;
+  // Today first, in plain words: either it is the top result, or a short card says what rules it out and until when.
+  const ev = M.EVENTS.find(e => e.key === muhuratEvent);
+  const td = from === todayKey() && (!mHits[0] || mHits[0].key !== from) ? cached('mtoday|' + muhuratEvent + '|' + from + '|' + locKey() + '|' + prefs.lang + '|' + Math.floor(Clock.ms() / 6e5), () => muhuratDay(ev, from)) : null;
+  const todayCard = td ? `<div class="card mtoday"><div class="eyebrow">${esc(t('today'))}</div><h3>${esc(t('todayNoMuhurat'))}</h3><ul class="gets">${td.faults.slice(0, 3).map(f => `<li>${esc(f)}</li>`).join('')}</ul>${mHits[0] ? `<p class="caption">${esc(t('nextMuhurat', { d: dayLabel(mHits[0].key) }))}</p>` : ''}</div>` : '';
+  const rest = `<section class="section first">${todayCard}${groupHead(t('ovPlan'), esc(t('goodDays')))}${mHits.length ? `<div class="list">${mHits.map((x, i) => `<button type="button" class="timeline rowbtn" onclick="muhuratSheet(${i})"><i class="dot good" aria-hidden="true"></i><div><strong>${x.key === todayKey() ? esc(t('today')) + ' · ' : ''}${dayLabel(x.key)}</strong><p>${span(x.win)} · ${esc(L.chogName(x.win.key))}</p>${muhuratEvent === 'travel' && wxStorm(x.key) ? `<p class="wxwarn">${esc(wxStorm(x.key))}</p>` : ''}</div><span class="chev" aria-hidden="true">›</span></button>`).join('')}</div>` : `<div class="card"><p>${esc(t('noGoodDays'))}</p></div>`}</section>`;
   $('app').innerHTML = `<div class="split"><div class="lead">${lead}</div><div class="rest">${rest}</div></div>`;
 }
 function muhuratSheet(i) {
