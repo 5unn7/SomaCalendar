@@ -7,7 +7,7 @@
   "scripts": {
     "bundle": "node scripts/build-redesign.mjs",
     "test:fixtures": "node tests/grahan-fixtures.mjs",
-    "test": "node tests/grahan-fixtures.mjs && node tests/redesign.mjs && node tests/panchang.mjs && node tests/widget.mjs && npm run bundle && node tests/redesign-ui.mjs && node tests/clock.mjs && node tests/festival-verdict.mjs && node tests/daymap.mjs && node tests/i18n-coverage.mjs && node tests/weather.mjs && node tests/rashi.mjs && node tests/edge-cases.mjs && node tests/now-state.mjs && node tests/a11y.mjs"
+    "test": "node tests/grahan-fixtures.mjs && node tests/redesign.mjs && node tests/panchang.mjs && node tests/widget.mjs && npm run bundle && node tests/redesign-ui.mjs && node tests/clock.mjs && node tests/festival-verdict.mjs && node tests/daymap.mjs && node tests/i18n-coverage.mjs && node tests/weather.mjs && node tests/rashi.mjs && node tests/edge-cases.mjs && node tests/now-state.mjs && node tests/a11y.mjs && node tests/muhurat-finder.mjs"
   },
   "dependencies": {
     "@grahan/core": "1.0.1",
